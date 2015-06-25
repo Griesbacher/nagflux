@@ -3,11 +3,11 @@ package collector
 import (
 	"errors"
 	"fmt"
-	"griesbacher.org/nagflux/helper"
-	"griesbacher.org/nagflux/logging"
-	"griesbacher.org/nagflux/statistics"
+	"github.com/griesbacher/nagflux/helper"
+	"github.com/griesbacher/nagflux/logging"
+	"github.com/griesbacher/nagflux/statistics"
 	"io/ioutil"
-	_ "os"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -27,7 +27,6 @@ type PerformanceData struct {
 }
 
 func (p PerformanceData) String() string {
-	//	if p.unit == "" {
 	return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s value=%s %s`,
 		p.hostname, p.fieldseperator,
 		p.service, p.fieldseperator,
@@ -35,15 +34,6 @@ func (p PerformanceData) String() string {
 		p.performanceLabel, p.fieldseperator,
 		p.performanceType,
 		p.value, p.time)
-	/*	}else {
-		return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s,n_unit=%s value=%s %s`,
-			p.hostname, p.fieldseperator,
-			p.service, p.fieldseperator,
-			p.command, p.fieldseperator,
-			p.performanceLabel, p.fieldseperator,
-			p.performanceType,
-			p.unit, p.value, p.time)
-	}*/
 }
 
 type SpoolfileWorker struct {
@@ -110,8 +100,7 @@ func (w *SpoolfileWorker) run() {
 					}
 				}
 			}
-			//TODO: remove
-			//os.Remove(file)
+			os.Remove(file)
 			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{queries, time.Now().Sub(startTime)})
 		}
 	}

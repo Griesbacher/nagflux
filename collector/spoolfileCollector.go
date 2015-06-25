@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"griesbacher.org/nagflux/logging"
+	"github.com/griesbacher/nagflux/logging"
 	"io/ioutil"
 	"os"
 	"path"
