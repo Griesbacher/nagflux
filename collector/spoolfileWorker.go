@@ -100,7 +100,10 @@ func (w *SpoolfileWorker) run() {
 					}
 				}
 			}
-			os.Remove(file)
+			err = os.Remove(file)
+			if err != nil {
+				logging.GetLogger().Warn(err)
+			}
 			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{queries, time.Now().Sub(startTime)})
 		}
 	}

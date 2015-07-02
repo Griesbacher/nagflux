@@ -3,10 +3,10 @@ package influx
 import (
 	"bytes"
 	"errors"
-	"github.com/kdar/factorlog"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
+	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -143,24 +143,24 @@ func (worker InfluxWorker) sendData(rawData []byte) error {
 		if err != nil {
 			worker.log.Warn(err)
 			worker.log.Warn("failed to send data, retrying...")
+			//TODO: abbrechen
 			if err := worker.waitForQuit(errorInterrupted); err != nil {
 				return err
 			}
 		} else {
 			defer resp.Body.Close()
 			if resp.StatusCode < 200 || resp.StatusCode > 300 {
+				//HTTP Error
+				//TODO: abbrechen
 				worker.logHttpResponse(resp)
 				if err := worker.waitForQuit(errorFailedToSend); err != nil {
 					return err
 				}
 			} else if resp.StatusCode == 500 {
+				//Temporarily timeout
 				worker.logHttpResponse(resp)
 			} else {
-				select {
-				case <-worker.quitInternal:
-					worker.quitInternal <- true
-					return errorInterrupted
-				}
+				//OK
 				return nil
 			}
 		}
@@ -207,16 +207,16 @@ func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 	var result string
 	var err error
 	switch jobCast := job.(type) {
-		case collector.PerformanceData:
+	case collector.PerformanceData:
 		if worker.version >= 0.9 {
 			result = jobCast.String()
 		} else {
 			worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
 			err = errors.New("This influxversion given in the config is not supportet")
 		}
-		case string:
+	case string:
 		result = jobCast
-		default:
+	default:
 		worker.log.Fatal("Could not cast object:", job)
 		err = errors.New("Could not cast object")
 	}

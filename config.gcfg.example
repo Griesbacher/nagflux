@@ -3,7 +3,7 @@ SpoolfileFolder = "/var/spool"
 SpoolfileWorker = 1
 InfluxWorker = 2
 MaxInfluxWorker = 5
-NumberOfCPUs = 2
+NumberOfCPUs = 1
 DumpFile = "nagflux.dump"
 
 [Log]
@@ -23,4 +23,4 @@ Address = "http://127.0.0.1:8086/write?precision=s&u=icinga&p=icinga&db=icinga"
 CharToReplaceSpace = "_"
 
 [Grafana]
-FieldSeperator = "|"
+FieldSeperator = "&"
