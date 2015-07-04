@@ -3,10 +3,10 @@ package monitoring
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kdar/factorlog"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
+	"github.com/kdar/factorlog"
 	"math"
 	"net/http"
 	"strconv"

@@ -54,7 +54,7 @@ func (user SimpleStatisticsUser) GetData(dataType string) (QueriesPerTime, time.
 	user.data[dataType].Reset()
 	collectionSpan := user.collectingSince[dataType]
 	user.collectingSince[dataType] = time.Now()
-	return data, time.Now().Sub(collectionSpan), nil
+	return data, time.Since(collectionSpan), nil
 }
 
 func (user SimpleStatisticsUser) String() string {

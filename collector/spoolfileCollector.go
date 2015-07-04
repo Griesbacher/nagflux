@@ -3,14 +3,11 @@ package collector
 import (
 	"github.com/griesbacher/nagflux/logging"
 	"io/ioutil"
-	"os"
 	"path"
-	"strings"
 	"time"
 )
 
 const (
-	WorkSuffix               = ".working"
 	MinFileAgeInSeconds      = time.Duration(60) * time.Second
 	IntervalToCheckDirectory = time.Duration(5) * time.Second
 )
@@ -53,7 +50,7 @@ func (s *SpoolfileCollector) run() {
 		case <-time.After(IntervalToCheckDirectory):
 			files, _ := ioutil.ReadDir(s.spoolDirectory)
 			for _, currentFile := range files {
-				if !isInUse(currentFile) && isItTime(currentFile.ModTime(), MinFileAgeInSeconds) {
+				if isItTime(currentFile.ModTime(), MinFileAgeInSeconds) {
 					currentPath := path.Join(s.spoolDirectory, currentFile.Name())
 					select {
 					case <-s.quit:
@@ -67,9 +64,7 @@ func (s *SpoolfileCollector) run() {
 	}
 }
 
-func isInUse(file os.FileInfo) bool {
-	return strings.HasSuffix(file.Name(), WorkSuffix)
-}
+
 func isItTime(timeStamp time.Time, duration time.Duration) bool {
 	return time.Now().After(timeStamp.Add(duration))
 }

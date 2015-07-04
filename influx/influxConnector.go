@@ -1,8 +1,8 @@
 package influx
 
 import (
-	"github.com/kdar/factorlog"
 	"github.com/griesbacher/nagflux/logging"
+	"github.com/kdar/factorlog"
 	"time"
 )
 

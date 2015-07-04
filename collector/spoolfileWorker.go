@@ -104,7 +104,7 @@ func (w *SpoolfileWorker) run() {
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{queries, time.Now().Sub(startTime)})
+			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{queries, time.Since(startTime)})
 		}
 	}
 }

@@ -3,12 +3,12 @@ package main
 import (
 	"code.google.com/p/gcfg"
 	"flag"
-	"github.com/kdar/factorlog"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/influx"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
+	"github.com/kdar/factorlog"
 	"os"
 	"os/signal"
 	"runtime"

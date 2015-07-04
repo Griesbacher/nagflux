@@ -2,8 +2,8 @@ package collector
 
 import (
 	"bufio"
-	"github.com/kdar/factorlog"
 	"github.com/griesbacher/nagflux/logging"
+	"github.com/kdar/factorlog"
 	"os"
 )
 
