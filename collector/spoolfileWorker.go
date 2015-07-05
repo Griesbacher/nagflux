@@ -37,13 +37,12 @@ func (p PerformanceData) String() string {
 }
 
 type SpoolfileWorker struct {
-	workerId           int
-	quit               chan bool
-	jobs               chan string
-	results            chan interface{}
-	statistics         statistics.DataReceiver
-	fieldseperator     string
-	charToReplaceSpace string
+	workerId       int
+	quit           chan bool
+	jobs           chan string
+	results        chan interface{}
+	statistics     statistics.DataReceiver
+	fieldseperator string
 }
 
 const hostPerfdata string = "HOSTPERFDATA"
@@ -57,10 +56,10 @@ const timet string = "TIMET"
 const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
-func SpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator, charToReplaceSpace string) func() *SpoolfileWorker {
+func SpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string) func() *SpoolfileWorker {
 	workerId := 0
 	return func() *SpoolfileWorker {
-		s := &SpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, charToReplaceSpace}
+		s := &SpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator}
 		workerId++
 		go s.run()
 		return s
@@ -152,7 +151,7 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 }
 
 func (w *SpoolfileWorker) replaceSpace(input string) string {
-	return strings.Replace(strings.Replace(input, w.charToReplaceSpace, w.charToReplaceSpace, -1), " ", w.charToReplaceSpace, -1)
+	return strings.Replace(input, " ", "\\ ", -1)
 }
 
 func isHostPerformanceData(input map[string]string) bool {

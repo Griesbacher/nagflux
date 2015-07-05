@@ -75,8 +75,6 @@ func (worker InfluxWorker) run() {
 	}
 }
 
-
-
 func (worker *InfluxWorker) sendBuffer(queries []interface{}) {
 	if len(queries) == 0 {
 		return
@@ -124,7 +122,7 @@ func (worker *InfluxWorker) sendBuffer(queries []interface{}) {
 				sendErr = worker.sendData([]byte(dataToSend), true)
 			}
 		}
-		if sendErr != nil{
+		if sendErr != nil {
 			//if there is still an error dump the queries and go on
 			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
 		}
@@ -141,6 +139,7 @@ func (worker InfluxWorker) dumpErrorQueries(messageForLog string, errorQueries [
 }
 
 var mutex = &sync.Mutex{}
+
 func (worker InfluxWorker) dumpRemainingQueries(remainingQueries []string) {
 	mutex.Lock()
 	worker.log.Debugf("Global queue %d own queue %d", len(worker.jobs), len(remainingQueries))
@@ -187,19 +186,19 @@ func (worker InfluxWorker) sendData(rawData []byte, log bool) error {
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			//OK
 			return nil
-		}else if resp.StatusCode == 500 {
+		} else if resp.StatusCode == 500 {
 			//Temporarily timeout
 			if log {
 				worker.logHttpResponse(resp)
 			}
 			return error500
-		}else if resp.StatusCode == 400 {
+		} else if resp.StatusCode == 400 {
 			//Bad Request
 			if log {
 				worker.logHttpResponse(resp)
 			}
 			return errorBadRequest
-		}else {
+		} else {
 			//HTTP Error
 			if log {
 				worker.logHttpResponse(resp)
@@ -249,16 +248,16 @@ func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 	var result string
 	var err error
 	switch jobCast := job.(type) {
-		case collector.PerformanceData:
+	case collector.PerformanceData:
 		if worker.version >= 0.9 {
 			result = jobCast.String()
 		} else {
 			worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
 			err = errors.New("This influxversion given in the config is not supportet")
 		}
-		case string:
+	case string:
 		result = jobCast
-		default:
+	default:
 		worker.log.Fatal("Could not cast object:", job)
 		err = errors.New("Could not cast object")
 	}

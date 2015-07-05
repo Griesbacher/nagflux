@@ -33,9 +33,8 @@ type Config struct {
 		WebserverPort string
 	}
 	Influx struct {
-		Address            string
-		Version            float32
-		CharToReplaceSpace string
+		Address string
+		Version float32
 	}
 	Grafana struct {
 		FieldSeperator string
@@ -76,7 +75,7 @@ func main() {
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	collector := collector.SpoolfileCollectorFactory(cfg.Main.SpoolfileFolder, cfg.Main.SpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator, cfg.Influx.CharToReplaceSpace)
+	collector := collector.SpoolfileCollectorFactory(cfg.Main.SpoolfileFolder, cfg.Main.SpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())

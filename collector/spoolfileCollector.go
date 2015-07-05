@@ -19,10 +19,10 @@ type SpoolfileCollector struct {
 	workers        []*SpoolfileWorker
 }
 
-func SpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator, charToReplaceSpace string) *SpoolfileCollector {
+func SpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string) *SpoolfileCollector {
 	s := &SpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*SpoolfileWorker, workerAmount)}
 
-	gen := SpoolfileWorkerGenerator(s.jobs, results, fieldseperator, charToReplaceSpace)
+	gen := SpoolfileWorkerGenerator(s.jobs, results, fieldseperator)
 
 	for w := 0; w < workerAmount; w++ {
 		s.workers[w] = gen()
@@ -63,7 +63,6 @@ func (s *SpoolfileCollector) run() {
 		}
 	}
 }
-
 
 func isItTime(timeStamp time.Time, duration time.Duration) bool {
 	return time.Now().After(timeStamp.Add(duration))
