@@ -124,22 +124,22 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 	go func() {
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         w.replaceSpace(input[hostname]),
-				command:          w.replaceSpace(input[typ+checkcommand]),
-				time:             w.replaceSpace(input[timet]),
-				performanceLabel: w.replaceSpace(value[1]),
-				unit:             w.replaceSpace(value[3]),
+				hostname:         w.cleanForInflux(input[hostname]),
+				command:          w.cleanForInflux(input[typ+checkcommand]),
+				time:             w.cleanForInflux(input[timet]),
+				performanceLabel: w.cleanForInflux(value[1]),
+				unit:             w.cleanForInflux(value[3]),
 				fieldseperator:   w.fieldseperator,
 			}
 			if typ == hostType {
 				perf.service = ""
 			} else {
-				perf.service = w.replaceSpace(input[servicedesc])
+				perf.service = w.cleanForInflux(input[servicedesc])
 			}
 
 			for i, data := range value {
 				if i > 1 && i != 3 && data != "" {
-					perf.value = data
+					perf.value = helper.StringIntToStringFloat(data)
 					perf.performanceType, err = indexToperformanceType(i)
 					ch <- perf
 				}
@@ -150,8 +150,11 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 	return ch
 }
 
-func (w *SpoolfileWorker) replaceSpace(input string) string {
-	return strings.Replace(input, " ", "\\ ", -1)
+func (w *SpoolfileWorker) cleanForInflux(input string) string {
+	input = strings.Replace(input, "\\", "\\\\", -1)
+	input = strings.Replace(input, " ", "\\ ", -1)
+	input = strings.Replace(input, ",", "\\,", -1)
+	return input
 }
 
 func isHostPerformanceData(input map[string]string) bool {

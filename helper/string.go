@@ -13,3 +13,10 @@ func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]strin
 	}
 	return result
 }
+
+func StringIntToStringFloat(inputInt string) string {
+	if !strings.Contains(inputInt, ".") {
+		inputInt += ".0"
+	}
+	return inputInt
+}

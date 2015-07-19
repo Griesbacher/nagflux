@@ -104,7 +104,7 @@ func main() {
 				continue
 			}
 			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds()/float64(influx.AmountWorkers())) / updateRate
-			log.Debug(len(resultQueue), idleTime)
+			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ",len(resultQueue), idleTime*100)
 
 			if idleTime > 0.25 {
 				influx.RemoveWorker()
