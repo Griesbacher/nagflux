@@ -125,7 +125,7 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         w.cleanForInflux(input[hostname]),
-				command:          w.cleanForInflux(input[typ+checkcommand]),
+				command:          w.cleanForInflux(strings.Split(input[typ+checkcommand], "!")[0]),
 				time:             w.cleanForInflux(input[timet]),
 				performanceLabel: w.cleanForInflux(value[1]),
 				unit:             w.cleanForInflux(value[3]),
