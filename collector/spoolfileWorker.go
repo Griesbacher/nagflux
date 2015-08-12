@@ -113,28 +113,33 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 	if err != nil {
 		logging.GetLogger().Error("Regex creation failed:", err)
 	}
+
+	ch := make(chan PerformanceData)
 	var typ string
 	if isHostPerformanceData(input) {
 		typ = hostType
 	} else if isServicePerformanceData(input) {
 		typ = serviceType
+	}else{
+		logging.GetLogger().Info("Line does not match the scheme", input)
+		close(ch);
+		return ch;
 	}
 
-	ch := make(chan PerformanceData)
 	go func() {
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         w.cleanForInflux(input[hostname]),
-				command:          w.cleanForInflux(strings.Split(input[typ+checkcommand], "!")[0]),
-				time:             w.cleanForInflux(input[timet]),
-				performanceLabel: w.cleanForInflux(value[1]),
-				unit:             w.cleanForInflux(value[3]),
+				hostname:         cleanForInflux(input[hostname]),
+				command:          cleanForInflux(splitCommandInput(input[typ+checkcommand])),
+				time:             cleanForInflux(input[timet]),
+				performanceLabel: cleanForInflux(value[1]),
+				unit:             cleanForInflux(value[3]),
 				fieldseperator:   w.fieldseperator,
 			}
 			if typ == hostType {
 				perf.service = ""
 			} else {
-				perf.service = w.cleanForInflux(input[servicedesc])
+				perf.service = cleanForInflux(input[servicedesc])
 			}
 
 			for i, data := range value {
@@ -150,7 +155,11 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 	return ch
 }
 
-func (w *SpoolfileWorker) cleanForInflux(input string) string {
+func splitCommandInput(command string) string{
+	return strings.Split(command, "!")[0];
+}
+
+func cleanForInflux(input string) string {
 	input = strings.Replace(input, "\\", "\\\\", -1)
 	input = strings.Replace(input, " ", "\\ ", -1)
 	input = strings.Replace(input, ",", "\\,", -1)
