@@ -1,4 +1,5 @@
 package collector
+
 import "fmt"
 
 type PerformanceData struct {
@@ -20,9 +21,9 @@ func (p PerformanceData) String() string {
 		p.command, p.fieldseperator,
 		p.performanceLabel, p.fieldseperator,
 		p.performanceType)
-	if p.unit != ""{
-		tableName += fmt.Sprintf(`,unit=%s`,p.unit)
+	if p.unit != "" {
+		tableName += fmt.Sprintf(`,unit=%s`, p.unit)
 	}
-	tableName += fmt.Sprintf(` value=%s %s`,p.value, p.time)
+	tableName += fmt.Sprintf(` value=%s %s`, p.value, p.time)
 	return tableName
 }

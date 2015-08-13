@@ -48,22 +48,29 @@ func (s *NagiosSpoolfileCollector) run() {
 			s.quit <- true
 			return
 		case <-time.After(IntervalToCheckDirectory):
-			files, _ := ioutil.ReadDir(s.spoolDirectory)
-			for _, currentFile := range files {
-				if isItTime(currentFile.ModTime(), MinFileAgeInSeconds) {
-					currentPath := path.Join(s.spoolDirectory, currentFile.Name())
-					select {
-					case <-s.quit:
-						s.quit <- true
-						return
-					case s.jobs <- currentPath:
-					}
+			for _, currentFile := range FilesInDirectoryOlderThanX(s.spoolDirectory, MinFileAgeInSeconds) {
+				select {
+				case <-s.quit:
+					s.quit <- true
+					return
+				case s.jobs <- currentFile:
 				}
 			}
 		}
 	}
 }
 
-func isItTime(timeStamp time.Time, duration time.Duration) bool {
+func FilesInDirectoryOlderThanX(folder string, age time.Duration) []string {
+	files, _ := ioutil.ReadDir(folder)
+	var oldFiles []string
+	for _, currentFile := range files {
+		if IsItTime(currentFile.ModTime(), age) {
+			oldFiles = append(oldFiles, path.Join(folder, currentFile.Name()))
+		}
+	}
+	return oldFiles
+}
+
+func IsItTime(timeStamp time.Time, duration time.Duration) bool {
 	return time.Now().After(timeStamp.Add(duration))
 }

@@ -16,14 +16,19 @@ import (
 	"time"
 )
 
+type Stoppable interface {
+	Stop()
+}
+
 type Config struct {
 	Main struct {
-		SpoolfileFolder string
-		SpoolfileWorker int
-		InfluxWorker    int
-		MaxInfluxWorker int
-		NumberOfCPUs    int
-		DumpFile        string
+		NagiosSpoolfileFolder  string
+		NagiosSpoolfileWorker  int
+		InfluxWorker           int
+		MaxInfluxWorker        int
+		NumberOfCPUs           int
+		DumpFile               string
+		NagfluxSpoolfileFolder string
 	}
 	Log struct {
 		LogFile     string
@@ -67,7 +72,7 @@ func main() {
 	runtime.GOMAXPROCS(cfg.Main.NumberOfCPUs)
 	log.Infof("Using %d of %d CPUs", cfg.Main.NumberOfCPUs, runtime.NumCPU())
 
-	log.Info("Spoolfile Folder: ", cfg.Main.SpoolfileFolder)
+	log.Info("Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	resultQueue := make(chan interface{}, int(resultQueueLength))
 	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version)
 
@@ -75,7 +80,9 @@ func main() {
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	collector := collector.NagiosSpoolfileCollectorFactory(cfg.Main.SpoolfileFolder, cfg.Main.SpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
+	nagiosCollector := collector.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
+
+	nagfluxCollector := collector.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
@@ -91,7 +98,7 @@ func main() {
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp(collector, dumpFileCollector, influx, resultQueue)
+		cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, resultQueue)
 		os.Exit(1)
 	}()
 
@@ -114,17 +121,18 @@ func main() {
 		}
 	}
 
-	cleanUp(collector, dumpFileCollector, influx, resultQueue)
+	cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, resultQueue)
 }
 
 //Wait till the Performance Data is sent
-func cleanUp(collector *collector.NagiosSpoolfileCollector, dumpFileCollector *collector.DumpfileCollector, influx *influx.InfluxConnector, resultQueue chan interface{}) {
+func cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector Stoppable, resultQueue chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()
 	}
 	dumpFileCollector.Stop()
-	collector.Stop()
+	nagiosCollector.Stop()
+	nagfluxCollector.Stop()
 	time.Sleep(1 * time.Second)
 	influx.Stop()
 	log.Debugf("Remaining queries %d", len(resultQueue))

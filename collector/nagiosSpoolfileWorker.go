@@ -97,12 +97,12 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 		typ = hostType
 	} else if isServicePerformanceData(input) {
 		typ = serviceType
-	}else{
-		if len(input) > 1{
+	} else {
+		if len(input) > 1 {
 			logging.GetLogger().Info("Line does not match the scheme", input)
 		}
-		close(ch);
-		return ch;
+		close(ch)
+		return ch
 	}
 
 	go func() {
@@ -134,12 +134,12 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	return ch
 }
 
-func splitCommandInput(command string) string{
-	return strings.Split(command, "!")[0];
+func splitCommandInput(command string) string {
+	return strings.Split(command, "!")[0]
 }
 
-func castTimeFromSToMs(time string) string{
-	return time+"000";
+func castTimeFromSToMs(time string) string {
+	return time + "000"
 }
 
 func isHostPerformanceData(input map[string]string) bool {

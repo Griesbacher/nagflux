@@ -1,4 +1,5 @@
 package helper
+
 import "strings"
 
 func SanitizeInfluxInput(input string) string {
