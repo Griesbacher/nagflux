@@ -14,11 +14,15 @@ type PerformanceData struct {
 }
 
 func (p PerformanceData) String() string {
-	return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s value=%s %s`,
+	tableName := fmt.Sprintf(`%s%s%s%s%s%s%s%s%s`,
 		p.hostname, p.fieldseperator,
 		p.service, p.fieldseperator,
 		p.command, p.fieldseperator,
 		p.performanceLabel, p.fieldseperator,
-		p.performanceType,
-		p.value, p.time)
+		p.performanceType)
+	if p.unit != ""{
+		tableName += fmt.Sprintf(`,unit=%s`,p.unit)
+	}
+	tableName += fmt.Sprintf(` value=%s %s`,p.value, p.time)
+	return tableName
 }

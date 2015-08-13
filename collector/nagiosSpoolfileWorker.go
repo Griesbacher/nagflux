@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/griesbacher/nagflux/influx"
 )
 
 type NagiosSpoolfileWorker struct {
@@ -99,7 +98,9 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	} else if isServicePerformanceData(input) {
 		typ = serviceType
 	}else{
-		logging.GetLogger().Info("Line does not match the scheme", input)
+		if len(input) > 1{
+			logging.GetLogger().Info("Line does not match the scheme", input)
+		}
 		close(ch);
 		return ch;
 	}
@@ -107,17 +108,17 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	go func() {
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         influx.SanitizeInput(input[hostname]),
-				command:          influx.SanitizeInput(splitCommandInput(input[typ+checkcommand])),
-				time:             influx.SanitizeInput(input[timet]),
-				performanceLabel: influx.SanitizeInput(value[1]),
-				unit:             influx.SanitizeInput(value[3]),
+				hostname:         helper.SanitizeInfluxInput(input[hostname]),
+				command:          helper.SanitizeInfluxInput(splitCommandInput(input[typ+checkcommand])),
+				time:             castTimeFromSToMs(input[timet]),
+				performanceLabel: helper.SanitizeInfluxInput(value[1]),
+				unit:             helper.SanitizeInfluxInput(value[3]),
 				fieldseperator:   w.fieldseperator,
 			}
 			if typ == hostType {
 				perf.service = ""
 			} else {
-				perf.service = influx.SanitizeInput(input[servicedesc])
+				perf.service = helper.SanitizeInfluxInput(input[servicedesc])
 			}
 
 			for i, data := range value {
@@ -135,6 +136,10 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 func splitCommandInput(command string) string{
 	return strings.Split(command, "!")[0];
+}
+
+func castTimeFromSToMs(time string) string{
+	return time+"000";
 }
 
 func isHostPerformanceData(input map[string]string) bool {

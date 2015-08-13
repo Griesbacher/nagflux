@@ -1,7 +1,7 @@
-package influx
+package helper
 import "strings"
 
-func SanitizeInput(input string) string {
+func SanitizeInfluxInput(input string) string {
 	input = strings.Replace(input, "\\", "\\\\", -1)
 	input = strings.Replace(input, " ", "\\ ", -1)
 	input = strings.Replace(input, ",", "\\,", -1)
