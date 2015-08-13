@@ -75,7 +75,7 @@ func main() {
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	collector := collector.SpoolfileCollectorFactory(cfg.Main.SpoolfileFolder, cfg.Main.SpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
+	collector := collector.NagiosSpoolfileCollectorFactory(cfg.Main.SpoolfileFolder, cfg.Main.SpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
@@ -118,7 +118,7 @@ func main() {
 }
 
 //Wait till the Performance Data is sent
-func cleanUp(collector *collector.SpoolfileCollector, dumpFileCollector *collector.DumpfileCollector, influx *influx.InfluxConnector, resultQueue chan interface{}) {
+func cleanUp(collector *collector.NagiosSpoolfileCollector, dumpFileCollector *collector.DumpfileCollector, influx *influx.InfluxConnector, resultQueue chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()

@@ -2,7 +2,6 @@ package collector
 
 import (
 	"errors"
-	"fmt"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
@@ -12,31 +11,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/griesbacher/nagflux/influx"
 )
 
-type PerformanceData struct {
-	hostname         string
-	service          string
-	command          string
-	performanceLabel string
-	performanceType  string
-	unit             string
-	time             string
-	value            string
-	fieldseperator   string
-}
-
-func (p PerformanceData) String() string {
-	return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s value=%s %s`,
-		p.hostname, p.fieldseperator,
-		p.service, p.fieldseperator,
-		p.command, p.fieldseperator,
-		p.performanceLabel, p.fieldseperator,
-		p.performanceType,
-		p.value, p.time)
-}
-
-type SpoolfileWorker struct {
+type NagiosSpoolfileWorker struct {
 	workerId       int
 	quit           chan bool
 	jobs           chan string
@@ -56,23 +34,23 @@ const timet string = "TIMET"
 const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
-func SpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string) func() *SpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string) func() *NagiosSpoolfileWorker {
 	workerId := 0
-	return func() *SpoolfileWorker {
-		s := &SpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator}
+	return func() *NagiosSpoolfileWorker {
+		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator}
 		workerId++
 		go s.run()
 		return s
 	}
 }
 
-func (w *SpoolfileWorker) Stop() {
+func (w *NagiosSpoolfileWorker) Stop() {
 	w.quit <- true
 	<-w.quit
 	logging.GetLogger().Debug("SpoolfileWorker stopped")
 }
 
-func (w *SpoolfileWorker) run() {
+func (w *NagiosSpoolfileWorker) run() {
 	var file string
 	for {
 		select {
@@ -108,7 +86,7 @@ func (w *SpoolfileWorker) run() {
 	}
 }
 
-func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
+func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
 	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
 	if err != nil {
 		logging.GetLogger().Error("Regex creation failed:", err)
@@ -129,17 +107,17 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 	go func() {
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         cleanForInflux(input[hostname]),
-				command:          cleanForInflux(splitCommandInput(input[typ+checkcommand])),
-				time:             cleanForInflux(input[timet]),
-				performanceLabel: cleanForInflux(value[1]),
-				unit:             cleanForInflux(value[3]),
+				hostname:         influx.SanitizeInput(input[hostname]),
+				command:          influx.SanitizeInput(splitCommandInput(input[typ+checkcommand])),
+				time:             influx.SanitizeInput(input[timet]),
+				performanceLabel: influx.SanitizeInput(value[1]),
+				unit:             influx.SanitizeInput(value[3]),
 				fieldseperator:   w.fieldseperator,
 			}
 			if typ == hostType {
 				perf.service = ""
 			} else {
-				perf.service = cleanForInflux(input[servicedesc])
+				perf.service = influx.SanitizeInput(input[servicedesc])
 			}
 
 			for i, data := range value {
@@ -157,13 +135,6 @@ func (w *SpoolfileWorker) performanceDataIterator(input map[string]string) <-cha
 
 func splitCommandInput(command string) string{
 	return strings.Split(command, "!")[0];
-}
-
-func cleanForInflux(input string) string {
-	input = strings.Replace(input, "\\", "\\\\", -1)
-	input = strings.Replace(input, " ", "\\ ", -1)
-	input = strings.Replace(input, ",", "\\,", -1)
-	return input
 }
 
 func isHostPerformanceData(input map[string]string) bool {

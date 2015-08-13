@@ -12,17 +12,17 @@ const (
 	IntervalToCheckDirectory = time.Duration(5) * time.Second
 )
 
-type SpoolfileCollector struct {
+type NagiosSpoolfileCollector struct {
 	quit           chan bool
 	jobs           chan string
 	spoolDirectory string
-	workers        []*SpoolfileWorker
+	workers        []*NagiosSpoolfileWorker
 }
 
-func SpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string) *SpoolfileCollector {
-	s := &SpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*SpoolfileWorker, workerAmount)}
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string) *NagiosSpoolfileCollector {
+	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
-	gen := SpoolfileWorkerGenerator(s.jobs, results, fieldseperator)
+	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator)
 
 	for w := 0; w < workerAmount; w++ {
 		s.workers[w] = gen()
@@ -32,7 +32,7 @@ func SpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results 
 	return s
 }
 
-func (s *SpoolfileCollector) Stop() {
+func (s *NagiosSpoolfileCollector) Stop() {
 	s.quit <- true
 	<-s.quit
 	for _, worker := range s.workers {
@@ -41,7 +41,7 @@ func (s *SpoolfileCollector) Stop() {
 	logging.GetLogger().Debug("SpoolfileCollector stopped")
 }
 
-func (s *SpoolfileCollector) run() {
+func (s *NagiosSpoolfileCollector) run() {
 	for {
 		select {
 		case <-s.quit:
