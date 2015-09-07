@@ -123,9 +123,44 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 			for i, data := range value {
 				if i > 1 && i != 3 && data != "" {
-					perf.value = helper.StringIntToStringFloat(data)
-					perf.performanceType, err = indexToperformanceType(i)
-					ch <- perf
+					performanceType, err := indexToperformanceType(i)
+					if err != nil{
+						logging.GetLogger().Warn(err, value)
+						continue
+					}
+					if performanceType == "warn" || performanceType == "crit" {
+						//Range handling
+						rangeRegex := regexp.MustCompile(`[\d\.\-]+`)
+						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
+						if len(rangeHits) == 1 {
+							perf.tags = append(perf.tags, "type=normal")
+							perf.value = helper.StringIntToStringFloat(rangeHits[0][0])
+							perf.performanceType = performanceType
+							ch <- perf
+						}else if len(rangeHits) == 2{
+							//If there is a range with no infinity as border, create two points
+							perf.performanceType = performanceType
+							if strings.Contains(data, "@"){
+								perf.tags = append(perf.tags, "fill=inner")
+							}else{
+								perf.tags = append(perf.tags, "fill=outer")
+							}
+
+							for i, tag := range []string {"type=min", "type=max"} {
+								tmpPerf := perf
+								tmpPerf.tags = append(tmpPerf.tags, tag)
+								tmpPerf.value = helper.StringIntToStringFloat(rangeHits[i][0])
+								ch <- tmpPerf
+							}
+						}else{
+							logging.GetLogger().Warn("Regexmatching went wrong", rangeHits)
+						}
+
+					}else{
+						perf.value = helper.StringIntToStringFloat(data)
+						perf.performanceType = performanceType
+						ch <- perf
+					}
 				}
 			}
 		}

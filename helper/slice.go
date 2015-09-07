@@ -11,3 +11,22 @@ func SumIntSliceTillPos(slice []int, pos int) int {
 	}
 	return sum
 }
+
+func SliceContainsString(str string, slice []string) bool {
+	for _, v := range slice {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveDuplicateStrings(dupes []string) []string {
+	emptySlice := []string{}
+	for _, value := range dupes {
+		if !SliceContainsString(value, emptySlice) {
+			emptySlice = append(emptySlice, value)
+		}
+	}
+	return emptySlice
+}
