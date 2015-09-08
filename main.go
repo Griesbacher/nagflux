@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.google.com/p/gcfg"
+	"gopkg.in/gcfg.v1"
 	"flag"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/influx"
