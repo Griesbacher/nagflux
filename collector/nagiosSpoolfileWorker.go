@@ -135,6 +135,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
 							perf.tags["type"] = "normal"
+							perf.tags["fill"] = "none"
 							perf.value = helper.StringIntToStringFloat(rangeHits[0][0])
 							perf.performanceType = performanceType
 							ch <- perf
@@ -149,6 +150,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 							for i, tag := range []string{"min", "max"} {
 								tmpPerf := perf
+								tmpPerf.tags = helper.CopyMap(perf.tags)
 								tmpPerf.tags["type"] = tag
 								tmpPerf.value = helper.StringIntToStringFloat(rangeHits[i][0])
 								ch <- tmpPerf
