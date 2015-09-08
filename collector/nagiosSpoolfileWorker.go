@@ -114,6 +114,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 				performanceLabel: helper.SanitizeInfluxInput(value[1]),
 				unit:             helper.SanitizeInfluxInput(value[3]),
 				fieldseperator:   w.fieldseperator,
+				tags:             map[string]string{},
 			}
 			if typ == hostType {
 				perf.service = ""
@@ -124,7 +125,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 			for i, data := range value {
 				if i > 1 && i != 3 && data != "" {
 					performanceType, err := indexToperformanceType(i)
-					if err != nil{
+					if err != nil {
 						logging.GetLogger().Warn(err, value)
 						continue
 					}
@@ -133,30 +134,30 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						rangeRegex := regexp.MustCompile(`[\d\.\-]+`)
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
-							perf.tags["type"]="normal"
+							perf.tags["type"] = "normal"
 							perf.value = helper.StringIntToStringFloat(rangeHits[0][0])
 							perf.performanceType = performanceType
 							ch <- perf
-						}else if len(rangeHits) == 2{
+						} else if len(rangeHits) == 2 {
 							//If there is a range with no infinity as border, create two points
 							perf.performanceType = performanceType
-							if strings.Contains(data, "@"){
-								perf.tags["fill"]="inner"
-							}else{
-								perf.tags["fill"]="outer"
+							if strings.Contains(data, "@") {
+								perf.tags["fill"] = "inner"
+							} else {
+								perf.tags["fill"] = "outer"
 							}
 
-							for i, tag := range []string {"min", "max"} {
+							for i, tag := range []string{"min", "max"} {
 								tmpPerf := perf
-								tmpPerf.tags["type"]= tag
+								tmpPerf.tags["type"] = tag
 								tmpPerf.value = helper.StringIntToStringFloat(rangeHits[i][0])
 								ch <- tmpPerf
 							}
-						}else{
+						} else {
 							logging.GetLogger().Warn("Regexmatching went wrong", rangeHits)
 						}
 
-					}else{
+					} else {
 						perf.value = helper.StringIntToStringFloat(data)
 						perf.performanceType = performanceType
 						ch <- perf

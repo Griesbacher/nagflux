@@ -4,9 +4,9 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
-	"time"
-	"strings"
 	"os"
+	"strings"
+	"time"
 )
 
 type NagfluxFileCollector struct {

@@ -30,7 +30,7 @@ func (p *PerformanceData) String() string {
 	}
 
 	if len(p.tags) > 0 {
-		tableName += fmt.Sprintf(`,%s`, strings.Replace(strings.Replace(strings.Trim(fmt.Sprintf("%s",p.tags),"map[]")," ", ",", -1),":", "=", -1))
+		tableName += fmt.Sprintf(`,%s`, strings.Replace(strings.Replace(strings.Trim(fmt.Sprintf("%s", p.tags), "map[]"), " ", ",", -1), ":", "=", -1))
 	}
 
 	tableName += fmt.Sprintf(` value=%s %s`, p.value, p.time)

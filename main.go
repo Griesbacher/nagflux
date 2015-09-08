@@ -1,7 +1,6 @@
 package main
 
 import (
-	"gopkg.in/gcfg.v1"
 	"flag"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/influx"
@@ -9,6 +8,7 @@ import (
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
+	"gopkg.in/gcfg.v1"
 	"os"
 	"os/signal"
 	"runtime"
