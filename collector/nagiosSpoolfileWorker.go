@@ -133,7 +133,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						rangeRegex := regexp.MustCompile(`[\d\.\-]+`)
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
-							perf.tags = append(perf.tags, "type=normal")
+							perf.tags["type"]="normal"
 							perf.value = helper.StringIntToStringFloat(rangeHits[0][0])
 							perf.performanceType = performanceType
 							ch <- perf
@@ -141,14 +141,14 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 							//If there is a range with no infinity as border, create two points
 							perf.performanceType = performanceType
 							if strings.Contains(data, "@"){
-								perf.tags = append(perf.tags, "fill=inner")
+								perf.tags["fill"]="inner"
 							}else{
-								perf.tags = append(perf.tags, "fill=outer")
+								perf.tags["fill"]="outer"
 							}
 
-							for i, tag := range []string {"type=min", "type=max"} {
+							for i, tag := range []string {"min", "max"} {
 								tmpPerf := perf
-								tmpPerf.tags = append(tmpPerf.tags, tag)
+								tmpPerf.tags["type"]= tag
 								tmpPerf.value = helper.StringIntToStringFloat(rangeHits[i][0])
 								ch <- tmpPerf
 							}
