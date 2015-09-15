@@ -37,7 +37,13 @@ var error500 = errors.New("Error 500")
 
 func InfluxWorkerGenerator(jobs chan interface{}, connection, dumpFile string, version float32, connector *InfluxConnector) func(workerId int) *InfluxWorker {
 	return func(workerId int) *InfluxWorker {
-		worker := &InfluxWorker{workerId, make(chan bool), make(chan bool, 1), jobs, connection, dumpFile, statistics.NewCmdStatisticReceiver(), logging.GetLogger(), version, connector, http.Client{}, true}
+		worker := &InfluxWorker{
+			workerId, make(chan bool),
+			make(chan bool, 1), jobs,
+			connection, dumpFile,
+			statistics.NewCmdStatisticReceiver(),
+			logging.GetLogger(), version,
+			connector, http.Client{}, true}
 		go worker.run()
 		return worker
 	}
@@ -51,31 +57,56 @@ func (worker *InfluxWorker) Stop() {
 	worker.log.Debug("InfluxWorker stopped")
 }
 
-//TODO: check if database is alive
 func (worker InfluxWorker) run() {
 	var queries []interface{}
 	var query interface{}
 	for {
-		select {
-		case <-worker.quit:
-			worker.log.Debug("InfluxWorker quitting...")
-			worker.sendBuffer(queries)
-			worker.quit <- true
-			return
-		case query = <-worker.jobs:
-			queries = append(queries, query)
-			if len(queries) == 200 {
-				worker.sendBuffer(queries)
-				queries = queries[:0]
+		if worker.connector.IsAlive() {
+			if worker.connector.DatabaseExists() {
+				select {
+				case <-worker.quit:
+					worker.log.Debug("InfluxWorker quitting...")
+					worker.sendBuffer(queries)
+					worker.quit <- true
+					return
+				case query = <-worker.jobs:
+					queries = append(queries, query)
+					if len(queries) == 300 {
+						worker.sendBuffer(queries)
+						queries = queries[:0]
+					}
+				case <-time.After(time.Duration(30) * time.Second):
+					worker.sendBuffer(queries)
+					queries = queries[:0]
+				}
+			} else {
+				//Test Database
+				worker.connector.TestDatabaseExists()
+				if worker.waitForExternalQuit() {
+					return
+				}
 			}
-		case <-time.After(time.Duration(30) * time.Second):
-			worker.sendBuffer(queries)
-			queries = queries[:0]
+		} else {
+			//Test Influxdb
+			worker.connector.TestIfIsAlive()
+			if worker.waitForExternalQuit() {
+				return
+			}
 		}
 	}
 }
 
-func (worker *InfluxWorker) sendBuffer(queries []interface{}) {
+func (worker InfluxWorker) waitForExternalQuit() bool {
+	select {
+	case <-worker.quit:
+		worker.quit <- true
+		return true
+	case <-time.After(time.Duration(30) * time.Second):
+		return false
+	}
+}
+
+func (worker InfluxWorker) sendBuffer(queries []interface{}) {
 	if len(queries) == 0 {
 		return
 	}

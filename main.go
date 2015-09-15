@@ -38,8 +38,10 @@ type Config struct {
 		WebserverPort string
 	}
 	Influx struct {
-		Address string
-		Version float32
+		Address                   string
+		Arguments                 string
+		Version                   float32
+		CreateDatabaseIfNotExists bool
 	}
 	Grafana struct {
 		FieldSeperator string
@@ -74,7 +76,7 @@ func main() {
 
 	log.Info("Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	resultQueue := make(chan interface{}, int(resultQueueLength))
-	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version)
+	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
 	dumpFileCollector := collector.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue

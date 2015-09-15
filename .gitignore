@@ -27,4 +27,5 @@ _testmain.go
 *.iml
 *.idea
 config.gcfg
+nagflux.dump
 nagflux.dump-errors
