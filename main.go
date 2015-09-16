@@ -2,7 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/collector/nagflux"
+	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/influx"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
@@ -20,34 +23,6 @@ type Stoppable interface {
 	Stop()
 }
 
-type Config struct {
-	Main struct {
-		NagiosSpoolfileFolder  string
-		NagiosSpoolfileWorker  int
-		InfluxWorker           int
-		MaxInfluxWorker        int
-		NumberOfCPUs           int
-		DumpFile               string
-		NagfluxSpoolfileFolder string
-	}
-	Log struct {
-		LogFile     string
-		MinSeverity string
-	}
-	Monitoring struct {
-		WebserverPort string
-	}
-	Influx struct {
-		Address                   string
-		Arguments                 string
-		Version                   float32
-		CreateDatabaseIfNotExists bool
-	}
-	Grafana struct {
-		FieldSeperator string
-	}
-}
-
 const updateRate = 120
 const resultQueueLength = 1000.0
 
@@ -60,7 +35,7 @@ func main() {
 	flag.Parse()
 
 	//Load config
-	var cfg Config
+	var cfg config.Config
 	err := gcfg.ReadFileInto(&cfg, configPath)
 	if err != nil {
 		panic(err)
@@ -78,13 +53,15 @@ func main() {
 	resultQueue := make(chan interface{}, int(resultQueueLength))
 	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
-	dumpFileCollector := collector.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
+	livestatus := livestatus.NewLivestatusCollector(resultQueue, cfg.Livestatus.Address, cfg.Livestatus.Type)
+
+	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	nagiosCollector := collector.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
 
-	nagfluxCollector := collector.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
+	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
@@ -100,7 +77,7 @@ func main() {
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, resultQueue)
+		cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus, resultQueue)
 		os.Exit(1)
 	}()
 
@@ -123,11 +100,11 @@ func main() {
 		}
 	}
 
-	cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, resultQueue)
+	cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus, resultQueue)
 }
 
 //Wait till the Performance Data is sent
-func cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector Stoppable, resultQueue chan interface{}) {
+func cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus Stoppable, resultQueue chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()

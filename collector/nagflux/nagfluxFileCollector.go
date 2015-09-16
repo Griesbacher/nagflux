@@ -1,6 +1,7 @@
-package collector
+package nagflux
 
 import (
+	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
@@ -34,8 +35,8 @@ func (nfc NagfluxFileCollector) run() {
 		case <-nfc.quit:
 			nfc.quit <- true
 			return
-		case <-time.After(IntervalToCheckDirectory):
-			for _, currentFile := range FilesInDirectoryOlderThanX(nfc.folder, MinFileAgeInSeconds) {
+		case <-time.After(spoolfile.IntervalToCheckDirectory):
+			for _, currentFile := range spoolfile.FilesInDirectoryOlderThanX(nfc.folder, spoolfile.MinFileAgeInSeconds) {
 				data, err := ioutil.ReadFile(currentFile)
 				if err != nil {
 					break

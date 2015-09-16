@@ -3,7 +3,8 @@ package influx
 import (
 	"bytes"
 	"errors"
-	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
@@ -279,7 +280,7 @@ func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 	var result string
 	var err error
 	switch jobCast := job.(type) {
-	case collector.PerformanceData:
+	case spoolfile.PerformanceData:
 		if worker.version >= 0.9 {
 			result = jobCast.String()
 		} else {
@@ -288,6 +289,8 @@ func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 		}
 	case string:
 		result = jobCast
+	case livestatus.Printable:
+		result = jobCast.Print(worker.version)
 	default:
 		worker.log.Fatal("Could not cast object:", job)
 		err = errors.New("Could not cast object")

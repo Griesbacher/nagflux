@@ -20,7 +20,15 @@ WebserverPort = ""
 
 [Influx]
 Version = 0.9
-Address = "http://127.0.0.1:8086/write?precision=ms&u=icinga&p=icinga&db=icinga"
+Address = "http://127.0.0.1:8086"
+Arguments = "precision=ms&u=icinga&p=icinga&db=icinga"
+CreateDatabaseIfNotExists = true
 
 [Grafana]
 FieldSeperator = "&"
+
+[Livestatus]
+#tcp or file
+Type = "tcp"
+#tcp: 127.0.0.1:6557 or file /var/run/live
+Address = "127.0.0.1:6557"
