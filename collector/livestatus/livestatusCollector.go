@@ -1,3 +1,4 @@
+//Contains livestatus related collectors.
 package livestatus
 
 import (
@@ -11,6 +12,7 @@ import (
 	"time"
 )
 
+//Fetches data from livestatus.
 type LivestatusCollector struct {
 	quit              chan bool
 	jobs              chan interface{}
@@ -20,8 +22,10 @@ type LivestatusCollector struct {
 }
 
 const (
+	//Updateinterval on livestatus data.
 	IntervalToCheckLivestatus = time.Duration(1) * time.Minute
-	QueryForComments          = `GET comments
+	//Livestatusquery for comments
+	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
 Filter: entry_time > %d
 OutputFormat: csv
@@ -33,6 +37,7 @@ Filter: entry_time > %d
 OutputFormat: json
 
 `
+	//Livestatusquery for notifications.
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
@@ -41,18 +46,21 @@ OutputFormat: csv
 `
 )
 
+//Constructor, which also starts it immediately.
 func NewLivestatusCollector(jobs chan interface{}, livestatusAddress, connectionType string) *LivestatusCollector {
 	live := &LivestatusCollector{make(chan bool, 2), jobs, livestatusAddress, connectionType, logging.GetLogger()}
 	go live.run()
 	return live
 }
 
+//Signals the collector to stop.
 func (live *LivestatusCollector) Stop() {
 	live.quit <- true
 	<-live.quit
 	live.log.Debug("LivestatusCollector stoped")
 }
 
+//Loop which checks livestats for data or waits to quit.
 func (dump LivestatusCollector) run() {
 	for {
 		select {
@@ -70,8 +78,7 @@ func (dump LivestatusCollector) run() {
 	}
 }
 
-type jsonResult [][]interface{}
-
+//Queries the livestatus and returns an object which can be printed
 func (live LivestatusCollector) queryLivestatus(query string) []Printable {
 	queryWithTimestamp := fmt.Sprintf(query, time.Now().Add(IntervalToCheckLivestatus/100*-150).Unix())
 	var csvString []string
@@ -82,7 +89,7 @@ func (live LivestatusCollector) queryLivestatus(query string) []Printable {
 	case "file":
 		conn, _ = net.Dial("unix", live.livestatusAddress)
 	default:
-		live.log.Warn("Connection type is unkown, options are: tcp, file. Input:" + live.connectionType)
+		live.log.Critical("Connection type is unkown, options are: tcp, file. Input:" + live.connectionType)
 		live.quit <- true
 	}
 	defer conn.Close()
@@ -115,7 +122,7 @@ func (live LivestatusCollector) queryLivestatus(query string) []Printable {
 		case QueryForComments:
 			result = append(result, LivestatusCommentData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
 		case QueryForDowntimes:
-			result = append(result, LivestatusDowntimeData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
+			//result = append(result, LivestatusDowntimeData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
 		default:
 			live.log.Fatal("Found unkown query type" + query)
 		}

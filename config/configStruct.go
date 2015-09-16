@@ -1,5 +1,7 @@
+//Contains all the config related stuff
 package config
 
+//Represents the config file.
 type Config struct {
 	Main struct {
 		NagiosSpoolfileFolder  string

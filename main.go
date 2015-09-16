@@ -23,7 +23,10 @@ type Stoppable interface {
 	Stop()
 }
 
+//Interval of the main loop, in which the amount of workers are calculated.
 const updateRate = 120
+
+//Buffer size.
 const resultQueueLength = 1000.0
 
 var log *factorlog.FactorLog
@@ -103,7 +106,7 @@ func main() {
 	cleanUp([]Stoppable{nagiosCollector, dumpFileCollector, nagfluxCollector, livestatus, influx}, resultQueue)
 }
 
-//Wait till the Performance Data is sent
+//Wait till the Performance Data is sent.
 func cleanUp(itemsToStop []Stoppable, resultQueue chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {

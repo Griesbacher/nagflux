@@ -131,8 +131,11 @@ func (connector *InfluxConnector) run() {
 }
 
 func (connector *InfluxConnector) TestIfIsAlive() bool {
-	resp, _ := http.Get(connector.connectionHost + "/ping")
+	resp, err := http.Get(connector.connectionHost + "/ping")
 	result := false
+	if err != nil {
+		return result
+	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		result = true
