@@ -24,6 +24,13 @@ type LivestatusCollector struct {
 const (
 	//Updateinterval on livestatus data.
 	IntervalToCheckLivestatus = time.Duration(1) * time.Minute
+	//Livestatusquery for notifications.
+	QueryForNotifications = `GET log
+Columns: type time contact_name message
+Filter: type ~ .*NOTIFICATION
+OutputFormat: csv
+
+`
 	//Livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
@@ -31,17 +38,11 @@ Filter: entry_time > %d
 OutputFormat: csv
 
 `
+	//Livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
 Filter: entry_time > %d
 OutputFormat: json
-
-`
-	//Livestatusquery for notifications.
-	QueryForNotifications = `GET log
-Columns: type time contact_name message
-Filter: type ~ .*NOTIFICATION
-OutputFormat: csv
 
 `
 )
@@ -68,10 +69,13 @@ func (dump LivestatusCollector) run() {
 			dump.quit <- true
 			return
 		case <-time.After(IntervalToCheckLivestatus):
+			for _, result := range dump.queryLivestatus(QueryForNotifications) {
+				dump.jobs <- result
+			}
 			for _, result := range dump.queryLivestatus(QueryForComments) {
 				dump.jobs <- result
 			}
-			for _, result := range dump.queryLivestatus(QueryForNotifications) {
+			for _, result := range dump.queryLivestatus(QueryForDowntimes) {
 				dump.jobs <- result
 			}
 		}
@@ -122,7 +126,7 @@ func (live LivestatusCollector) queryLivestatus(query string) []Printable {
 		case QueryForComments:
 			result = append(result, LivestatusCommentData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
 		case QueryForDowntimes:
-			//result = append(result, LivestatusDowntimeData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
+			result = append(result, LivestatusDowntimeData{LivestatusData{records[0], records[1], records[2], records[3], records[4]}, records[5]})
 		default:
 			live.log.Fatal("Found unkown query type" + query)
 		}
