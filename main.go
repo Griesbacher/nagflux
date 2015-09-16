@@ -77,7 +77,7 @@ func main() {
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus, resultQueue)
+		cleanUp([]Stoppable{nagiosCollector, dumpFileCollector, nagfluxCollector, livestatus, influx}, resultQueue)
 		os.Exit(1)
 	}()
 
@@ -100,19 +100,18 @@ func main() {
 		}
 	}
 
-	cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus, resultQueue)
+	cleanUp([]Stoppable{nagiosCollector, dumpFileCollector, nagfluxCollector, livestatus, influx}, resultQueue)
 }
 
 //Wait till the Performance Data is sent
-func cleanUp(nagiosCollector, dumpFileCollector, influx, nagfluxCollector, livestatus Stoppable, resultQueue chan interface{}) {
+func cleanUp(itemsToStop []Stoppable, resultQueue chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()
 	}
-	dumpFileCollector.Stop()
-	nagiosCollector.Stop()
-	nagfluxCollector.Stop()
-	time.Sleep(1 * time.Second)
-	influx.Stop()
+	for _, item := range itemsToStop {
+		item.Stop()
+		time.Sleep(500 * time.Millisecond)
+	}
 	log.Debugf("Remaining queries %d", len(resultQueue))
 }
