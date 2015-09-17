@@ -30,14 +30,14 @@ OutputFormat: csv
 	//Livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
-Filter: time > %d
+Filter: entry_time > %d
 OutputFormat: csv
 
 `
 	//Livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
-Filter: time > %d
+Filter: entry_time > %d
 OutputFormat: csv
 
 `

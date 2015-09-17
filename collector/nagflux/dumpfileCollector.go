@@ -50,5 +50,4 @@ func (dump DumpfileCollector) run() {
 		}
 	}
 	dump.quit <- true
-	dump.log.Info("DumpfileCollector finished")
 }
