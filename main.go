@@ -56,13 +56,15 @@ func main() {
 	resultQueue := make(chan interface{}, int(resultQueueLength))
 	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
-	livestatus := livestatus.NewLivestatusCollector(resultQueue, cfg.Livestatus.Address, cfg.Livestatus.Type)
-
 	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator)
+	liveconnector := &livestatus.LivestatusConnector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector)
+	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
+
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator, livestatusCache)
 
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
 
@@ -80,7 +82,7 @@ func main() {
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp([]Stoppable{nagiosCollector, dumpFileCollector, nagfluxCollector, livestatus, influx}, resultQueue)
+		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
 		os.Exit(1)
 	}()
 
@@ -103,7 +105,7 @@ func main() {
 		}
 	}
 
-	cleanUp([]Stoppable{nagiosCollector, dumpFileCollector, nagfluxCollector, livestatus, influx}, resultQueue)
+	cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
 }
 
 //Wait till the Performance Data is sent.

@@ -2,6 +2,7 @@ package spoolfile
 
 import (
 	"errors"
+	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
@@ -14,12 +15,13 @@ import (
 )
 
 type NagiosSpoolfileWorker struct {
-	workerId       int
-	quit           chan bool
-	jobs           chan string
-	results        chan interface{}
-	statistics     statistics.DataReceiver
-	fieldseperator string
+	workerId               int
+	quit                   chan bool
+	jobs                   chan string
+	results                chan interface{}
+	statistics             statistics.DataReceiver
+	fieldseperator         string
+	livestatusCacheBuilder *livestatus.LivestatusCacheBuilder
 }
 
 const hostPerfdata string = "HOSTPERFDATA"
@@ -33,10 +35,10 @@ const timet string = "TIMET"
 const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
 	workerId := 0
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator}
+		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
 		workerId++
 		go s.run()
 		return s
@@ -129,6 +131,12 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						logging.GetLogger().Warn(err, value)
 						continue
 					}
+
+					//Add downtime tag if needed
+					if performanceType == "value" && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service) {
+						perf.tags["downtime"] = "1"
+					}
+
 					if performanceType == "warn" || performanceType == "crit" {
 						//Range handling
 						rangeRegex := regexp.MustCompile(`[\d\.\-]+`)

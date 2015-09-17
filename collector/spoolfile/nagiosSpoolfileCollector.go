@@ -1,6 +1,7 @@
 package spoolfile
 
 import (
+	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/logging"
 	"io/ioutil"
 	"path"
@@ -19,10 +20,10 @@ type NagiosSpoolfileCollector struct {
 	workers        []*NagiosSpoolfileWorker
 }
 
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string) *NagiosSpoolfileCollector {
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
-	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator)
+	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator, livestatusCacheBuilder)
 
 	for w := 0; w < workerAmount; w++ {
 		s.workers[w] = gen()
