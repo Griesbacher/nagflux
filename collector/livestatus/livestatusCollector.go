@@ -18,24 +18,26 @@ type LivestatusCollector struct {
 
 const (
 	//Updateinterval on livestatus data.
-	intervalToCheckLivestatus = time.Duration(1) * time.Minute
+	intervalToCheckLivestatus = time.Duration(2) * time.Minute
 	//Livestatusquery for notifications.
-	//TODO:time filter
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
+Filter: time > %d
 OutputFormat: csv
 
 `
 	//Livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
+Filter: time > %d
 OutputFormat: csv
 
 `
 	//Livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
+Filter: time > %d
 OutputFormat: csv
 
 `
@@ -65,9 +67,9 @@ func (dump LivestatusCollector) run() {
 		case <-time.After(intervalToCheckLivestatus):
 			printables := make(chan Printable)
 			finished := make(chan bool)
-			go dump.requestPrintablesFromLivestatus(QueryForNotifications, false, printables, finished)
-			go dump.requestPrintablesFromLivestatus(QueryForNotifications, false, printables, finished)
-			go dump.requestPrintablesFromLivestatus(QueryForDowntimes, false, printables, finished)
+			go dump.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+			go dump.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+			go dump.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 			jobsFinished := 0
 			for jobsFinished < 3 {
 				select {

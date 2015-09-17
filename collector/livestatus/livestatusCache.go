@@ -62,14 +62,18 @@ func (live *LivestatusCacheBuilder) Stop() {
 }
 
 //Loop which caches livestatus downtimes and waits to quit.
-func (cache LivestatusCacheBuilder) run() {
+func (cache *LivestatusCacheBuilder) run() {
+	newCache := cache.createLivestatusCache(QueryForHostsInDowntime, QueryForServicesInDowntime)
+	cache.mutex.Lock()
+	cache.downtimeCache = newCache
+	cache.mutex.Unlock()
 	for {
 		select {
 		case <-cache.quit:
 			cache.quit <- true
 			return
 		case <-time.After(intervalToCheckLivestatusCache):
-			newCache := cache.createLivestatusCache(QueryForHostsInDowntime, QueryForServicesInDowntime)
+			newCache = cache.createLivestatusCache(QueryForHostsInDowntime, QueryForServicesInDowntime)
 			cache.mutex.Lock()
 			cache.downtimeCache = newCache
 			cache.mutex.Unlock()
@@ -78,13 +82,13 @@ func (cache LivestatusCacheBuilder) run() {
 }
 
 //Builds host/service map which are in downtime
-func (live LivestatusCacheBuilder) createLivestatusCache(hostQuery, serviceQuery string) LivestatusCache {
+func (cache LivestatusCacheBuilder) createLivestatusCache(hostQuery, serviceQuery string) LivestatusCache {
 	result := LivestatusCache{make(map[string][]string)}
 
 	csv := make(chan []string)
 	finished := make(chan bool)
-	go live.livestatusConnector.connectToLivestatus(hostQuery, csv, finished)
-	go live.livestatusConnector.connectToLivestatus(serviceQuery, csv, finished)
+	go cache.livestatusConnector.connectToLivestatus(hostQuery, csv, finished)
+	go cache.livestatusConnector.connectToLivestatus(serviceQuery, csv, finished)
 
 	jobsFinished := 0
 	for jobsFinished < 2 {
