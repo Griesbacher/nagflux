@@ -133,7 +133,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 					}
 
 					//Add downtime tag if needed
-					if performanceType == "value" && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service) {
+					if performanceType == "value" && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service, input[timet]) {
 						perf.tags["downtime"] = "1"
 					}
 

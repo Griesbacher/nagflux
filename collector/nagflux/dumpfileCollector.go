@@ -30,7 +30,7 @@ func (dump *DumpfileCollector) Stop() {
 
 func (dump DumpfileCollector) run() {
 	if _, err := os.Stat(dump.dumpFile); os.IsNotExist(err) {
-		dump.log.Infof("Dumpfile: %s not found, skipping... (Everything is fine)", dump.dumpFile)
+		dump.log.Debugf("Dumpfile: %s not found, skipping... (Everything is fine)", dump.dumpFile)
 	} else {
 		if file, err := os.Open(dump.dumpFile); err != nil {
 			dump.log.Warn(err)
