@@ -49,12 +49,13 @@ func (s *NagiosSpoolfileCollector) run() {
 			s.quit <- true
 			return
 		case <-time.After(IntervalToCheckDirectory):
-			for _, currentFile := range FilesInDirectoryOlderThanX(s.spoolDirectory, MinFileAgeInSeconds) {
+			files, _ := ioutil.ReadDir(s.spoolDirectory)
+			for  _, currentFile  := range files {
 				select {
 				case <-s.quit:
 					s.quit <- true
 					return
-				case s.jobs <- currentFile:
+				case s.jobs <- path.Join(s.spoolDirectory, currentFile.Name()):
 				}
 			}
 		}
