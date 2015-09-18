@@ -68,7 +68,7 @@ func (dump LivestatusCollector) run() {
 			printables := make(chan Printable)
 			finished := make(chan bool)
 			go dump.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
-			go dump.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+			go dump.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
 			go dump.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 			jobsFinished := 0
 			for jobsFinished < 3 {
