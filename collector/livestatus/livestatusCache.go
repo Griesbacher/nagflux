@@ -5,6 +5,8 @@ import (
 	"github.com/kdar/factorlog"
 	"sync"
 	"time"
+	"strings"
+	"strconv"
 )
 
 //Fetches data from livestatus.
@@ -21,7 +23,17 @@ type LivestatusCache struct {
 }
 
 func (cache *LivestatusCache) addDowntime(host, service, start string) {
-	cache.downtime[host] = map[string]string{service:start}
+	if _, hostExists := cache.downtime[host]; !hostExists {
+		cache.downtime[host] = map[string]string{service:start}
+	}else if _, serviceExists := cache.downtime[host][service]; !serviceExists {
+		cache.downtime[host][service] = start
+	}else {
+		oldTimestamp ,_ := strconv.Atoi(cache.downtime[host][service])
+		newTimestamp ,_  := strconv.Atoi(start)
+		if  oldTimestamp > newTimestamp {
+			cache.downtime[host][service] = start
+		}
+	}
 }
 
 const (
@@ -59,7 +71,7 @@ func NewLivestatusCacheBuilder(livestatusConnector *LivestatusConnector) *Livest
 func (live *LivestatusCacheBuilder) Stop() {
 	live.quit <- true
 	<-live.quit
-	live.log.Debug("LivestatusCacheBuilder stoped")
+	live.log.Debug("LivestatusCacheBuilder stopped")
 }
 
 //Loop which caches livestatus downtimes and waits to quit.
@@ -99,15 +111,20 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 	for jobsFinished < 3 {
 		select {
 		case downtimesLine := <-downtimeCsv:
-			downtimes[downtimesLine[0]] = downtimesLine[1]
+			for _, id := range strings.Split(downtimesLine[0], ",") {
+				downtimes[id] = downtimesLine[1]
+			}
 		case <-finished:
+			jobsFinished++
 			for jobsFinished < 3 {
 				select {
 				case hostService := <-hostServiceCsv:
-					if len(hostService) == 2 {
-						result.addDowntime(hostService[0], hostService[1], "")
-					} else if len(hostService) == 3 {
-						result.addDowntime(hostService[0], hostService[1], hostService[2])
+					for _, id := range strings.Split(hostService[0], ",") {
+						if len(hostService) == 2 {
+							result.addDowntime(hostService[1], "", downtimes[id])
+						} else if len(hostService) == 3 {
+							result.addDowntime(hostService[1], hostService[2], downtimes[id])
+						}
 					}
 				case <-finished:
 					jobsFinished++
@@ -122,7 +139,6 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 func (cache LivestatusCacheBuilder) IsServiceInDowntime(host, service, time string) bool {
 	result := false
 	cache.mutex.Lock()
-
 	if _, hostExists := cache.downtimeCache.downtime[host]; hostExists {
 		if _, serviceExists := cache.downtimeCache.downtime[host][service]; serviceExists {
 			if cache.downtimeCache.downtime[host][service] < time {
