@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"fmt"
 )
 
 //Fetches data from livestatus.
@@ -97,18 +98,18 @@ func (cache *LivestatusCacheBuilder) run() {
 //Builds host/service map which are in downtime
 func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 	result := LivestatusCache{make(map[string]map[string]string)}
-
 	downtimeCsv := make(chan []string)
+	finishedDowntime := make(chan bool)
 	hostServiceCsv := make(chan []string)
 	finished := make(chan bool)
-	go cache.livestatusConnector.connectToLivestatus(QueryForDowntimeid, downtimeCsv, finished)
+	go cache.livestatusConnector.connectToLivestatus(QueryForDowntimeid, downtimeCsv, finishedDowntime)
 	go cache.livestatusConnector.connectToLivestatus(QueryForHostsInDowntime, hostServiceCsv, finished)
 	go cache.livestatusConnector.connectToLivestatus(QueryForServicesInDowntime, hostServiceCsv, finished)
 
 	jobsFinished := 0
 	//contains id to starttime
 	downtimes := map[string]string{}
-	for jobsFinished < 3 {
+	for jobsFinished < 2 {
 		select {
 		case downtimesLine := <-downtimeCsv:
 			startTime, _ := strconv.Atoi(downtimesLine[1])
@@ -118,11 +119,10 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 				latestTime = entryTime
 			}
 			for _, id := range strings.Split(downtimesLine[0], ",") {
-				downtimes[id] = string(latestTime)
+				downtimes[id] = fmt.Sprint(latestTime)
 			}
-		case <-finished:
-			jobsFinished++
-			for jobsFinished < 3 {
+		case <-finishedDowntime:
+			for jobsFinished < 2 {
 				select {
 				case hostService := <-hostServiceCsv:
 					for _, id := range strings.Split(hostService[0], ",") {
@@ -134,8 +134,14 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 					}
 				case <-finished:
 					jobsFinished++
+				case <-time.After(intervalToCheckLivestatusCache/3):
+					cache.log.Debug("Livestatus(host/service) timed out")
+					return result
 				}
 			}
+		case <-time.After(intervalToCheckLivestatusCache/3):
+			cache.log.Debug("Livestatus(downtimes) timed out")
+			return result
 		}
 	}
 	return result

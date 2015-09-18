@@ -7,6 +7,7 @@ import (
 	"github.com/kdar/factorlog"
 	"net"
 	"strings"
+	"io"
 )
 
 //Fetches data from livestatus.
@@ -35,7 +36,14 @@ func (connector LivestatusConnector) connectToLivestatus(query string, result ch
 
 	length := 1
 	for length > 0 {
-		message, _, _ := reader.ReadLine()
+		message, _, err := reader.ReadLine()
+		if err != nil {
+			if err == io.EOF{
+				break
+			}else{
+				connector.Log.Warn(err)
+			}
+		}
 		length = len(message)
 		if length > 0 {
 			csvReader := csv.NewReader(strings.NewReader(string(message)))
