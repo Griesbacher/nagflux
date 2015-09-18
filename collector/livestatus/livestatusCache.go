@@ -3,10 +3,10 @@ package livestatus
 import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
-	"strings"
-	"strconv"
 )
 
 //Fetches data from livestatus.
@@ -24,29 +24,29 @@ type LivestatusCache struct {
 
 func (cache *LivestatusCache) addDowntime(host, service, start string) {
 	if _, hostExists := cache.downtime[host]; !hostExists {
-		cache.downtime[host] = map[string]string{service:start}
-	}else if _, serviceExists := cache.downtime[host][service]; !serviceExists {
+		cache.downtime[host] = map[string]string{service: start}
+	} else if _, serviceExists := cache.downtime[host][service]; !serviceExists {
 		cache.downtime[host][service] = start
-	}else {
-		oldTimestamp ,_ := strconv.Atoi(cache.downtime[host][service])
-		newTimestamp ,_  := strconv.Atoi(start)
-		if  oldTimestamp > newTimestamp {
+	} else {
+		oldTimestamp, _ := strconv.Atoi(cache.downtime[host][service])
+		newTimestamp, _ := strconv.Atoi(start)
+		if oldTimestamp > newTimestamp {
 			cache.downtime[host][service] = start
 		}
 	}
 }
 
 const (
-//Updateinterval on livestatus data.
+	//Updateinterval on livestatus data.
 	intervalToCheckLivestatusCache = time.Duration(30) * time.Second
-//Livestatusquery for services in downtime.
+	//Livestatusquery for services in downtime.
 	QueryForServicesInDowntime = `GET services
 Columns: downtimes host_name display_name
 Filter: scheduled_downtime_depth > 0
 OutputFormat: csv
 
 `
-//Livestatusquery for hosts in downtime
+	//Livestatusquery for hosts in downtime
 	QueryForHostsInDowntime = `GET hosts
 Columns: downtimes name
 Filter: scheduled_downtime_depth > 0
@@ -54,7 +54,7 @@ OutputFormat: csv
 
 `
 	QueryForDowntimeid = `GET downtimes
-Columns: id start_time
+Columns: id start_time entry_time
 OutputFormat: csv
 
 `
@@ -111,8 +111,14 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 	for jobsFinished < 3 {
 		select {
 		case downtimesLine := <-downtimeCsv:
+			startTime, _ := strconv.Atoi(downtimesLine[1])
+			entryTime, _ := strconv.Atoi(downtimesLine[2])
+			latestTime := startTime
+			if startTime < entryTime {
+				latestTime = entryTime
+			}
 			for _, id := range strings.Split(downtimesLine[0], ",") {
-				downtimes[id] = downtimesLine[1]
+				downtimes[id] = string(latestTime)
 			}
 		case <-finished:
 			jobsFinished++
