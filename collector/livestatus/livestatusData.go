@@ -93,8 +93,8 @@ type LivestatusDowntimeData struct {
 func (downtime LivestatusDowntimeData) Print(version float32) string {
 	if version >= 0.9 {
 		tags := ",type=downtime,author=" + downtime.author
-		start := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime start\n"+downtime.comment), downtime.entry_time+"000")
-		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end\n"+downtime.comment), downtime.end_time+"000")
+		start := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime start: \n"+downtime.comment), downtime.entry_time+"000")
+		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: \n"+downtime.comment), downtime.end_time+"000")
 		return start + "\n" + end
 	} else {
 		logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
