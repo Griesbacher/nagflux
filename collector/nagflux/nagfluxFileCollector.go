@@ -43,7 +43,7 @@ func (nfc NagfluxFileCollector) run() {
 				}
 				for _, line := range strings.SplitAfter(string(data), "\n") {
 					line = strings.TrimSpace(line)
-					if line == ""{
+					if line == "" {
 						continue
 					}
 					select {
@@ -51,6 +51,8 @@ func (nfc NagfluxFileCollector) run() {
 						nfc.quit <- true
 						return
 					case nfc.results <- line:
+					case <-time.After(time.Duration(1) * time.Minute):
+						nfc.log.Warn("NagfluxFileCollector: Could not write to buffer")
 					}
 				}
 				err = os.Remove(currentFile)

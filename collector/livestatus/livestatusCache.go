@@ -1,13 +1,13 @@
 package livestatus
 
 import (
+	"fmt"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"fmt"
 )
 
 //Fetches data from livestatus.
@@ -134,12 +134,12 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 					}
 				case <-finished:
 					jobsFinished++
-				case <-time.After(intervalToCheckLivestatusCache/3):
+				case <-time.After(intervalToCheckLivestatusCache / 3):
 					cache.log.Debug("Livestatus(host/service) timed out")
 					return result
 				}
 			}
-		case <-time.After(intervalToCheckLivestatusCache/3):
+		case <-time.After(intervalToCheckLivestatusCache / 3):
 			cache.log.Debug("Livestatus(downtimes) timed out")
 			return result
 		}

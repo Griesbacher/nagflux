@@ -50,12 +50,14 @@ func (s *NagiosSpoolfileCollector) run() {
 			return
 		case <-time.After(IntervalToCheckDirectory):
 			files, _ := ioutil.ReadDir(s.spoolDirectory)
-			for  _, currentFile  := range files {
+			for _, currentFile := range files {
 				select {
 				case <-s.quit:
 					s.quit <- true
 					return
 				case s.jobs <- path.Join(s.spoolDirectory, currentFile.Name()):
+				case <-time.After(time.Duration(1) * time.Minute):
+					logging.GetLogger().Warn("NagiosSpoolfileCollector: Could not write to buffer")
 				}
 			}
 		}

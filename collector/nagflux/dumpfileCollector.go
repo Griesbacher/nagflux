@@ -5,6 +5,7 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"os"
+	"time"
 )
 
 type DumpfileCollector struct {
@@ -44,6 +45,8 @@ func (dump DumpfileCollector) run() {
 					dump.quit <- true
 					return
 				case dump.jobs <- scanner.Text():
+				case <-time.After(time.Duration(1) * time.Second):
+					dump.log.Debug("Read from scanner timed out")
 				}
 			}
 			os.Remove(dump.dumpFile)

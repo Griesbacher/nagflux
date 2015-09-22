@@ -17,9 +17,9 @@ type LivestatusCollector struct {
 }
 
 const (
-//Updateinterval on livestatus data.
+	//Updateinterval on livestatus data.
 	intervalToCheckLivestatus = time.Duration(2) * time.Minute
-//Livestatusquery for notifications.
+	//Livestatusquery for notifications.
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
@@ -28,14 +28,14 @@ Negate:
 OutputFormat: csv
 
 `
-//Livestatusquery for comments
+	//Livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
 Filter: entry_time > %d
 OutputFormat: csv
 
 `
-//Livestatusquery for downtimes
+	//Livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
 Filter: entry_time > %d
@@ -59,26 +59,27 @@ func (live *LivestatusCollector) Stop() {
 }
 
 //Loop which checks livestats for data or waits to quit.
-func (dump LivestatusCollector) run() {
+func (live LivestatusCollector) run() {
 	for {
 		select {
-		case <-dump.quit:
-			dump.quit <- true
+		case <-live.quit:
+			live.quit <- true
 			return
 		case <-time.After(intervalToCheckLivestatus):
 			printables := make(chan Printable)
 			finished := make(chan bool)
-			go dump.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
-			go dump.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
-			go dump.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
+			go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+			go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
+			go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 			jobsFinished := 0
 			for jobsFinished < 3 {
 				select {
 				case job := <-printables:
-					dump.log.Debug("-",job.Print(0.9))
-					dump.jobs <- job
+					live.jobs <- job
 				case <-finished:
 					jobsFinished++
+				case <-time.After(intervalToCheckLivestatus / 3):
+					live.log.Debug("requestPrintablesFromLivestatus timed out")
 				}
 			}
 		}
@@ -125,7 +126,7 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 		case <-finished:
 			outerFinish <- true
 			return
-		case <-time.After(intervalToCheckLivestatus/3):
+		case <-time.After(intervalToCheckLivestatus / 3):
 			live.log.Warn("connectToLivestatus timed out")
 		}
 	}

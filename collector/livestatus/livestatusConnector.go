@@ -5,9 +5,9 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/kdar/factorlog"
+	"io"
 	"net"
 	"strings"
-	"io"
 )
 
 //Fetches data from livestatus.
@@ -30,7 +30,7 @@ func (connector LivestatusConnector) connectToLivestatus(query string, result ch
 		outerFinish <- true
 		return
 	}
-	if conn == nil{
+	if conn == nil {
 		connector.Log.Critical("Unable to connect to livestatus", connector.LivestatusAddress)
 		outerFinish <- true
 		return
@@ -44,9 +44,9 @@ func (connector LivestatusConnector) connectToLivestatus(query string, result ch
 	for length > 0 {
 		message, _, err := reader.ReadLine()
 		if err != nil {
-			if err == io.EOF{
+			if err == io.EOF {
 				break
-			}else{
+			} else {
 				connector.Log.Warn(err)
 			}
 		}
