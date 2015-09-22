@@ -30,6 +30,12 @@ func (connector LivestatusConnector) connectToLivestatus(query string, result ch
 		outerFinish <- true
 		return
 	}
+	if conn == nil{
+		connector.Log.Critical("Unable to connect to livestatus", connector.LivestatusAddress)
+		outerFinish <- true
+		return
+	}
+
 	defer conn.Close()
 	fmt.Fprintf(conn, query)
 	reader := bufio.NewReader(conn)

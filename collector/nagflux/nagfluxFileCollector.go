@@ -43,6 +43,9 @@ func (nfc NagfluxFileCollector) run() {
 				}
 				for _, line := range strings.SplitAfter(string(data), "\n") {
 					line = strings.TrimSpace(line)
+					if line == ""{
+						continue
+					}
 					select {
 					case <-nfc.quit:
 						nfc.quit <- true

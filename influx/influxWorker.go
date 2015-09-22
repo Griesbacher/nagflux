@@ -295,7 +295,7 @@ func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 		worker.log.Fatal("Could not cast object:", job)
 		err = errors.New("Could not cast object")
 	}
-	if result[len(result)-1:] != "\n" {
+	if len(result) > 1 && result[len(result)-1:] != "\n" {
 		result += "\n"
 	}
 	return result, err
