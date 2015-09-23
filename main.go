@@ -14,9 +14,9 @@ import (
 	"gopkg.in/gcfg.v1"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
+	"fmt"
 )
 
 type Stoppable interface {
@@ -34,6 +34,11 @@ var log *factorlog.FactorLog
 func main() {
 	//Parse Args
 	var configPath string
+	flag.Usage = func() {
+		fmt.Println(`Nagflux by Philip Griesbacher @ 2015
+Commandline Parameter:
+-configPath Path to the config file. If no file path is given the default is ./config.gcfg.
+		`)}
 	flag.StringVar(&configPath, "configPath", "config.gcfg", "path to the config file")
 	flag.Parse()
 
@@ -47,10 +52,6 @@ func main() {
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
-
-	//Set CPUs to use
-	runtime.GOMAXPROCS(cfg.Main.NumberOfCPUs)
-	log.Infof("Using %d of %d CPUs", cfg.Main.NumberOfCPUs, runtime.NumCPU())
 
 	log.Info("Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	resultQueue := make(chan interface{}, int(resultQueueLength))
