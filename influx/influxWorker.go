@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+//Reads data from the queue and sends them to the influxdb.
 type InfluxWorker struct {
 	workerId     int
 	quit         chan bool
@@ -36,6 +37,7 @@ var errorHttpClient = errors.New("Http Client got an error")
 var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
+//Generates a new Worker and starts it.
 func InfluxWorkerGenerator(jobs chan interface{}, connection, dumpFile string, version float32, connector *InfluxConnector) func(workerId int) *InfluxWorker {
 	return func(workerId int) *InfluxWorker {
 		worker := &InfluxWorker{
@@ -50,6 +52,7 @@ func InfluxWorkerGenerator(jobs chan interface{}, connection, dumpFile string, v
 	}
 }
 
+//Stops the worker
 func (worker *InfluxWorker) Stop() {
 	worker.quitInternal <- true
 	worker.quit <- true
@@ -58,6 +61,7 @@ func (worker *InfluxWorker) Stop() {
 	worker.log.Debug("InfluxWorker stopped")
 }
 
+//Tries to send data all the time.
 func (worker InfluxWorker) run() {
 	var queries []interface{}
 	var query interface{}
@@ -97,6 +101,7 @@ func (worker InfluxWorker) run() {
 	}
 }
 
+//Checks if a external quit signal arrives.
 func (worker InfluxWorker) waitForExternalQuit() bool {
 	select {
 	case <-worker.quit:
@@ -107,6 +112,7 @@ func (worker InfluxWorker) waitForExternalQuit() bool {
 	}
 }
 
+//Sends the given queries to the influxdb.
 func (worker InfluxWorker) sendBuffer(queries []interface{}) {
 	if len(queries) == 0 {
 		return
@@ -163,6 +169,7 @@ func (worker InfluxWorker) sendBuffer(queries []interface{}) {
 	worker.statistics.ReceiveQueries("send", statistics.QueriesPerTime{len(lineQueries), time.Since(startTime)})
 }
 
+//Writes the bad queries to a dumpfile.
 func (worker InfluxWorker) dumpErrorQueries(messageForLog string, errorQueries []string) {
 	errorFile := worker.dumpFile + "-errors"
 	worker.log.Warnf("Dumping queries with errors to: %s", errorFile)
@@ -172,6 +179,7 @@ func (worker InfluxWorker) dumpErrorQueries(messageForLog string, errorQueries [
 
 var mutex = &sync.Mutex{}
 
+//Dumps the remaining queries if a quit signal arises.
 func (worker InfluxWorker) dumpRemainingQueries(remainingQueries []string) {
 	mutex.Lock()
 	worker.log.Debugf("Global queue %d own queue %d", len(worker.jobs), len(remainingQueries))
@@ -186,6 +194,7 @@ func (worker InfluxWorker) dumpRemainingQueries(remainingQueries []string) {
 	mutex.Unlock()
 }
 
+//Reads the queries from the global queue and returns them as string.
 func (worker InfluxWorker) readQueriesFromQueue() []string {
 	var queries []string
 	var query interface{}
@@ -204,6 +213,7 @@ func (worker InfluxWorker) readQueriesFromQueue() []string {
 	return queries
 }
 
+//sends the raw data to influxdb and returns an err if given.
 func (worker InfluxWorker) sendData(rawData []byte, log bool) error {
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
@@ -240,11 +250,13 @@ func (worker InfluxWorker) sendData(rawData []byte, log bool) error {
 	}
 }
 
+//Logs a http response to warn.
 func (worker InfluxWorker) logHttpResponse(resp *http.Response) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	worker.log.Warnf("Influx status: %s - %s", resp.Status, string(body))
 }
 
+//Waits on an internal quit signal.
 func (worker InfluxWorker) waitForQuitOrGoOn() error {
 	select {
 	//Got stop signal
@@ -258,6 +270,7 @@ func (worker InfluxWorker) waitForQuitOrGoOn() error {
 	}
 }
 
+//Writes queries to a dumpfile.
 func (worker InfluxWorker) dumpQueries(filename string, queries []string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if _, err := os.Create(filename); err != nil {
@@ -276,6 +289,7 @@ func (worker InfluxWorker) dumpQueries(filename string, queries []string) {
 	}
 }
 
+//Converts an interface{} to a string.
 func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
 	var result string
 	var err error

@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+//Collects queries from old runs, which could not been completed.
 type DumpfileCollector struct {
 	quit      chan bool
 	jobs      chan interface{}
@@ -16,12 +17,14 @@ type DumpfileCollector struct {
 	IsRunning bool
 }
 
+//Constructor, which also starts the collector
 func NewDumpfileCollector(jobs chan interface{}, dumpFile string) *DumpfileCollector {
 	s := &DumpfileCollector{make(chan bool, 2), jobs, dumpFile, logging.GetLogger(), true}
 	go s.run()
 	return s
 }
 
+//Stops the Collector.
 func (dump *DumpfileCollector) Stop() {
 	dump.quit <- true
 	<-dump.quit
@@ -29,6 +32,7 @@ func (dump *DumpfileCollector) Stop() {
 	dump.log.Debug("DumpfileCollector stoped")
 }
 
+//Searches for old file and parses it.
 func (dump DumpfileCollector) run() {
 	if _, err := os.Stat(dump.dumpFile); os.IsNotExist(err) {
 		dump.log.Debugf("Dumpfile: %s not found, skipping... (Everything is fine)", dump.dumpFile)

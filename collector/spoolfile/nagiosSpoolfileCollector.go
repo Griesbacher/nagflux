@@ -13,6 +13,7 @@ const (
 	IntervalToCheckDirectory = time.Duration(5) * time.Second
 )
 
+//Scans the nagios spoolfile folder and delegates the files to its workers.
 type NagiosSpoolfileCollector struct {
 	quit           chan bool
 	jobs           chan string
@@ -20,6 +21,7 @@ type NagiosSpoolfileCollector struct {
 	workers        []*NagiosSpoolfileWorker
 }
 
+//Creates the give amount of Woker and starts them.
 func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
@@ -33,6 +35,7 @@ func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, re
 	return s
 }
 
+//Stops his workers and itself.
 func (s *NagiosSpoolfileCollector) Stop() {
 	s.quit <- true
 	<-s.quit
@@ -42,6 +45,7 @@ func (s *NagiosSpoolfileCollector) Stop() {
 	logging.GetLogger().Debug("SpoolfileCollector stopped")
 }
 
+//Delegates the files to its workers.
 func (s *NagiosSpoolfileCollector) run() {
 	for {
 		select {
@@ -64,6 +68,7 @@ func (s *NagiosSpoolfileCollector) run() {
 	}
 }
 
+//Returns a list of file, of a folder, names which are older then a certain duration.
 func FilesInDirectoryOlderThanX(folder string, age time.Duration) []string {
 	files, _ := ioutil.ReadDir(folder)
 	var oldFiles []string
@@ -75,6 +80,7 @@ func FilesInDirectoryOlderThanX(folder string, age time.Duration) []string {
 	return oldFiles
 }
 
+//Checks if the timestamp plus duration is in the past.
 func IsItTime(timeStamp time.Time, duration time.Duration) bool {
 	return time.Now().After(timeStamp.Add(duration))
 }

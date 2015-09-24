@@ -1,5 +1,6 @@
 package helper
 
+//Summarise an int slice till a given position.
 func SumIntSliceTillPos(slice []int, pos int) int {
 	sum := 0
 	for index, value := range slice {
@@ -12,6 +13,7 @@ func SumIntSliceTillPos(slice []int, pos int) int {
 	return sum
 }
 
+//Loops of slice and checks if it contains a given string.
 func SliceContainsString(str string, slice []string) bool {
 	for _, v := range slice {
 		if v == str {
@@ -21,6 +23,7 @@ func SliceContainsString(str string, slice []string) bool {
 	return false
 }
 
+//Removes duplicates strings from a string slice - UNUSED.
 func RemoveDuplicateStrings(dupes []string) []string {
 	emptySlice := []string{}
 	for _, value := range dupes {

@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+//Displays statistics.
 type MonitoringServer struct {
 	port            string
 	quit            chan bool
@@ -25,6 +26,7 @@ type MonitoringServer struct {
 var singleMonitoringServer *MonitoringServer = nil
 var mutex = &sync.Mutex{}
 
+//Starts the webserver.
 func StartMonitoringServer(port string) *MonitoringServer {
 	mutex.Lock()
 	if singleMonitoringServer == nil && port != "" {
@@ -36,11 +38,14 @@ func StartMonitoringServer(port string) *MonitoringServer {
 	return singleMonitoringServer
 }
 
+//Stops the webserver
 func (server MonitoringServer) Stop() {
 	server.quit <- true
 	<-server.quit
 	server.log.Debug("MonitoringServer stopped")
 }
+
+//Updates data.
 func (server MonitoringServer) run() {
 	go server.startWebServer()
 	for {
@@ -54,6 +59,7 @@ func (server MonitoringServer) run() {
 	}
 }
 
+//Web handler
 func (server MonitoringServer) handler(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(server.generateOutputStatistic())
 	if err == nil {
@@ -63,11 +69,13 @@ func (server MonitoringServer) handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//Starts Webserver itself
 func (server MonitoringServer) startWebServer() {
 	http.HandleFunc("/", server.handler)
 	http.ListenAndServe(server.port, nil)
 }
 
+//Updates statistics to display
 func (server MonitoringServer) updateStatistic() {
 	for _, key := range server.statisticUser.GetDataTypes() {
 		queriesSend, _, err := server.statisticUser.GetData(key)
@@ -82,6 +90,7 @@ func (server MonitoringServer) updateStatistic() {
 
 var timeInterval = []int{1, 5, 15}
 
+//Generates "html" output
 func (server MonitoringServer) generateOutputStatistic() map[string]map[string]int {
 	summedData := make(map[string]map[string]int)
 	for key, value := range server.statisticValues {

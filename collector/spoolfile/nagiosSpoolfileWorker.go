@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+//Parses the given spoolfiles and adds the extraced perfdata to the queue.
 type NagiosSpoolfileWorker struct {
 	workerId               int
 	quit                   chan bool
@@ -35,6 +36,7 @@ const timet string = "TIMET"
 const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
+//Generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
 	workerId := 0
 	return func() *NagiosSpoolfileWorker {
@@ -45,12 +47,14 @@ func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, 
 	}
 }
 
+//Stops the worker
 func (w *NagiosSpoolfileWorker) Stop() {
 	w.quit <- true
 	<-w.quit
 	logging.GetLogger().Debug("SpoolfileWorker stopped")
 }
 
+//Waits for files to parse and sends the data to the main queue.
 func (w *NagiosSpoolfileWorker) run() {
 	var file string
 	for {
@@ -91,6 +95,7 @@ func (w *NagiosSpoolfileWorker) run() {
 	}
 }
 
+//Iterator to loop over generated perf data.
 func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
 	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
 	if err != nil {
@@ -184,22 +189,27 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	return ch
 }
 
+//Cuts the command at the first !.
 func splitCommandInput(command string) string {
 	return strings.Split(command, "!")[0]
 }
 
+//Adds three zeros to the timestring to cast from Seconds to Milliseconds.
 func castTimeFromSToMs(time string) string {
 	return time + "000"
 }
 
+//Tests if perfdata is of type hostperfdata.
 func isHostPerformanceData(input map[string]string) bool {
 	return input["DATATYPE"] == hostPerfdata
 }
 
+//Tests if perfdata is of type serviceperfdata.
 func isServicePerformanceData(input map[string]string) bool {
 	return input["DATATYPE"] == servicePerfdata
 }
 
+//Converts the index of the perftype to an string.
 func indexToperformanceType(index int) (string, error) {
 	switch index {
 	case 2:

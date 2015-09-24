@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
@@ -16,7 +17,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"fmt"
 )
 
 type Stoppable interface {
@@ -38,7 +38,8 @@ func main() {
 		fmt.Println(`Nagflux by Philip Griesbacher @ 2015
 Commandline Parameter:
 -configPath Path to the config file. If no file path is given the default is ./config.gcfg.
-		`)}
+		`)
+	}
 	flag.StringVar(&configPath, "configPath", "config.gcfg", "path to the config file")
 	flag.Parse()
 

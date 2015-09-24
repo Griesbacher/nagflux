@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//Makes the basic connection to an influxdb.
 type InfluxConnector struct {
 	connectionHost string
 	connectionArgs string
@@ -26,6 +27,7 @@ type InfluxConnector struct {
 	databaseName   string
 }
 
+//Constructor which will create some workers if the connection is established.
 func InfluxConnectorFactory(jobs chan interface{}, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *InfluxConnector {
 
 	regexDatabaseName, err := regexp.Compile(`.*db=(.*)`)
@@ -70,6 +72,7 @@ func InfluxConnectorFactory(jobs chan interface{}, connectionHost, connectionArg
 	return s
 }
 
+//Creates a new worker
 func (connector *InfluxConnector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
@@ -79,6 +82,7 @@ func (connector *InfluxConnector) AddWorker() {
 	}
 }
 
+//Stops a worker
 func (connector *InfluxConnector) RemoveWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength > 1 {
@@ -89,24 +93,29 @@ func (connector *InfluxConnector) RemoveWorker() {
 	}
 }
 
+//Current amount of workers.
 func (connector InfluxConnector) AmountWorkers() int {
 	return len(connector.workers)
 }
 
+//Is the database system alive.
 func (connector InfluxConnector) IsAlive() bool {
 	return connector.isAlive
 }
 
+//Does the database exist.
 func (connector InfluxConnector) DatabaseExists() bool {
 	return connector.databaseExists
 }
 
+//Stop the connector and its workers.
 func (connector *InfluxConnector) Stop() {
 	connector.quit <- true
 	<-connector.quit
 	connector.log.Debug("InfluxConnectorFactory stopped")
 }
 
+//Waits just for the end.
 func (connector *InfluxConnector) run() {
 	for {
 		select {
@@ -130,6 +139,7 @@ func (connector *InfluxConnector) run() {
 	}
 }
 
+//Test active if the database system is alive.
 func (connector *InfluxConnector) TestIfIsAlive() bool {
 	resp, err := http.Get(connector.connectionHost + "/ping")
 	result := false
@@ -145,6 +155,7 @@ func (connector *InfluxConnector) TestIfIsAlive() bool {
 	return result
 }
 
+//Represents the query result
 type ShowSeriesResult struct {
 	Results []struct {
 		Series []struct {
@@ -155,6 +166,7 @@ type ShowSeriesResult struct {
 	}
 }
 
+//Test active if the database exists.
 func (connector *InfluxConnector) TestDatabaseExists() bool {
 	resp, _ := http.Get(connector.connectionHost + "/query?q=show%20databases")
 
@@ -175,6 +187,7 @@ func (connector *InfluxConnector) TestDatabaseExists() bool {
 	return false
 }
 
+//Creates the database.
 func (connector *InfluxConnector) CreateDatabase() bool {
 	resp, _ := http.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
 
