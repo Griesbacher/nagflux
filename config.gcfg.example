@@ -3,7 +3,6 @@ NagiosSpoolfileFolder = "/var/spool/nagios"
 NagiosSpoolfileWorker = 1
 InfluxWorker = 2
 MaxInfluxWorker = 5
-NumberOfCPUs = 1
 DumpFile = "nagflux.dump"
 NagfluxSpoolfileFolder = "/var/spool/nagflux"
 

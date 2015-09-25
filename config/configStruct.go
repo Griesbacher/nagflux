@@ -8,7 +8,6 @@ type Config struct {
 		NagiosSpoolfileWorker  int
 		InfluxWorker           int
 		MaxInfluxWorker        int
-		NumberOfCPUs           int
 		DumpFile               string
 		NagfluxSpoolfileFolder string
 	}

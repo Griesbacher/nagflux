@@ -54,7 +54,6 @@ Commandline Parameter:
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
 
-	log.Info("Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	resultQueue := make(chan interface{}, int(resultQueueLength))
 	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
@@ -66,8 +65,10 @@ Commandline Parameter:
 	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
+	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator, livestatusCache)
 
+	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
