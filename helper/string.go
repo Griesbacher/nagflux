@@ -22,3 +22,8 @@ func StringIntToStringFloat(inputInt string) string {
 	}
 	return inputInt
 }
+
+//Adds three zeros to the timestring to cast from Seconds to Milliseconds.
+func CastStringTimeFromSToMs(time string) string {
+	return time + "000"
+}

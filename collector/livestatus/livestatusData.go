@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/griesbacher/nagflux/logging"
 	"strings"
+	"github.com/griesbacher/nagflux/helper"
 )
 
 //This interface should be used to push data into the queue.
@@ -20,6 +21,15 @@ type LivestatusData struct {
 	author               string
 }
 
+//Escape all bad chars.
+func (live *LivestatusData) sanitizeValues() {
+	live.host_name = helper.SanitizeInfluxInput(live.host_name)
+	live.service_display_name = helper.SanitizeInfluxInput(live.service_display_name)
+	live.comment = helper.SanitizeInfluxInput(strings.TrimSpace(live.comment))
+	live.entry_time = helper.SanitizeInfluxInput(live.entry_time)
+	live.author = helper.SanitizeInfluxInput(live.author)
+}
+
 //Generates the Influxdb tablename.
 func (live LivestatusData) getTablename() string {
 	return fmt.Sprintf("%s&%s&messages", live.host_name, live.service_display_name)
@@ -27,13 +37,13 @@ func (live LivestatusData) getTablename() string {
 
 //Generates the linedata which can be parsed from influxdb
 func (live LivestatusData) genInfluxLine(tags string) string {
-	return live.genInfluxLineWithValue(tags, strings.TrimSpace(live.comment))
+	return live.genInfluxLineWithValue(tags, live.comment)
 }
 
 //Generates the linedata which can be parsed from influxdb
 func (live LivestatusData) genInfluxLineWithValue(tags, text string) string {
 	tags += ",author=" + live.author
-	return fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), tags, text, live.entry_time+"000")
+	return fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), tags, text, helper.CastStringTimeFromSToMs(live.entry_time))
 }
 
 //Adds notification types to the livestatus data
@@ -43,8 +53,15 @@ type LivestatusNotificationData struct {
 	notification_level string
 }
 
+func (notification *LivestatusNotificationData) sanitizeValues() {
+	notification.LivestatusData.sanitizeValues()
+	notification.notification_type = helper.SanitizeInfluxInput(notification.notification_type)
+	notification.notification_level = helper.SanitizeInfluxInput(notification.notification_level)
+}
+
 //Prints the data in influxdb lineformat
 func (notification LivestatusNotificationData) Print(version float32) string {
+	notification.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
 		if notification.notification_type == "HOST NOTIFICATION" {
@@ -54,7 +71,7 @@ func (notification LivestatusNotificationData) Print(version float32) string {
 		} else {
 			logging.GetLogger().Warn("This notification type is not supported:" + notification.notification_type)
 		}
-		value := fmt.Sprintf("%s: %s",strings.TrimSpace(notification.notification_level),strings.TrimSpace(notification.comment))
+		value := fmt.Sprintf("%s:<br> %s",strings.TrimSpace(notification.notification_level),notification.comment)
 		return notification.genInfluxLineWithValue(tags, value)
 	} else {
 		logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
@@ -68,8 +85,14 @@ type LivestatusCommentData struct {
 	entry_type string
 }
 
+func (comment *LivestatusCommentData) sanitizeValues() {
+	comment.LivestatusData.sanitizeValues()
+	comment.entry_type = helper.SanitizeInfluxInput(comment.entry_type)
+}
+
 //Prints the data in influxdb lineformat
 func (comment LivestatusCommentData) Print(version float32) string {
+	comment.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
 		if comment.entry_type == "1" {
@@ -96,12 +119,18 @@ type LivestatusDowntimeData struct {
 	end_time string
 }
 
+func (downtime *LivestatusDowntimeData) sanitizeValues() {
+	downtime.LivestatusData.sanitizeValues()
+	downtime.end_time = helper.SanitizeInfluxInput(downtime.end_time)
+}
+
 //Prints the data in influxdb lineformat
 func (downtime LivestatusDowntimeData) Print(version float32) string {
+	downtime.sanitizeValues()
 	if version >= 0.9 {
 		tags := ",type=downtime,author=" + downtime.author
-		start := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime start: \n"+downtime.comment), downtime.entry_time+"000")
-		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: \n"+downtime.comment), downtime.end_time+"000")
+		start := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime start: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.entry_time))
+		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.end_time))
 		return start + "\n" + end
 	} else {
 		logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)

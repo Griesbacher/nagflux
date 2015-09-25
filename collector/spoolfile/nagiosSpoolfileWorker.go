@@ -121,7 +121,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 			perf := PerformanceData{
 				hostname:         helper.SanitizeInfluxInput(input[hostname]),
 				command:          helper.SanitizeInfluxInput(splitCommandInput(input[typ+checkcommand])),
-				time:             castTimeFromSToMs(input[timet]),
+				time:             helper.CastStringTimeFromSToMs(input[timet]),
 				performanceLabel: helper.SanitizeInfluxInput(value[1]),
 				unit:             helper.SanitizeInfluxInput(value[3]),
 				fieldseperator:   w.fieldseperator,
@@ -192,11 +192,6 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 //Cuts the command at the first !.
 func splitCommandInput(command string) string {
 	return strings.Split(command, "!")[0]
-}
-
-//Adds three zeros to the timestring to cast from Seconds to Milliseconds.
-func castTimeFromSToMs(time string) string {
-	return time + "000"
 }
 
 //Tests if perfdata is of type hostperfdata.
