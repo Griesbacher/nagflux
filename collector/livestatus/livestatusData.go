@@ -27,14 +27,20 @@ func (live LivestatusData) getTablename() string {
 
 //Generates the linedata which can be parsed from influxdb
 func (live LivestatusData) genInfluxLine(tags string) string {
+	return live.genInfluxLineWithValue(tags, strings.TrimSpace(live.comment))
+}
+
+//Generates the linedata which can be parsed from influxdb
+func (live LivestatusData) genInfluxLineWithValue(tags, text string) string {
 	tags += ",author=" + live.author
-	return fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), tags, strings.TrimSpace(live.comment), live.entry_time+"000")
+	return fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), tags, text, live.entry_time+"000")
 }
 
 //Adds notification types to the livestatus data
 type LivestatusNotificationData struct {
 	LivestatusData
 	notification_type string
+	notification_level string
 }
 
 //Prints the data in influxdb lineformat
@@ -48,7 +54,8 @@ func (notification LivestatusNotificationData) Print(version float32) string {
 		} else {
 			logging.GetLogger().Warn("This notification type is not supported:" + notification.notification_type)
 		}
-		return notification.genInfluxLine(tags)
+		value := fmt.Sprintf("%s: %s",strings.TrimSpace(notification.notification_level),strings.TrimSpace(notification.comment))
+		return notification.genInfluxLineWithValue(tags, value)
 	} else {
 		logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
 		return ""

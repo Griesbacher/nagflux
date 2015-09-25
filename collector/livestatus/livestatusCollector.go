@@ -60,28 +60,34 @@ func (live *LivestatusCollector) Stop() {
 
 //Loop which checks livestats for data or waits to quit.
 func (live LivestatusCollector) run() {
+	live.queryData()
 	for {
 		select {
 		case <-live.quit:
 			live.quit <- true
 			return
 		case <-time.After(intervalToCheckLivestatus):
-			printables := make(chan Printable)
-			finished := make(chan bool)
-			go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
-			go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
-			go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
-			jobsFinished := 0
-			for jobsFinished < 3 {
-				select {
-				case job := <-printables:
-					live.jobs <- job
-				case <-finished:
-					jobsFinished++
-				case <-time.After(intervalToCheckLivestatus / 3):
-					live.log.Debug("requestPrintablesFromLivestatus timed out")
-				}
-			}
+			live.queryData()
+		}
+	}
+}
+
+//Queries livestatus and returns the data to the gobal queue
+func (live LivestatusCollector) queryData(){
+	printables := make(chan Printable)
+	finished := make(chan bool)
+	go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+	go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
+	go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
+	jobsFinished := 0
+	for jobsFinished < 3 {
+		select {
+		case job := <-printables:
+			live.jobs <- job
+		case <-finished:
+			jobsFinished++
+		case <-time.After(intervalToCheckLivestatus / 3):
+			live.log.Debug("requestPrintablesFromLivestatus timed out")
 		}
 	}
 }
@@ -102,9 +108,19 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 			switch query {
 			case QueryForNotifications:
 				if line[0] == "HOST NOTIFICATION" {
-					printables <- LivestatusNotificationData{LivestatusData{line[4], "", line[7], line[1], line[2]}, line[0]}
+					if len(line) == 10 {
+						//Custom
+						printables <- LivestatusNotificationData{LivestatusData{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+					} else if len(line) == 9 {
+						printables <- LivestatusNotificationData{LivestatusData{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+					}
 				} else if line[0] == "SERVICE NOTIFICATION" {
-					printables <- LivestatusNotificationData{LivestatusData{line[4], line[5], line[8], line[1], line[2]}, line[0]}
+					if len(line) == 11 {
+						//Custom
+						printables <- LivestatusNotificationData{LivestatusData{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+					} else if len(line) == 10 {
+						printables <- LivestatusNotificationData{LivestatusData{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+					}
 				} else {
 					live.log.Warn("The notification type is unkown:" + line[0])
 				}
