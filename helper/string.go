@@ -6,8 +6,12 @@ import (
 
 //Splits a string by two splitter an returns a map.
 func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]string {
+	if entrySplitter == "" || keyValueSplitter == "" || input == "" {
+		return nil
+	}
+
 	result := make(map[string]string)
-	entry := strings.SplitAfter(input, entrySplitter)
+	entry := strings.Split(input, entrySplitter)
 	for _, pair := range entry {
 		keyValue := strings.Split(strings.TrimSpace(pair), keyValueSplitter)
 		result[keyValue[0]] = strings.Join(keyValue[1:], keyValueSplitter)
@@ -17,6 +21,10 @@ func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]strin
 
 //Adds a '.0' to a string if it does not contain a dot.
 func StringIntToStringFloat(inputInt string) string {
+	if inputInt == "" {
+		return inputInt
+	}
+
 	if !strings.Contains(inputInt, ".") {
 		inputInt += ".0"
 	}

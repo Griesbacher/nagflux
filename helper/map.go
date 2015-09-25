@@ -16,5 +16,5 @@ func CopyMap(old map[string]string) map[string]string {
 
 //Prints a map in the influxdb tags format.
 func PrintMapAsString(toPrint map[string]string, fieldSeparator, assignmentSeparator string) string {
-	return strings.Replace(strings.Replace(strings.Trim(fmt.Sprintf("%s", toPrint), "map[]"), " ", fieldSeparator, -1), ":", assignmentSeparator, -1)
+	return strings.TrimSpace(strings.Replace(strings.Replace(strings.Trim(fmt.Sprintf("%s", toPrint), "map[]"), " ", fieldSeparator, -1), ":", assignmentSeparator, -1))
 }
