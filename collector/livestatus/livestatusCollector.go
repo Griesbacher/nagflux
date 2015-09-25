@@ -73,7 +73,7 @@ func (live LivestatusCollector) run() {
 }
 
 //Queries livestatus and returns the data to the gobal queue
-func (live LivestatusCollector) queryData(){
+func (live LivestatusCollector) queryData() {
 	printables := make(chan Printable)
 	finished := make(chan bool)
 	go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)

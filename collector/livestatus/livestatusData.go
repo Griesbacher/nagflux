@@ -2,9 +2,9 @@ package livestatus
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"strings"
-	"github.com/griesbacher/nagflux/helper"
 )
 
 //This interface should be used to push data into the queue.
@@ -25,7 +25,6 @@ type LivestatusData struct {
 func (live *LivestatusData) sanitizeValues() {
 	live.host_name = helper.SanitizeInfluxInput(live.host_name)
 	live.service_display_name = helper.SanitizeInfluxInput(live.service_display_name)
-	live.comment = helper.SanitizeInfluxInput(strings.TrimSpace(live.comment))
 	live.entry_time = helper.SanitizeInfluxInput(live.entry_time)
 	live.author = helper.SanitizeInfluxInput(live.author)
 }
@@ -49,7 +48,7 @@ func (live LivestatusData) genInfluxLineWithValue(tags, text string) string {
 //Adds notification types to the livestatus data
 type LivestatusNotificationData struct {
 	LivestatusData
-	notification_type string
+	notification_type  string
 	notification_level string
 }
 
@@ -64,14 +63,14 @@ func (notification LivestatusNotificationData) Print(version float32) string {
 	notification.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
-		if notification.notification_type == "HOST NOTIFICATION" {
+		if notification.notification_type == "HOST\\ NOTIFICATION" {
 			tags = ",type=host_notification"
-		} else if notification.notification_type == "SERVICE NOTIFICATION" {
+		} else if notification.notification_type == "SERVICE\\ NOTIFICATION" {
 			tags = ",type=service_notification"
 		} else {
 			logging.GetLogger().Warn("This notification type is not supported:" + notification.notification_type)
 		}
-		value := fmt.Sprintf("%s:<br> %s",strings.TrimSpace(notification.notification_level),notification.comment)
+		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notification_level), notification.comment)
 		return notification.genInfluxLineWithValue(tags, value)
 	} else {
 		logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
