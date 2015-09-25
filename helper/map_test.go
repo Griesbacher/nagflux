@@ -25,16 +25,18 @@ func TestCopyMap(t *testing.T) {
 func TestPrintMapAsString(t *testing.T) {
 	map1 := map[string]string{"k1": "v1", "k2": "v2"}
 	result := PrintMapAsString(map1, ";", "=")
-	expected := "k1=v1;k2=v2"
-	if result != expected {
-		t.Errorf("Failed: PrintMapAsString() expected:%s result: %s", expected, result)
+	expected1 := "k1=v1;k2=v2"
+	expected2 := "k2=v2;k1=v1"
+	if result != expected1 && result != expected2 {
+		t.Errorf("Failed: PrintMapAsString() expected:%s/%s result:%s", expected1, expected2, result)
 	}
 
 	map1 = map[string]string{"k1": "v1", "k2": "v2"}
 	result = PrintMapAsString(map1, "", "")
-	expected = "k1v1k2v2"
-	if result != expected {
-		t.Errorf("Failed: PrintMapAsString() expected:%s result: %s", expected, result)
+	expected1 = "k1v1k2v2"
+	expected2 = "k2v2k1v1"
+	if result != expected1 && result != expected2 {
+		t.Errorf("Failed: PrintMapAsString() expected:%s/%s result:%s", expected1, expected2, result)
 	}
 
 }

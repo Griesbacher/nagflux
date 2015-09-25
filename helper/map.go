@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -16,5 +15,10 @@ func CopyMap(old map[string]string) map[string]string {
 
 //Prints a map in the influxdb tags format.
 func PrintMapAsString(toPrint map[string]string, fieldSeparator, assignmentSeparator string) string {
-	return strings.TrimSpace(strings.Replace(strings.Replace(strings.Trim(fmt.Sprintf("%s", toPrint), "map[]"), " ", fieldSeparator, -1), ":", assignmentSeparator, -1))
+	result := ""
+	for key, value := range toPrint{
+		result += key+assignmentSeparator+value+fieldSeparator
+	}
+	result = strings.Trim(result, fieldSeparator)
+	return result
 }
