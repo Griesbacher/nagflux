@@ -1,9 +1,9 @@
-# nagflux
+# nagflux [![Circle CI](https://circleci.com/gh/Griesbacher/nagflux/tree/master.svg?style=svg)](https://circleci.com/gh/Griesbacher/nagflux/tree/master)
 A connector which copies performancedata from Nagios/Icinga to InfluxDB
 
 ##Install
 ```
-go get github.com/griesbacher/nagflux
+go get -u github.com/griesbacher/nagflux
 go build github.com/griesbacher/nagflux
 ```
 
