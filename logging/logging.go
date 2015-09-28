@@ -37,7 +37,7 @@ func InitLogger(logFile, minSeverity string) {
 //Singelton logger
 func GetLogger() *factorlog.FactorLog {
 	if singleLogger == nil {
-		InitLogger("", "DEBUG")
+		InitLogger("", "WARN")
 	}
 	return singleLogger
 }

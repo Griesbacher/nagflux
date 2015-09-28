@@ -31,6 +31,7 @@ func (cache *LivestatusCache) addDowntime(host, service, start string) {
 	} else {
 		oldTimestamp, _ := strconv.Atoi(cache.downtime[host][service])
 		newTimestamp, _ := strconv.Atoi(start)
+		//Take timestamp if its newer
 		if oldTimestamp > newTimestamp {
 			cache.downtime[host][service] = start
 		}
@@ -153,7 +154,7 @@ func (cache LivestatusCacheBuilder) IsServiceInDowntime(host, service, time stri
 	cache.mutex.Lock()
 	if _, hostExists := cache.downtimeCache.downtime[host]; hostExists {
 		if _, serviceExists := cache.downtimeCache.downtime[host][service]; serviceExists {
-			if cache.downtimeCache.downtime[host][service] < time {
+			if cache.downtimeCache.downtime[host][service] <= time {
 				result = true
 			}
 		}

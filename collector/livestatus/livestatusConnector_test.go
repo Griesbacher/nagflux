@@ -2,12 +2,12 @@ package livestatus
 
 import (
 	"bufio"
+	"github.com/griesbacher/nagflux/logging"
 	"log"
 	"net"
-	"testing"
-	"github.com/griesbacher/nagflux/logging"
-	"time"
 	"reflect"
+	"testing"
+	"time"
 )
 
 type MockLivestatus struct {
@@ -17,7 +17,7 @@ type MockLivestatus struct {
 	isRunning         bool
 }
 
-func (mockLive *MockLivestatus)StartMockLivestatus() {
+func (mockLive *MockLivestatus) StartMockLivestatus() {
 	var listener net.Listener
 	var err error
 	switch mockLive.ConnectionType {
@@ -55,20 +55,19 @@ func (mockLive *MockLivestatus)StartMockLivestatus() {
 		connWriter.Flush()
 		conn.Close()
 	}
+	listener.Close()
 }
 
-func (mockLive *MockLivestatus)StopMockLivestatus() {
+func (mockLive *MockLivestatus) StopMockLivestatus() {
 	mockLive.isRunning = false
 }
 
 func TestConnectToLivestatus(t *testing.T) {
 	//Create Livestatus mock
-	address := "localhost:6557"
-	typ := "tcp"
-	livestatus := MockLivestatus{address, typ, map[string]string{"test\n\n":"foo;bar\n"}, true}
+	livestatus := MockLivestatus{"localhost:6557", "tcp", map[string]string{"test\n\n": "foo;bar\n"}, true}
 
 	go livestatus.StartMockLivestatus()
-	connector := LivestatusConnector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType }
+	connector := LivestatusConnector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
 
 	csv := make(chan []string)
 	finished := make(chan bool)
@@ -88,9 +87,9 @@ func TestConnectToLivestatus(t *testing.T) {
 				t.Error("Connector exited with error")
 			}
 			waitingForTheEnd = false
-		case <-time.After(time.Duration(3)*time.Second):
+		case <-time.After(time.Duration(3) * time.Second):
 			t.Error("Livestatus connection timed out")
 		}
 	}
-
+	livestatus.StopMockLivestatus()
 }
