@@ -27,12 +27,12 @@ func (connector LivestatusConnector) connectToLivestatus(query string, result ch
 		conn, _ = net.Dial("unix", connector.LivestatusAddress)
 	default:
 		connector.Log.Critical("Connection type is unkown, options are: tcp, file. Input:" + connector.ConnectionType)
-		outerFinish <- true
+		outerFinish <- false
 		return
 	}
 	if conn == nil {
 		connector.Log.Critical("Unable to connect to livestatus", connector.LivestatusAddress)
-		outerFinish <- true
+		outerFinish <- false
 		return
 	}
 

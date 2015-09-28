@@ -1,8 +1,8 @@
 package livestatus
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
 func TestAddDowntime(t *testing.T) {
@@ -10,11 +10,9 @@ func TestAddDowntime(t *testing.T) {
 	if !reflect.DeepEqual(cache.downtime, make(map[string]map[string]string)) {
 		t.Error("Cache should be empty at the beginning.")
 	}
-	cache.addDowntime("hostname", "servicename" ,"123")
-	intern := map[string]map[string]string{"hostname":map[string]string{"servicename":"123"}}
+	cache.addDowntime("hostname", "servicename", "123")
+	intern := map[string]map[string]string{"hostname": map[string]string{"servicename": "123"}}
 	if !reflect.DeepEqual(cache.downtime, intern) {
-		t.Error("Cache should be empty at the beginning.")
+		t.Error("Added element is missing.")
 	}
 }
-
-

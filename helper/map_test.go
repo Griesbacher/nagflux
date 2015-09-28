@@ -9,15 +9,13 @@ func TestCopyMap(t *testing.T) {
 	map1 := map[string]string{"k1": "v1", "k2": "v2"}
 	map2 := CopyMap(map1)
 
-	eq := reflect.DeepEqual(map1, map2)
-	if !eq {
+	if !reflect.DeepEqual(map1, map2) {
 		t.Error("Maps are not equal after copy.")
 	}
 
 	map2["k1"] = "foo"
 
-	eq = reflect.DeepEqual(map1, map2)
-	if eq {
+	if reflect.DeepEqual(map1, map2) {
 		t.Error("Maps are equal after change.")
 	}
 }
