@@ -62,7 +62,6 @@ func (mockLive *MockLivestatus) StartMockLivestatus() {
 		isRunning = mockLive.isRunning
 		mutex.Unlock()
 	}
-	log.Println("fertig")
 }
 
 func (mockLive *MockLivestatus) StopMockLivestatus() {
