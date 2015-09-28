@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"sync"
 )
 
 type MockLivestatus struct {
@@ -16,6 +17,8 @@ type MockLivestatus struct {
 	Queries           map[string]string
 	isRunning         bool
 }
+
+var mutex = &sync.Mutex{}
 
 func (mockLive *MockLivestatus) StartMockLivestatus() {
 	var listener net.Listener
@@ -33,12 +36,12 @@ func (mockLive *MockLivestatus) StartMockLivestatus() {
 	if err != nil {
 		log.Panic(err)
 	}
-	mockLive.isRunning = true
-	for mockLive.isRunning {
 
+	isRunning := true
+	for isRunning {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Println(err)
+			//log.Println(err)
 			continue
 		}
 		connReader := bufio.NewReader(conn)
@@ -54,12 +57,16 @@ func (mockLive *MockLivestatus) StartMockLivestatus() {
 		connWriter.WriteString(answer)
 		connWriter.Flush()
 		conn.Close()
+
+		mutex.Lock()
+		isRunning = mockLive.isRunning
+		mutex.Unlock()
 	}
-	listener.Close()
+	log.Println("fertig")
 }
 
 func (mockLive *MockLivestatus) StopMockLivestatus() {
-	mockLive.isRunning = false
+
 }
 
 func TestConnectToLivestatus(t *testing.T) {

@@ -35,23 +35,17 @@ func TestServiceInDowntime(t *testing.T) {
 
 	cacheBuilder := NewLivestatusCacheBuilder(connector)
 
-	var cache map[string]map[string]string
-	for !reflect.DeepEqual(cacheBuilder.downtimeCache.downtime, cache) {
-		if cacheBuilder.downtimeCache.downtime != nil {
-			cache = cacheBuilder.downtimeCache.downtime
-			time.Sleep(time.Duration(1) * time.Second)
-		}
-		time.Sleep(time.Duration(1) * time.Second)
-	}
+	time.Sleep(time.Duration(2) * time.Second)
 
-	go cacheBuilder.Stop()
-	go livestatus.StopMockLivestatus()
+	cacheBuilder.Stop()
+	livestatus.StopMockLivestatus()
 
 	intern := map[string]map[string]string{"host1": map[string]string{"": "1", "service1": "1"}, "host2": map[string]string{"": "2"}}
+	cacheBuilder.mutex.Lock()
 	if !reflect.DeepEqual(cacheBuilder.downtimeCache.downtime, intern) {
 		t.Errorf("Internall Cache does not fit.\nExpexted:%s\nResult:%s\n", intern, cacheBuilder.downtimeCache.downtime)
 	}
-
+	cacheBuilder.mutex.Unlock()
 	if !cacheBuilder.IsServiceInDowntime("host1", "service1", "1") {
 		t.Errorf(`"host1","service1","1" should be in downtime`)
 	}
@@ -67,4 +61,5 @@ func TestServiceInDowntime(t *testing.T) {
 	if !cacheBuilder.IsServiceInDowntime("host1", "", "2") {
 		t.Errorf(`"host1","","2" should be in downtime`)
 	}
+
 }

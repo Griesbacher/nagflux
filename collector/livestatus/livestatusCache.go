@@ -70,42 +70,42 @@ func NewLivestatusCacheBuilder(livestatusConnector *LivestatusConnector) *Livest
 }
 
 //Signals the cache to stop.
-func (live *LivestatusCacheBuilder) Stop() {
-	live.quit <- true
-	<-live.quit
-	live.log.Debug("LivestatusCacheBuilder stopped")
+func (builder *LivestatusCacheBuilder) Stop() {
+	builder.quit <- true
+	<-builder.quit
+	builder.log.Debug("LivestatusCacheBuilder stopped")
 }
 
 //Loop which caches livestatus downtimes and waits to quit.
-func (cache *LivestatusCacheBuilder) run() {
-	newCache := cache.createLivestatusCache()
-	cache.mutex.Lock()
-	cache.downtimeCache = newCache
-	cache.mutex.Unlock()
+func (builder *LivestatusCacheBuilder) run() {
+	newCache := builder.createLivestatusCache()
+	builder.mutex.Lock()
+	builder.downtimeCache = newCache
+	builder.mutex.Unlock()
 	for {
 		select {
-		case <-cache.quit:
-			cache.quit <- true
+		case <-builder.quit:
+			builder.quit <- true
 			return
 		case <-time.After(intervalToCheckLivestatusCache):
-			newCache = cache.createLivestatusCache()
-			cache.mutex.Lock()
-			cache.downtimeCache = newCache
-			cache.mutex.Unlock()
+			newCache = builder.createLivestatusCache()
+			builder.mutex.Lock()
+			builder.downtimeCache = newCache
+			builder.mutex.Unlock()
 		}
 	}
 }
 
 //Builds host/service map which are in downtime
-func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
+func (builder LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 	result := LivestatusCache{make(map[string]map[string]string)}
 	downtimeCsv := make(chan []string)
 	finishedDowntime := make(chan bool)
 	hostServiceCsv := make(chan []string)
 	finished := make(chan bool)
-	go cache.livestatusConnector.connectToLivestatus(QueryForDowntimeid, downtimeCsv, finishedDowntime)
-	go cache.livestatusConnector.connectToLivestatus(QueryForHostsInDowntime, hostServiceCsv, finished)
-	go cache.livestatusConnector.connectToLivestatus(QueryForServicesInDowntime, hostServiceCsv, finished)
+	go builder.livestatusConnector.connectToLivestatus(QueryForDowntimeid, downtimeCsv, finishedDowntime)
+	go builder.livestatusConnector.connectToLivestatus(QueryForHostsInDowntime, hostServiceCsv, finished)
+	go builder.livestatusConnector.connectToLivestatus(QueryForServicesInDowntime, hostServiceCsv, finished)
 
 	jobsFinished := 0
 	//contains id to starttime
@@ -136,12 +136,12 @@ func (cache LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 				case <-finished:
 					jobsFinished++
 				case <-time.After(intervalToCheckLivestatusCache / 3):
-					cache.log.Debug("Livestatus(host/service) timed out")
+					builder.log.Debug("Livestatus(host/service) timed out")
 					return result
 				}
 			}
 		case <-time.After(intervalToCheckLivestatusCache / 3):
-			cache.log.Debug("Livestatus(downtimes) timed out")
+			builder.log.Debug("Livestatus(downtimes) timed out")
 			return result
 		}
 	}
