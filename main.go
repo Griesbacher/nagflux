@@ -62,7 +62,7 @@ Commandline Parameter:
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	liveconnector := &livestatus.LivestatusConnector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
-	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector)
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector, cfg.Grafana.FieldSeperator)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)

@@ -14,6 +14,7 @@ type Printable interface {
 
 //Contains basic data extracted from livestatusqueries.
 type LivestatusData struct {
+	fieldSeperator       string
 	host_name            string
 	service_display_name string
 	comment              string
@@ -31,7 +32,7 @@ func (live *LivestatusData) sanitizeValues() {
 
 //Generates the Influxdb tablename.
 func (live LivestatusData) getTablename() string {
-	return fmt.Sprintf("%s&%s&messages", live.host_name, live.service_display_name)
+	return fmt.Sprintf("%s%s%s%smessages", live.host_name, live.fieldSeperator, live.service_display_name, live.fieldSeperator)
 }
 
 //Generates the linedata which can be parsed from influxdb

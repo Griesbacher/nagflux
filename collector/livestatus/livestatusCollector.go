@@ -14,6 +14,7 @@ type LivestatusCollector struct {
 	jobs                chan interface{}
 	livestatusConnector *LivestatusConnector
 	log                 *factorlog.FactorLog
+	fieldSeperator      string
 }
 
 const (
@@ -45,8 +46,8 @@ OutputFormat: csv
 )
 
 //Constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs chan interface{}, livestatusConnector *LivestatusConnector) *LivestatusCollector {
-	live := &LivestatusCollector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger()}
+func NewLivestatusCollector(jobs chan interface{}, livestatusConnector *LivestatusConnector, fieldSeperator string) *LivestatusCollector {
+	live := &LivestatusCollector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
 	go live.run()
 	return live
 }
@@ -95,7 +96,7 @@ func (live LivestatusCollector) queryData() {
 func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, addTimestampToQuery bool, printables chan Printable, outerFinish chan bool) {
 	queryWithTimestamp := query
 	if addTimestampToQuery {
-		queryWithTimestamp = fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix())
+		queryWithTimestamp = addTimestampToLivestatusQuery(query)
 	}
 
 	csv := make(chan []string)
@@ -110,29 +111,29 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 				if line[0] == "HOST NOTIFICATION" {
 					if len(line) == 10 {
 						//Custom
-						printables <- LivestatusNotificationData{LivestatusData{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 					} else if len(line) == 9 {
-						printables <- LivestatusNotificationData{LivestatusData{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 					}
 				} else if line[0] == "SERVICE NOTIFICATION" {
 					if len(line) == 11 {
 						//Custom
-						printables <- LivestatusNotificationData{LivestatusData{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
 					} else if len(line) == 10 {
-						printables <- LivestatusNotificationData{LivestatusData{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 					}
 				} else {
 					live.log.Warn("The notification type is unkown:" + line[0])
 				}
 			case QueryForComments:
 				if len(line) == 6 {
-					printables <- LivestatusCommentData{LivestatusData{line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- LivestatusCommentData{LivestatusData{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForComments out of range", line)
 				}
 			case QueryForDowntimes:
 				if len(line) == 6 {
-					printables <- LivestatusDowntimeData{LivestatusData{line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- LivestatusDowntimeData{LivestatusData{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForDowntimes out of range", line)
 				}
@@ -146,4 +147,8 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 			live.log.Warn("connectToLivestatus timed out")
 		}
 	}
+}
+
+func addTimestampToLivestatusQuery(query string) string {
+	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix())
 }

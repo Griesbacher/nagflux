@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+func TestNewLivestatusCacheBuilder(t *testing.T) {
+	connector := &LivestatusConnector{logging.GetLogger(), "localhost:6558", "tcp"}
+	if NewLivestatusCacheBuilder(connector) == nil {
+		t.Error("Constructor returned null pointer")
+	}
+}
+
 func TestAddDowntime(t *testing.T) {
 	cache := LivestatusCache{make(map[string]map[string]string)}
 	if !reflect.DeepEqual(cache.downtime, make(map[string]map[string]string)) {

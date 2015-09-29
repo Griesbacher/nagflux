@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 type MockLivestatus struct {
@@ -53,7 +53,10 @@ func (mockLive *MockLivestatus) StartMockLivestatus() {
 			line, _ = connReader.ReadString('\n')
 		}
 		query += "\n"
-		answer := mockLive.Queries[query]
+		answer, found := mockLive.Queries[query]
+		if found == false {
+			answer = "\n\n"
+		}
 		connWriter.WriteString(answer)
 		connWriter.Flush()
 		conn.Close()
