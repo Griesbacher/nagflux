@@ -2,7 +2,6 @@ package spoolfile
 
 import (
 	"errors"
-	"fmt"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
