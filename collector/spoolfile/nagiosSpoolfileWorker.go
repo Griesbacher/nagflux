@@ -2,6 +2,7 @@ package spoolfile
 
 import (
 	"errors"
+	"fmt"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
@@ -23,6 +24,8 @@ type NagiosSpoolfileWorker struct {
 	statistics             statistics.DataReceiver
 	fieldseperator         string
 	livestatusCacheBuilder *livestatus.LivestatusCacheBuilder
+	regexPerformancelable  *regexp.Regexp
+	regexAltCommand        *regexp.Regexp
 }
 
 const hostPerfdata string = "HOSTPERFDATA"
@@ -39,8 +42,16 @@ const servicedesc string = "SERVICEDESC"
 //Generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
 	workerId := 0
+	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
+	if err != nil {
+		logging.GetLogger().Error("Regex creation failed:", err)
+	}
+	regexAltCommand, err := regexp.Compile(`.*\[(.*)\]\s?$`)
+	if err != nil {
+		logging.GetLogger().Error("Regex creation failed:", err)
+	}
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
+		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder, regexPerformancelable, regexAltCommand}
 		workerId++
 		go s.run()
 		return s
@@ -97,11 +108,6 @@ func (w *NagiosSpoolfileWorker) run() {
 
 //Iterator to loop over generated perf data.
 func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
-	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
-	if err != nil {
-		logging.GetLogger().Error("Regex creation failed:", err)
-	}
-
 	ch := make(chan PerformanceData)
 	var typ string
 	if isHostPerformanceData(input) {
@@ -116,21 +122,25 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 		return ch
 	}
 
+	currentHostname := helper.SanitizeInfluxInput(input[hostname])
+	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
+	currentTime := helper.CastStringTimeFromSToMs(input[timet])
+	currentService := ""
+	if typ != hostType {
+		currentService = helper.SanitizeInfluxInput(input[servicedesc])
+	}
+
 	go func() {
-		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
+		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         helper.SanitizeInfluxInput(input[hostname]),
-				command:          helper.SanitizeInfluxInput(splitCommandInput(input[typ+checkcommand])),
-				time:             helper.CastStringTimeFromSToMs(input[timet]),
+				hostname:         currentHostname,
+				service:          currentService,
+				command:          currentCommand,
+				time:             currentTime,
 				performanceLabel: helper.SanitizeInfluxInput(value[1]),
 				unit:             helper.SanitizeInfluxInput(value[3]),
 				fieldseperator:   w.fieldseperator,
 				tags:             map[string]string{},
-			}
-			if typ == hostType {
-				perf.service = ""
-			} else {
-				perf.service = helper.SanitizeInfluxInput(input[servicedesc])
 			}
 
 			for i, data := range value {
@@ -187,6 +197,16 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 		close(ch)
 	}()
 	return ch
+}
+
+//searchAltCommand looks for alternative command name in perfdata
+func (w *NagiosSpoolfileWorker) searchAltCommand(perfData, command string) string {
+	result := command
+	search := w.regexAltCommand.FindAllStringSubmatch(perfData, 1)
+	if len(search) == 1 && len(search[0]) == 2 {
+		result = search[0][1]
+	}
+	return helper.SanitizeInfluxInput(splitCommandInput(result))
 }
 
 //Cuts the command at the first !.
