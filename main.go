@@ -55,7 +55,7 @@ Commandline Parameter:
 	log = logging.GetLogger()
 
 	resultQueue := make(chan interface{}, int(resultQueueLength))
-	influx := influx.InfluxConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
+	influx := influx.ConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
 	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue

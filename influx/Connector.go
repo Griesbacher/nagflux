@@ -11,12 +11,12 @@ import (
 	"time"
 )
 
-//Makes the basic connection to an influxdb.
-type InfluxConnector struct {
+//Connector makes the basic connection to an influxdb.
+type Connector struct {
 	connectionHost string
 	connectionArgs string
 	dumpFile       string
-	workers        []*InfluxWorker
+	workers        []*Worker
 	maxWorkers     int
 	jobs           chan interface{}
 	quit           chan bool
@@ -27,8 +27,8 @@ type InfluxConnector struct {
 	databaseName   string
 }
 
-//Constructor which will create some workers if the connection is established.
-func InfluxConnectorFactory(jobs chan interface{}, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *InfluxConnector {
+//ConnectorFactory Constructor which will create some workers if the connection is established.
+func ConnectorFactory(jobs chan interface{}, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
 
 	regexDatabaseName, err := regexp.Compile(`.*db=(.*)`)
 	if err != nil {
@@ -41,9 +41,9 @@ func InfluxConnectorFactory(jobs chan interface{}, connectionHost, connectionArg
 			databaseName = hits[1]
 		}
 	}
-	s := &InfluxConnector{connectionHost, connectionArgs, dumpFile, make([]*InfluxWorker, workerAmount), maxWorkers, jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName}
+	s := &Connector{connectionHost, connectionArgs, dumpFile, make([]*Worker, workerAmount), maxWorkers, jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName}
 
-	gen := InfluxWorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s)
+	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s)
 
 	s.TestIfIsAlive()
 	for i := 0; i < 5 && !s.isAlive; i++ {
@@ -72,18 +72,18 @@ func InfluxConnectorFactory(jobs chan interface{}, connectionHost, connectionArg
 	return s
 }
 
-//Creates a new worker
-func (connector *InfluxConnector) AddWorker() {
+//AddWorker creates a new worker
+func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
-		gen := InfluxWorkerGenerator(connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs, connector.dumpFile, connector.version, connector)
+		gen := WorkerGenerator(connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs, connector.dumpFile, connector.version, connector)
 		connector.workers = append(connector.workers, gen(oldLength+2))
 		connector.log.Debugf("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}
 }
 
-//Stops a worker
-func (connector *InfluxConnector) RemoveWorker() {
+//RemoveWorker stops a worker
+func (connector *Connector) RemoveWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength > 1 {
 		lastWorkerIndex := oldLength - 1
@@ -93,30 +93,30 @@ func (connector *InfluxConnector) RemoveWorker() {
 	}
 }
 
-//Current amount of workers.
-func (connector InfluxConnector) AmountWorkers() int {
+//AmountWorkers current amount of workers.
+func (connector Connector) AmountWorkers() int {
 	return len(connector.workers)
 }
 
-//Is the database system alive.
-func (connector InfluxConnector) IsAlive() bool {
+//IsAlive is the database system alive.
+func (connector Connector) IsAlive() bool {
 	return connector.isAlive
 }
 
-//Does the database exist.
-func (connector InfluxConnector) DatabaseExists() bool {
+//DatabaseExists does the database exist.
+func (connector Connector) DatabaseExists() bool {
 	return connector.databaseExists
 }
 
 //Stop the connector and its workers.
-func (connector *InfluxConnector) Stop() {
+func (connector *Connector) Stop() {
 	connector.quit <- true
 	<-connector.quit
 	connector.log.Debug("InfluxConnectorFactory stopped")
 }
 
 //Waits just for the end.
-func (connector *InfluxConnector) run() {
+func (connector *Connector) run() {
 	for {
 		select {
 		case <-connector.quit:
@@ -139,8 +139,8 @@ func (connector *InfluxConnector) run() {
 	}
 }
 
-//Test active if the database system is alive.
-func (connector *InfluxConnector) TestIfIsAlive() bool {
+//TestIfIsAlive test active if the database system is alive.
+func (connector *Connector) TestIfIsAlive() bool {
 	resp, err := http.Get(connector.connectionHost + "/ping")
 	result := false
 	if err != nil {
@@ -155,7 +155,7 @@ func (connector *InfluxConnector) TestIfIsAlive() bool {
 	return result
 }
 
-//Represents the query result
+//ShowSeriesResult represents the JSON query result
 type ShowSeriesResult struct {
 	Results []struct {
 		Series []struct {
@@ -166,8 +166,8 @@ type ShowSeriesResult struct {
 	}
 }
 
-//Test active if the database exists.
-func (connector *InfluxConnector) TestDatabaseExists() bool {
+//TestDatabaseExists test active if the database exists.
+func (connector *Connector) TestDatabaseExists() bool {
 	resp, _ := http.Get(connector.connectionHost + "/query?q=show%20databases")
 
 	defer resp.Body.Close()
@@ -187,15 +187,14 @@ func (connector *InfluxConnector) TestDatabaseExists() bool {
 	return false
 }
 
-//Creates the database.
-func (connector *InfluxConnector) CreateDatabase() bool {
+//CreateDatabase creates the database.
+func (connector *Connector) CreateDatabase() bool {
 	resp, _ := http.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
 
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	if string(body) == `results":[{}]}` {
 		return true
-	} else {
-		return false
 	}
+	return false
 }

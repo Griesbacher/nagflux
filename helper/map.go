@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-//Creates a real copy of a string to string map.
+//CopyMap creates a real copy of a string to string map.
 func CopyMap(old map[string]string) map[string]string {
 	newMap := map[string]string{}
 	for k, v := range old {
@@ -13,7 +13,7 @@ func CopyMap(old map[string]string) map[string]string {
 	return newMap
 }
 
-//Prints a map in the influxdb tags format.
+//PrintMapAsString prints a map in the influxdb tags format.
 func PrintMapAsString(toPrint map[string]string, fieldSeparator, assignmentSeparator string) string {
 	result := ""
 	for key, value := range toPrint {

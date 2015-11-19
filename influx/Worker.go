@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-//Reads data from the queue and sends them to the influxdb.
-type InfluxWorker struct {
-	workerId     int
+//Worker reads data from the queue and sends them to the influxdb.
+type Worker struct {
+	workerID     int
 	quit         chan bool
 	quitInternal chan bool
 	jobs         chan interface{}
@@ -26,21 +26,21 @@ type InfluxWorker struct {
 	statistics   statistics.DataReceiver
 	log          *factorlog.FactorLog
 	version      float32
-	connector    *InfluxConnector
+	connector    *Connector
 	httpClient   http.Client
 	IsRunning    bool
 }
 
 var errorInterrupted = errors.New("Got interrupted")
 var errorBadRequest = errors.New("400 Bad Request")
-var errorHttpClient = errors.New("Http Client got an error")
+var errorHTTPClient = errors.New("Http Client got an error")
 var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
-//Generates a new Worker and starts it.
-func InfluxWorkerGenerator(jobs chan interface{}, connection, dumpFile string, version float32, connector *InfluxConnector) func(workerId int) *InfluxWorker {
-	return func(workerId int) *InfluxWorker {
-		worker := &InfluxWorker{
+//WorkerGenerator generates a new Worker and starts it.
+func WorkerGenerator(jobs chan interface{}, connection, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
+	return func(workerId int) *Worker {
+		worker := &Worker{
 			workerId, make(chan bool),
 			make(chan bool, 1), jobs,
 			connection, dumpFile,
@@ -52,8 +52,8 @@ func InfluxWorkerGenerator(jobs chan interface{}, connection, dumpFile string, v
 	}
 }
 
-//Stops the worker
-func (worker *InfluxWorker) Stop() {
+//Stop stops the worker
+func (worker *Worker) Stop() {
 	worker.quitInternal <- true
 	worker.quit <- true
 	<-worker.quit
@@ -62,7 +62,7 @@ func (worker *InfluxWorker) Stop() {
 }
 
 //Tries to send data all the time.
-func (worker InfluxWorker) run() {
+func (worker Worker) run() {
 	var queries []interface{}
 	var query interface{}
 	for {
@@ -102,7 +102,7 @@ func (worker InfluxWorker) run() {
 }
 
 //Checks if a external quit signal arrives.
-func (worker InfluxWorker) waitForExternalQuit() bool {
+func (worker Worker) waitForExternalQuit() bool {
 	select {
 	case <-worker.quit:
 		worker.quit <- true
@@ -113,7 +113,7 @@ func (worker InfluxWorker) waitForExternalQuit() bool {
 }
 
 //Sends the given queries to the influxdb.
-func (worker InfluxWorker) sendBuffer(queries []interface{}) {
+func (worker Worker) sendBuffer(queries []interface{}) {
 	if len(queries) == 0 {
 		return
 	}
@@ -170,7 +170,7 @@ func (worker InfluxWorker) sendBuffer(queries []interface{}) {
 }
 
 //Writes the bad queries to a dumpfile.
-func (worker InfluxWorker) dumpErrorQueries(messageForLog string, errorQueries []string) {
+func (worker Worker) dumpErrorQueries(messageForLog string, errorQueries []string) {
 	errorFile := worker.dumpFile + "-errors"
 	worker.log.Warnf("Dumping queries with errors to: %s", errorFile)
 	errorQueries = append([]string{messageForLog}, errorQueries...)
@@ -180,7 +180,7 @@ func (worker InfluxWorker) dumpErrorQueries(messageForLog string, errorQueries [
 var mutex = &sync.Mutex{}
 
 //Dumps the remaining queries if a quit signal arises.
-func (worker InfluxWorker) dumpRemainingQueries(remainingQueries []string) {
+func (worker Worker) dumpRemainingQueries(remainingQueries []string) {
 	mutex.Lock()
 	worker.log.Debugf("Global queue %d own queue %d", len(worker.jobs), len(remainingQueries))
 	if len(worker.jobs) != 0 || len(remainingQueries) != 0 {
@@ -195,7 +195,7 @@ func (worker InfluxWorker) dumpRemainingQueries(remainingQueries []string) {
 }
 
 //Reads the queries from the global queue and returns them as string.
-func (worker InfluxWorker) readQueriesFromQueue() []string {
+func (worker Worker) readQueriesFromQueue() []string {
 	var queries []string
 	var query interface{}
 	stop := false
@@ -214,7 +214,7 @@ func (worker InfluxWorker) readQueriesFromQueue() []string {
 }
 
 //sends the raw data to influxdb and returns an err if given.
-func (worker InfluxWorker) sendData(rawData []byte, log bool) error {
+func (worker Worker) sendData(rawData []byte, log bool) error {
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
 		worker.log.Warn(err)
@@ -222,42 +222,40 @@ func (worker InfluxWorker) sendData(rawData []byte, log bool) error {
 	resp, err := worker.httpClient.Do(req)
 	if err != nil {
 		worker.log.Warn(err)
-		return errorHttpClient
-	} else {
-		defer resp.Body.Close()
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			//OK
-			return nil
-		} else if resp.StatusCode == 500 {
-			//Temporarily timeout
-			if log {
-				worker.logHttpResponse(resp)
-			}
-			return error500
-		} else if resp.StatusCode == 400 {
-			//Bad Request
-			if log {
-				worker.logHttpResponse(resp)
-			}
-			return errorBadRequest
-		} else {
-			//HTTP Error
-			if log {
-				worker.logHttpResponse(resp)
-			}
-			return errorFailedToSend
-		}
+		return errorHTTPClient
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		//OK
+		return nil
+	} else if resp.StatusCode == 500 {
+		//Temporarily timeout
+		if log {
+			worker.logHTTPResponse(resp)
+		}
+		return error500
+	} else if resp.StatusCode == 400 {
+		//Bad Request
+		if log {
+			worker.logHTTPResponse(resp)
+		}
+		return errorBadRequest
+	}
+	//HTTP Error
+	if log {
+		worker.logHTTPResponse(resp)
+	}
+	return errorFailedToSend
 }
 
 //Logs a http response to warn.
-func (worker InfluxWorker) logHttpResponse(resp *http.Response) {
+func (worker Worker) logHTTPResponse(resp *http.Response) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	worker.log.Warnf("Influx status: %s - %s", resp.Status, string(body))
 }
 
 //Waits on an internal quit signal.
-func (worker InfluxWorker) waitForQuitOrGoOn() error {
+func (worker Worker) waitForQuitOrGoOn() error {
 	select {
 	//Got stop signal
 	case <-worker.quitInternal:
@@ -271,7 +269,7 @@ func (worker InfluxWorker) waitForQuitOrGoOn() error {
 }
 
 //Writes queries to a dumpfile.
-func (worker InfluxWorker) dumpQueries(filename string, queries []string) {
+func (worker Worker) dumpQueries(filename string, queries []string) {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		if _, err := os.Create(filename); err != nil {
 			worker.log.Critical(err)
@@ -290,7 +288,7 @@ func (worker InfluxWorker) dumpQueries(filename string, queries []string) {
 }
 
 //Converts an interface{} to a string.
-func (worker InfluxWorker) castJobToString(job interface{}) (string, error) {
+func (worker Worker) castJobToString(job interface{}) (string, error) {
 	var result string
 	var err error
 	switch jobCast := job.(type) {

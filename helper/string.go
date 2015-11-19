@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-//Splits a string by two splitter an returns a map.
+//StringToMap splits a string by two splitter an returns a map.
 func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]string {
 	if entrySplitter == "" || keyValueSplitter == "" || input == "" {
 		return nil
@@ -19,7 +19,7 @@ func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]strin
 	return result
 }
 
-//Adds a '.0' to a string if it does not contain a dot.
+//StringIntToStringFloat adds a '.0' to a string if it does not contain a dot.
 func StringIntToStringFloat(inputInt string) string {
 	if inputInt == "" {
 		return inputInt
@@ -31,7 +31,7 @@ func StringIntToStringFloat(inputInt string) string {
 	return inputInt
 }
 
-//Adds three zeros to the timestring to cast from Seconds to Milliseconds.
+//CastStringTimeFromSToMs adds three zeros to the timestring to cast from Seconds to Milliseconds.
 func CastStringTimeFromSToMs(time string) string {
 	return time + "000"
 }
