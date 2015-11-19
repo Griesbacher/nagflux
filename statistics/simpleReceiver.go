@@ -2,19 +2,15 @@ package statistics
 
 import "sync"
 
-type DataReceiver interface {
-	ReceiveQueries(string, QueriesPerTime)
-	SetStatisticsUser(StatisticsUser)
-}
-
 type simpleReceiver struct {
-	users []StatisticsUser
+	users []User
 }
 
-var singleReceiver *simpleReceiver = nil
+var singleReceiver *simpleReceiver
 var mutex = &sync.Mutex{}
 
-func NewCmdStatisticReceiver() *simpleReceiver {
+//NewCmdStatisticReceiver creates a new simpleReciver
+func NewCmdStatisticReceiver() *DataReceiver {
 	mutex.Lock()
 	if singleReceiver == nil {
 		singleReceiver = new(simpleReceiver)
@@ -23,12 +19,14 @@ func NewCmdStatisticReceiver() *simpleReceiver {
 	return singleReceiver
 }
 
+//ReceiveQueries sends the data to the user
 func (statistic simpleReceiver) ReceiveQueries(dataType string, monitored QueriesPerTime) {
 	for _, user := range statistic.users {
 		user.ObtainQueries(dataType, monitored)
 	}
 }
 
-func (statistic *simpleReceiver) SetStatisticsUser(user StatisticsUser) {
+//SetStatisticsUser setter
+func (statistic *simpleReceiver) SetStatisticsUser(user User) {
 	statistic.users = append(statistic.users, user)
 }

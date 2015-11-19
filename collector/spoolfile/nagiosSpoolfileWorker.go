@@ -118,7 +118,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	}
 
 	currentHostname := helper.SanitizeInfluxInput(input[hostname])
-	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
+	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -126,7 +126,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1) {
+		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         currentHostname,
 				service:          currentService,
