@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-//Displays statistics.
-type MonitoringServer struct {
+//Server displays statistics.
+type Server struct {
 	port            string
 	quit            chan bool
 	log             *factorlog.FactorLog
@@ -23,14 +23,14 @@ type MonitoringServer struct {
 	statisticValues map[string][]int
 }
 
-var singleMonitoringServer *MonitoringServer = nil
+var singleMonitoringServer *Server
 var mutex = &sync.Mutex{}
 
-//Starts the webserver.
-func StartMonitoringServer(port string) *MonitoringServer {
+//StartMonitoringServer starts the webserver.
+func StartMonitoringServer(port string) *Server {
 	mutex.Lock()
 	if singleMonitoringServer == nil && port != "" {
-		singleMonitoringServer = &MonitoringServer{port, make(chan bool), logging.GetLogger(), statistics.NewSimpleStatisticsUser(), make(map[string][]int)}
+		singleMonitoringServer = &Server{port, make(chan bool), logging.GetLogger(), statistics.NewSimpleStatisticsUser(), make(map[string][]int)}
 		singleMonitoringServer.statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
 		go singleMonitoringServer.run()
 	}
@@ -38,15 +38,15 @@ func StartMonitoringServer(port string) *MonitoringServer {
 	return singleMonitoringServer
 }
 
-//Stops the webserver
-func (server MonitoringServer) Stop() {
+//Stop stops the webserver
+func (server Server) Stop() {
 	server.quit <- true
 	<-server.quit
 	server.log.Debug("MonitoringServer stopped")
 }
 
 //Updates data.
-func (server MonitoringServer) run() {
+func (server Server) run() {
 	go server.startWebServer()
 	for {
 		select {
@@ -60,7 +60,7 @@ func (server MonitoringServer) run() {
 }
 
 //Web handler
-func (server MonitoringServer) handler(w http.ResponseWriter, r *http.Request) {
+func (server Server) handler(w http.ResponseWriter, r *http.Request) {
 	jsonData, err := json.Marshal(server.generateOutputStatistic())
 	if err == nil {
 		fmt.Fprintf(w, string(jsonData))
@@ -70,13 +70,13 @@ func (server MonitoringServer) handler(w http.ResponseWriter, r *http.Request) {
 }
 
 //Starts Webserver itself
-func (server MonitoringServer) startWebServer() {
+func (server Server) startWebServer() {
 	http.HandleFunc("/", server.handler)
 	http.ListenAndServe(server.port, nil)
 }
 
 //Updates statistics to display
-func (server MonitoringServer) updateStatistic() {
+func (server Server) updateStatistic() {
 	for _, key := range server.statisticUser.GetDataTypes() {
 		queriesSend, _, err := server.statisticUser.GetData(key)
 		if err == nil {
@@ -91,7 +91,7 @@ func (server MonitoringServer) updateStatistic() {
 var timeInterval = []int{1, 5, 15}
 
 //Generates "html" output
-func (server MonitoringServer) generateOutputStatistic() map[string]map[string]int {
+func (server Server) generateOutputStatistic() map[string]map[string]int {
 	summedData := make(map[string]map[string]int)
 	for key, value := range server.statisticValues {
 		for _, numberOfMinutes := range timeInterval {

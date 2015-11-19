@@ -9,9 +9,9 @@ import (
 const logFormat = "%{Date} %{Time} %{Severity}: %{SafeMessage}"
 const logColors = "%{Color \"white\" \"DEBUG\"}%{Color \"magenta\" \"WARN\"}%{Color \"red\" \"CRITICAL\"}"
 
-var singleLogger *factorlog.FactorLog = nil
+var singleLogger *factorlog.FactorLog
 
-//Logger Constructor.
+//InitLogger Constructor.
 func InitLogger(logFile, minSeverity string) {
 	var logFormatter factorlog.Formatter
 	var targetWriter io.Writer
@@ -34,7 +34,7 @@ func InitLogger(logFile, minSeverity string) {
 	singleLogger.SetMinMaxSeverity(factorlog.StringToSeverity(minSeverity), factorlog.StringToSeverity("PANIC"))
 }
 
-//Singelton logger
+//GetLogger getsingelton logger
 func GetLogger() *factorlog.FactorLog {
 	if singleLogger == nil {
 		InitLogger("", "WARN")
