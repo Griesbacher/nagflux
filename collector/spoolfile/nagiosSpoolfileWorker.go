@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-//Parses the given spoolfiles and adds the extraced perfdata to the queue.
+//NagiosSpoolfileWorker parses the given spoolfiles and adds the extraced perfdata to the queue.
 type NagiosSpoolfileWorker struct {
 	workerId               int
 	quit                   chan bool
@@ -38,7 +38,9 @@ const timet string = "TIMET"
 const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
-//Generates a worker and starts it.
+var rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
+
+//NagiosSpoolfileWorkerGenerator generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
 	workerId := 0
 	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
@@ -57,7 +59,7 @@ func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, 
 	}
 }
 
-//Stops the worker
+//Stop stops the worker
 func (w *NagiosSpoolfileWorker) Stop() {
 	w.quit <- true
 	<-w.quit
@@ -108,21 +110,15 @@ func (w *NagiosSpoolfileWorker) run() {
 //Iterator to loop over generated perf data.
 func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
 	ch := make(chan PerformanceData)
-	var typ string
-	if isHostPerformanceData(input) {
-		typ = hostType
-	} else if isServicePerformanceData(input) {
-		typ = serviceType
-	} else {
-		if len(input) > 1 {
-			logging.GetLogger().Info("Line does not match the scheme", input)
-		}
+	typ := findType(input)
+	if typ == "" {
+		logging.GetLogger().Info("Line does not match the scheme", input)
 		close(ch)
 		return ch
 	}
 
 	currentHostname := helper.SanitizeInfluxInput(input[hostname])
-	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
+	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -130,7 +126,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
+		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         currentHostname,
 				service:          currentService,
@@ -157,7 +153,6 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 					if performanceType == "warn" || performanceType == "crit" {
 						//Range handling
-						rangeRegex := regexp.MustCompile(`[\d\.\-]+`)
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
 							perf.tags["type"] = "normal"
@@ -196,6 +191,16 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 		close(ch)
 	}()
 	return ch
+}
+
+func findType(input map[string]string) string {
+	var typ string
+	if isHostPerformanceData(input) {
+		typ = hostType
+	} else if isServicePerformanceData(input) {
+		typ = serviceType
+	}
+	return typ
 }
 
 //searchAltCommand looks for alternative command name in perfdata

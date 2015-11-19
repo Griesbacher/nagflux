@@ -18,9 +18,9 @@ type LivestatusCollector struct {
 }
 
 const (
-	//Updateinterval on livestatus data.
+//Updateinterval on livestatus data.
 	intervalToCheckLivestatus = time.Duration(2) * time.Minute
-	//Livestatusquery for notifications.
+//Livestatusquery for notifications.
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
@@ -29,14 +29,14 @@ Negate:
 OutputFormat: csv
 
 `
-	//Livestatusquery for comments
+//Livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
 Filter: entry_time > %d
 OutputFormat: csv
 
 `
-	//Livestatusquery for downtimes
+//Livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
 Filter: entry_time > %d
@@ -108,20 +108,8 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 		case line := <-csv:
 			switch query {
 			case QueryForNotifications:
-				if line[0] == "HOST NOTIFICATION" {
-					if len(line) == 10 {
-						//Custom
-						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
-					} else if len(line) == 9 {
-						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
-					}
-				} else if line[0] == "SERVICE NOTIFICATION" {
-					if len(line) == 11 {
-						//Custom
-						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
-					} else if len(line) == 10 {
-						printables <- LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
-					}
+				if printable := live.handleQueryForNotifications(line); printable != nil {
+					printables <- printable
 				} else {
 					live.log.Warn("The notification type is unkown:" + line[0])
 				}
@@ -150,5 +138,26 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 }
 
 func addTimestampToLivestatusQuery(query string) string {
-	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix())
+	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus / 100 * -150).Unix())
+}
+
+func (live LivestatusCollector) handleQueryForNotifications(line []string) *LivestatusNotificationData {
+	switch line[0] {
+	case "HOST NOTIFICATION":
+		if len(line) == 10 {
+			//Custom
+			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+		} else if len(line) == 9 {
+			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+		}
+	case "SERVICE NOTIFICATION" :
+		if len(line) == 11 {
+			//Custom
+			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+		} else if len(line) == 10 {
+			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+		}
+
+	}
+	return nil
 }
