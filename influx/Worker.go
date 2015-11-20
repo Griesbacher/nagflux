@@ -166,7 +166,7 @@ func (worker Worker) sendBuffer(queries []interface{}) {
 		}
 
 	}
-	worker.statistics.ReceiveQueries("send", statistics.QueriesPerTime{len(lineQueries), time.Since(startTime)})
+	worker.statistics.ReceiveQueries("send", statistics.QueriesPerTime{Queries: len(lineQueries), Time: time.Since(startTime)})
 }
 
 //Writes the bad queries to a dumpfile.

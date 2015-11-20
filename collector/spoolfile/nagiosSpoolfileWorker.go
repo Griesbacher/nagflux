@@ -92,7 +92,7 @@ func (w *NagiosSpoolfileWorker) run() {
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{queries, time.Since(startTime)})
+			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{Queries: queries, Time: time.Since(startTime)})
 		case <-time.After(time.Duration(5) * time.Minute):
 			logging.GetLogger().Debug("NagiosSpoolfileWorker: Got nothing to do")
 		}
