@@ -23,8 +23,6 @@ type NagiosSpoolfileWorker struct {
 	statistics             statistics.DataReceiver
 	fieldseperator         string
 	livestatusCacheBuilder *livestatus.LivestatusCacheBuilder
-	regexPerformancelable  *regexp.Regexp
-	regexAltCommand        *regexp.Regexp
 }
 
 const hostPerfdata string = "HOSTPERFDATA"
@@ -39,20 +37,14 @@ const checkcommand string = "CHECKCOMMAND"
 const servicedesc string = "SERVICEDESC"
 
 var rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
+var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
+var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
 	workerId := 0
-	regexPerformancelable, err := regexp.Compile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
-	if err != nil {
-		logging.GetLogger().Error("Regex creation failed:", err)
-	}
-	regexAltCommand, err := regexp.Compile(`.*\[(.*)\]\s?$`)
-	if err != nil {
-		logging.GetLogger().Error("Regex creation failed:", err)
-	}
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder, regexPerformancelable, regexAltCommand}
+		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
 		workerId++
 		go s.run()
 		return s
@@ -126,7 +118,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		for _, value := range w.regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
+		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         currentHostname,
 				service:          currentService,
@@ -206,7 +198,7 @@ func findType(input map[string]string) string {
 //searchAltCommand looks for alternative command name in perfdata
 func (w *NagiosSpoolfileWorker) searchAltCommand(perfData, command string) string {
 	result := command
-	search := w.regexAltCommand.FindAllStringSubmatch(perfData, 1)
+	search := regexAltCommand.FindAllStringSubmatch(perfData, 1)
 	if len(search) == 1 && len(search[0]) == 2 {
 		result = search[0][1]
 	}

@@ -27,13 +27,10 @@ type Connector struct {
 	databaseName   string
 }
 
+var regexDatabaseName = regexp.MustCompile(`.*db=(.*)`)
+
 //ConnectorFactory Constructor which will create some workers if the connection is established.
 func ConnectorFactory(jobs chan interface{}, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
-
-	regexDatabaseName, err := regexp.Compile(`.*db=(.*)`)
-	if err != nil {
-		logging.GetLogger().Error("Regex creation failed:", err)
-	}
 	var databaseName string
 	for _, argument := range strings.Split(connectionArgs, "&") {
 		hits := regexDatabaseName.FindStringSubmatch(argument)
