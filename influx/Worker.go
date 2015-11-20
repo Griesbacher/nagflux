@@ -90,6 +90,7 @@ func (worker Worker) run() {
 			} else {
 				//Test Database
 				worker.connector.TestDatabaseExists()
+				worker.log.Critical("Database does not exists, waiting for the end to come")
 				if worker.waitForExternalQuit() {
 					return
 				}
@@ -97,6 +98,7 @@ func (worker Worker) run() {
 		} else {
 			//Test Influxdb
 			worker.connector.TestIfIsAlive()
+			worker.log.Critical("InfluxDB is not running, waiting for the end to come")
 			if worker.waitForExternalQuit() {
 				return
 			}
