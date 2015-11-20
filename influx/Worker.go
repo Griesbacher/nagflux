@@ -3,7 +3,6 @@ package influx
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/logging"
