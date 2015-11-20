@@ -104,7 +104,9 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 	ch := make(chan PerformanceData)
 	typ := findType(input)
 	if typ == "" {
-		logging.GetLogger().Info("Line does not match the scheme", input)
+		if len(input) > 1 {
+			logging.GetLogger().Info("Line does not match the scheme", input)
+		}
 		close(ch)
 		return ch
 	}

@@ -10,7 +10,7 @@ var singleReceiver *simpleReceiver
 var mutex = &sync.Mutex{}
 
 //NewCmdStatisticReceiver creates a new simpleReciver
-func NewCmdStatisticReceiver() *DataReceiver {
+func NewCmdStatisticReceiver() DataReceiver {
 	mutex.Lock()
 	if singleReceiver == nil {
 		singleReceiver = new(simpleReceiver)

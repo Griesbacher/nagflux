@@ -19,6 +19,11 @@ import (
 	"time"
 )
 
+//Stoppable represents every daemonlike struct which can be stopped
+type Stoppable interface {
+	Stop()
+}
+
 //Interval of the main loop, in which the amount of workers are calculated.
 const updateRate = 120
 

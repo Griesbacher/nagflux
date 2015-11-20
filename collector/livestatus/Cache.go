@@ -1,13 +1,7 @@
 package livestatus
 
 import (
-	"fmt"
-	"github.com/griesbacher/nagflux/logging"
-	"github.com/kdar/factorlog"
 	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 //Cache contains stored data

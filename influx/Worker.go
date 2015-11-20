@@ -3,6 +3,7 @@ package influx
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/logging"
@@ -30,6 +31,8 @@ type Worker struct {
 	httpClient   http.Client
 	IsRunning    bool
 }
+
+const dataTimeout = time.Duration(10) * time.Second
 
 var errorInterrupted = errors.New("Got interrupted")
 var errorBadRequest = errors.New("400 Bad Request")
@@ -80,7 +83,7 @@ func (worker Worker) run() {
 						worker.sendBuffer(queries)
 						queries = queries[:0]
 					}
-				case <-time.After(time.Duration(30) * time.Second):
+				case <-time.After(dataTimeout):
 					worker.sendBuffer(queries)
 					queries = queries[:0]
 				}
