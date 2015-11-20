@@ -10,51 +10,33 @@ import (
 	"time"
 )
 
-//Fetches data from livestatus.
-type LivestatusCacheBuilder struct {
-	livestatusConnector *LivestatusConnector
+//CacheBuilder fetches data from livestatus.
+type CacheBuilder struct {
+	livestatusConnector *Connector
 	quit                chan bool
 	log                 *factorlog.FactorLog
-	downtimeCache       LivestatusCache
+	downtimeCache       Cache
 	mutex               *sync.Mutex
-}
-
-type LivestatusCache struct {
-	downtime map[string]map[string]string
-}
-
-func (cache *LivestatusCache) addDowntime(host, service, start string) {
-	if _, hostExists := cache.downtime[host]; !hostExists {
-		cache.downtime[host] = map[string]string{service: start}
-	} else if _, serviceExists := cache.downtime[host][service]; !serviceExists {
-		cache.downtime[host][service] = start
-	} else {
-		oldTimestamp, _ := strconv.Atoi(cache.downtime[host][service])
-		newTimestamp, _ := strconv.Atoi(start)
-		//Take timestamp if its newer
-		if oldTimestamp > newTimestamp {
-			cache.downtime[host][service] = start
-		}
-	}
 }
 
 const (
 	//Updateinterval on livestatus data.
 	intervalToCheckLivestatusCache = time.Duration(30) * time.Second
-	//Livestatusquery for services in downtime.
+	//QueryForServicesInDowntime livestatusquery for services in downtime.
 	QueryForServicesInDowntime = `GET services
 Columns: downtimes host_name display_name
 Filter: scheduled_downtime_depth > 0
 OutputFormat: csv
 
 `
-	//Livestatusquery for hosts in downtime
+	//QueryForHostsInDowntime livestatusquery for hosts in downtime
 	QueryForHostsInDowntime = `GET hosts
 Columns: downtimes name
 Filter: scheduled_downtime_depth > 0
 OutputFormat: csv
 
 `
+	//QueryForDowntimeid livestatusquery for downtime start/end
 	QueryForDowntimeid = `GET downtimes
 Columns: id start_time entry_time
 OutputFormat: csv
@@ -62,22 +44,22 @@ OutputFormat: csv
 `
 )
 
-//Constructor, which also starts it immediately.
-func NewLivestatusCacheBuilder(livestatusConnector *LivestatusConnector) *LivestatusCacheBuilder {
-	cache := &LivestatusCacheBuilder{livestatusConnector, make(chan bool, 2), logging.GetLogger(), LivestatusCache{make(map[string]map[string]string)}, &sync.Mutex{}}
+//NewLivestatusCacheBuilder constructor, which also starts it immediately.
+func NewLivestatusCacheBuilder(livestatusConnector *Connector) *CacheBuilder {
+	cache := &CacheBuilder{livestatusConnector, make(chan bool, 2), logging.GetLogger(), Cache{make(map[string]map[string]string)}, &sync.Mutex{}}
 	go cache.run()
 	return cache
 }
 
-//Signals the cache to stop.
-func (builder *LivestatusCacheBuilder) Stop() {
+//Stop signals the cache to stop.
+func (builder *CacheBuilder) Stop() {
 	builder.quit <- true
 	<-builder.quit
 	builder.log.Debug("LivestatusCacheBuilder stopped")
 }
 
 //Loop which caches livestatus downtimes and waits to quit.
-func (builder *LivestatusCacheBuilder) run() {
+func (builder *CacheBuilder) run() {
 	newCache := builder.createLivestatusCache()
 	builder.mutex.Lock()
 	builder.downtimeCache = newCache
@@ -97,8 +79,8 @@ func (builder *LivestatusCacheBuilder) run() {
 }
 
 //Builds host/service map which are in downtime
-func (builder LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
-	result := LivestatusCache{make(map[string]map[string]string)}
+func (builder CacheBuilder) createLivestatusCache() Cache {
+	result := Cache{make(map[string]map[string]string)}
 	downtimeCsv := make(chan []string)
 	finishedDowntime := make(chan bool)
 	hostServiceCsv := make(chan []string)
@@ -148,18 +130,18 @@ func (builder LivestatusCacheBuilder) createLivestatusCache() LivestatusCache {
 	return result
 }
 
-//Returns true if the host/service is in downtime
-func (cache LivestatusCacheBuilder) IsServiceInDowntime(host, service, time string) bool {
+//IsServiceInDowntime returns true if the host/service is in downtime
+func (builder CacheBuilder) IsServiceInDowntime(host, service, time string) bool {
 	result := false
-	cache.mutex.Lock()
-	if _, hostExists := cache.downtimeCache.downtime[host]; hostExists {
-		if _, serviceExists := cache.downtimeCache.downtime[host][service]; serviceExists {
-			if cache.downtimeCache.downtime[host][service] <= time {
+	builder.mutex.Lock()
+	if _, hostExists := builder.downtimeCache.downtime[host]; hostExists {
+		if _, serviceExists := builder.downtimeCache.downtime[host][service]; serviceExists {
+			if builder.downtimeCache.downtime[host][service] <= time {
 				result = true
 			}
 		}
 	}
 
-	cache.mutex.Unlock()
+	builder.mutex.Unlock()
 	return result
 }

@@ -76,7 +76,7 @@ func TestConnectToLivestatus(t *testing.T) {
 	livestatus := MockLivestatus{"localhost:6557", "tcp", map[string]string{"test\n\n": "foo;bar\n"}, true}
 
 	go livestatus.StartMockLivestatus()
-	connector := LivestatusConnector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
+	connector := Connector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
 
 	csv := make(chan []string)
 	finished := make(chan bool)

@@ -9,11 +9,13 @@ import (
 )
 
 const (
-	MinFileAgeInSeconds      = time.Duration(60) * time.Second
+	//MinFileAge is the duration to wait, before the files are parsed
+	MinFileAge = time.Duration(60) * time.Second
+	//IntervalToCheckDirectory the interval to check if there are new files
 	IntervalToCheckDirectory = time.Duration(5) * time.Second
 )
 
-//Scans the nagios spoolfile folder and delegates the files to its workers.
+//NagiosSpoolfileCollector scans the nagios spoolfile folder and delegates the files to its workers.
 type NagiosSpoolfileCollector struct {
 	quit           chan bool
 	jobs           chan string
@@ -21,8 +23,8 @@ type NagiosSpoolfileCollector struct {
 	workers        []*NagiosSpoolfileWorker
 }
 
-//Creates the give amount of Woker and starts them.
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) *NagiosSpoolfileCollector {
+//NagiosSpoolfileCollectorFactory creates the give amount of Woker and starts them.
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
 	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator, livestatusCacheBuilder)
@@ -35,7 +37,7 @@ func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, re
 	return s
 }
 
-//Stops his workers and itself.
+//Stop stops his workers and itself.
 func (s *NagiosSpoolfileCollector) Stop() {
 	s.quit <- true
 	<-s.quit
@@ -68,7 +70,7 @@ func (s *NagiosSpoolfileCollector) run() {
 	}
 }
 
-//Returns a list of file, of a folder, names which are older then a certain duration.
+//FilesInDirectoryOlderThanX returns a list of file, of a folder, names which are older then a certain duration.
 func FilesInDirectoryOlderThanX(folder string, age time.Duration) []string {
 	files, _ := ioutil.ReadDir(folder)
 	var oldFiles []string
@@ -80,7 +82,7 @@ func FilesInDirectoryOlderThanX(folder string, age time.Duration) []string {
 	return oldFiles
 }
 
-//Checks if the timestamp plus duration is in the past.
+//IsItTime checks if the timestamp plus duration is in the past.
 func IsItTime(timeStamp time.Time, duration time.Duration) bool {
 	return time.Now().After(timeStamp.Add(duration))
 }

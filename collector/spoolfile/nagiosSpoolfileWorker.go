@@ -16,13 +16,13 @@ import (
 
 //NagiosSpoolfileWorker parses the given spoolfiles and adds the extraced perfdata to the queue.
 type NagiosSpoolfileWorker struct {
-	workerId               int
+	workerID               int
 	quit                   chan bool
 	jobs                   chan string
 	results                chan interface{}
 	statistics             statistics.DataReceiver
 	fieldseperator         string
-	livestatusCacheBuilder *livestatus.LivestatusCacheBuilder
+	livestatusCacheBuilder *livestatus.CacheBuilder
 }
 
 const hostPerfdata string = "HOSTPERFDATA"
@@ -41,11 +41,11 @@ var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);
 var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.LivestatusCacheBuilder) func() *NagiosSpoolfileWorker {
-	workerId := 0
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
+	workerID := 0
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerId, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
-		workerId++
+		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
+		workerID++
 		go s.run()
 		return s
 	}

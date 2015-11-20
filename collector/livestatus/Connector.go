@@ -10,15 +10,15 @@ import (
 	"strings"
 )
 
-//Fetches data from livestatus.
-type LivestatusConnector struct {
+//Connector fetches data from livestatus.
+type Connector struct {
 	Log               *factorlog.FactorLog
 	LivestatusAddress string
 	ConnectionType    string
 }
 
 //Queries livestatus and returns an list of list outer list are lines inner elements within the line.
-func (connector LivestatusConnector) connectToLivestatus(query string, result chan []string, outerFinish chan bool) {
+func (connector Connector) connectToLivestatus(query string, result chan []string, outerFinish chan bool) {
 	var conn net.Conn
 	switch connector.ConnectionType {
 	case "tcp":

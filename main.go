@@ -19,10 +19,6 @@ import (
 	"time"
 )
 
-type Stoppable interface {
-	Stop()
-}
-
 //Interval of the main loop, in which the amount of workers are calculated.
 const updateRate = 120
 
@@ -61,7 +57,7 @@ Commandline Parameter:
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
-	liveconnector := &livestatus.LivestatusConnector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
+	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
 	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector, cfg.Grafana.FieldSeperator)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
@@ -107,8 +103,6 @@ Commandline Parameter:
 			}
 		}
 	}
-
-	cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
 }
 
 //Wait till the Performance Data is sent.

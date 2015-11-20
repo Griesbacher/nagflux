@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-func TestNewLivestatusCacheBuilder(t *testing.T) {
-	connector := &LivestatusConnector{logging.GetLogger(), "localhost:6558", "tcp"}
+func TestNewCacheBuilder(t *testing.T) {
+	connector := &Connector{logging.GetLogger(), "localhost:6558", "tcp"}
 	if NewLivestatusCacheBuilder(connector) == nil {
 		t.Error("Constructor returned null pointer")
 	}
 }
 
 func TestAddDowntime(t *testing.T) {
-	cache := LivestatusCache{make(map[string]map[string]string)}
+	cache := Cache{make(map[string]map[string]string)}
 	if !reflect.DeepEqual(cache.downtime, make(map[string]map[string]string)) {
 		t.Error("Cache should be empty at the beginning.")
 	}
@@ -38,7 +38,7 @@ func TestServiceInDowntime(t *testing.T) {
 	queries[QueryForDowntimeid] = "1;0;1\n2;2;3\n3;0;1\n4;1;2\n5;2;1\n"
 	livestatus := &MockLivestatus{"localhost:6558", "tcp", queries, true}
 	go livestatus.StartMockLivestatus()
-	connector := &LivestatusConnector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
+	connector := &Connector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
 
 	cacheBuilder := NewLivestatusCacheBuilder(connector)
 

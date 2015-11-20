@@ -5,6 +5,7 @@ import (
 	"github.com/griesbacher/nagflux/helper"
 )
 
+//PerformanceData represents the nagios perfdata
 type PerformanceData struct {
 	hostname         string
 	service          string

@@ -1,4 +1,3 @@
-//Contains livestatus related collectors.
 package livestatus
 
 import (
@@ -8,11 +7,11 @@ import (
 	"time"
 )
 
-//Fetches data from livestatus.
-type LivestatusCollector struct {
+//Collector fetches data from livestatus.
+type Collector struct {
 	quit                chan bool
 	jobs                chan interface{}
-	livestatusConnector *LivestatusConnector
+	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
 	fieldSeperator      string
 }
@@ -20,7 +19,7 @@ type LivestatusCollector struct {
 const (
 	//Updateinterval on livestatus data.
 	intervalToCheckLivestatus = time.Duration(2) * time.Minute
-	//Livestatusquery for notifications.
+	//QueryForNotifications livestatusquery for notifications.
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
@@ -29,14 +28,14 @@ Negate:
 OutputFormat: csv
 
 `
-	//Livestatusquery for comments
+	//QueryForComments livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
 Filter: entry_time > %d
 OutputFormat: csv
 
 `
-	//Livestatusquery for downtimes
+	//QueryForDowntimes livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
 Filter: entry_time > %d
@@ -45,22 +44,22 @@ OutputFormat: csv
 `
 )
 
-//Constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs chan interface{}, livestatusConnector *LivestatusConnector, fieldSeperator string) *LivestatusCollector {
-	live := &LivestatusCollector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
+//NewLivestatusCollector constructor, which also starts it immediately.
+func NewLivestatusCollector(jobs chan interface{}, livestatusConnector *Connector, fieldSeperator string) *Collector {
+	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
 	go live.run()
 	return live
 }
 
-//Signals the collector to stop.
-func (live *LivestatusCollector) Stop() {
+//Stop signals the collector to stop.
+func (live *Collector) Stop() {
 	live.quit <- true
 	<-live.quit
 	live.log.Debug("LivestatusCollector stoped")
 }
 
 //Loop which checks livestats for data or waits to quit.
-func (live LivestatusCollector) run() {
+func (live Collector) run() {
 	live.queryData()
 	for {
 		select {
@@ -74,7 +73,7 @@ func (live LivestatusCollector) run() {
 }
 
 //Queries livestatus and returns the data to the gobal queue
-func (live LivestatusCollector) queryData() {
+func (live Collector) queryData() {
 	printables := make(chan Printable)
 	finished := make(chan bool)
 	go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
@@ -93,7 +92,7 @@ func (live LivestatusCollector) queryData() {
 	}
 }
 
-func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, addTimestampToQuery bool, printables chan Printable, outerFinish chan bool) {
+func (live Collector) requestPrintablesFromLivestatus(query string, addTimestampToQuery bool, printables chan Printable, outerFinish chan bool) {
 	queryWithTimestamp := query
 	if addTimestampToQuery {
 		queryWithTimestamp = addTimestampToLivestatusQuery(query)
@@ -115,13 +114,13 @@ func (live LivestatusCollector) requestPrintablesFromLivestatus(query string, ad
 				}
 			case QueryForComments:
 				if len(line) == 6 {
-					printables <- LivestatusCommentData{LivestatusData{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- CommentData{Data{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForComments out of range", line)
 				}
 			case QueryForDowntimes:
 				if len(line) == 6 {
-					printables <- LivestatusDowntimeData{LivestatusData{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- DowntimeData{Data{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForDowntimes out of range", line)
 				}
@@ -141,21 +140,21 @@ func addTimestampToLivestatusQuery(query string) string {
 	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix())
 }
 
-func (live LivestatusCollector) handleQueryForNotifications(line []string) *LivestatusNotificationData {
+func (live Collector) handleQueryForNotifications(line []string) *NotificationData {
 	switch line[0] {
 	case "HOST NOTIFICATION":
 		if len(line) == 10 {
 			//Custom
-			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+			return &NotificationData{Data{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 		} else if len(line) == 9 {
-			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+			return &NotificationData{Data{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		}
 	case "SERVICE NOTIFICATION":
 		if len(line) == 11 {
 			//Custom
-			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+			return &NotificationData{Data{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
 		} else if len(line) == 10 {
-			return &LivestatusNotificationData{LivestatusData{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+			return &NotificationData{Data{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 		}
 
 	}
