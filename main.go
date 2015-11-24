@@ -12,7 +12,6 @@ import (
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
-	"gopkg.in/gcfg.v1"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,11 +44,8 @@ Commandline Parameter:
 	flag.Parse()
 
 	//Load config
-	var cfg config.Config
-	err := gcfg.ReadFileInto(&cfg, configPath)
-	if err != nil {
-		panic(err)
-	}
+	config.InitConfig(configPath)
+	var cfg config.Config = config.GetConfig()
 
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
@@ -98,12 +94,12 @@ Commandline Parameter:
 			if err != nil {
 				continue
 			}
-			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds()/float64(influx.AmountWorkers())) / updateRate
-			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueue), idleTime*100)
+			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
+			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueue), idleTime * 100)
 
 			if idleTime > 0.25 {
 				influx.RemoveWorker()
-			} else if idleTime < 0.1 && float64(len(resultQueue)) > resultQueueLength*0.8 {
+			} else if idleTime < 0.1 && float64(len(resultQueue)) > resultQueueLength * 0.8 {
 				influx.AddWorker()
 			}
 		}

@@ -219,16 +219,19 @@ func (worker Worker) readQueriesFromQueue() []string {
 
 //sends the raw data to influxdb and returns an err if given.
 func (worker Worker) sendData(rawData []byte, log bool) error {
+	worker.log.Debug(string(rawData))
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
 		worker.log.Warn(err)
 	}
+	req.Header.Set("User-Agent", "Nagflux")
 	resp, err := worker.httpClient.Do(req)
 	if err != nil {
 		worker.log.Warn(err)
 		return errorHTTPClient
 	}
 	defer resp.Body.Close()
+	worker.log.Debug(resp.Status)
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		//OK
 		return nil

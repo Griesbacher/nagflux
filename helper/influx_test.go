@@ -6,10 +6,9 @@ var SanitizeInfluxData = []struct {
 	input  string
 	output string
 }{
-	{"a\\a", "a\\\\a"},
-	{"a a", "a\\ a"},
-	{"a,a", "a\\,a"},
-	{"\\, ", "\\\\\\,\\ "},
+	{"a a", `a\ a`},
+	{"a,a", `a\,a`},
+	{", ",  `\,\ `},
 	{"aa", "aa"},
 	{`c:\ `, `c:\\\ `},
 	{"", ""},
