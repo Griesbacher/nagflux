@@ -10,7 +10,7 @@ var SanitizeInfluxData = []struct {
 	{"a,a", `a\,a`},
 	{", ",  `\,\ `},
 	{"aa", "aa"},
-	{`c:\ `, `c:\\\ `},
+	{`c:\ `, `c:\\ `},
 	{"", ""},
 }
 
