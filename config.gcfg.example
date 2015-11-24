@@ -10,7 +10,7 @@ NagfluxSpoolfileFolder = "/var/spool/nagflux"
 #leave empty for stdout
 LogFile = ""
 #List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
-MinSeverity = "DEBUG"
+MinSeverity = "INFO"
 
 [Monitoring]
 #leave empty to disable
@@ -22,6 +22,8 @@ Version = 0.9
 Address = "http://127.0.0.1:8086"
 Arguments = "precision=ms&u=icinga&p=icinga&db=icinga"
 CreateDatabaseIfNotExists = true
+NastyString = "\\ "
+NastyStringToReplace = " "
 
 [Grafana]
 FieldSeperator = "&"
