@@ -1,27 +1,27 @@
 dependencies:
-	pre:
-		- go get github.com/axw/gocov/gocov
-		- go get github.com/mattn/goveralls
-		- go get golang.org/x/tools/cmd/cover
-	override:
-		- cd ..
-		- rm -rf /home/ubuntu/.go_workspace/src/github.com/griesbacher/nagflux
-		- rm -rf /home/ubuntu/.go_project/src/github.com/griesbacher/nagflux
-		- go get -u -t github.com/griesbacher/nagflux; echo 1
-		- go build -v
+    pre:
+        - go get github.com/axw/gocov/gocov
+        - go get github.com/mattn/goveralls
+        - go get golang.org/x/tools/cmd/cover
+    override:
+        - cd ..
+        - rm -rf /home/ubuntu/.go_workspace/src/github.com/griesbacher/nagflux
+        - rm -rf /home/ubuntu/.go_project/src/github.com/griesbacher/nagflux
+        - go get -u -t github.com/griesbacher/nagflux; echo 1
+        - go build -v
 
 database:
-	override:
-		- wget https://s3.amazonaws.com/influxdb/influxdb_0.9.5_amd64.deb
-		- sudo dpkg -i influxdb_0.9.5_amd64.deb
-		- influxd &> influx.log:
-			background: true
-		- sleep 5
-		- influx -execute 'create database circle'
-		- influx -execute 'show databases'
+    override:
+        - wget https://s3.amazonaws.com/influxdb/influxdb_0.9.5_amd64.deb
+        - sudo dpkg -i influxdb_0.9.5_amd64.deb
+        - influxd &> influx.log:
+            background: true
+        - sleep 5
+        - influx -execute 'create database circle'
+        - influx -execute 'show databases'
 
 test:
-	post:
-		- bash coverage.sh
-		- goveralls -coverprofile=cover.out -service=circle-ci -repotoken=$COVERALLS_TOKEN && rm cover.out
-		- curl --data "repo=griesbacher/nagflux" http://goreportcard.com/checks
+    post:
+        - bash coverage.sh
+        - goveralls -coverprofile=cover.out -service=circle-ci -repotoken=$COVERALLS_TOKEN && rm cover.out
+        - curl --data "repo=griesbacher/nagflux" http://goreportcard.com/checks
