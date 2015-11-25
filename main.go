@@ -30,6 +30,7 @@ const updateRate = 120
 const resultQueueLength = 1000.0
 
 var log *factorlog.FactorLog
+var quit = make(chan bool)
 
 func main() {
 	//Parse Args
@@ -83,9 +84,9 @@ Commandline Parameter:
 		<-interruptChannel
 		log.Warn("Got Interrupted")
 		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
-		os.Exit(1)
+		quit <- true
 	}()
-
+	loop:
 	//Main loop
 	for {
 		select {
@@ -102,6 +103,8 @@ Commandline Parameter:
 			} else if idleTime < 0.1 && float64(len(resultQueue)) > resultQueueLength*0.8 {
 				influx.AddWorker()
 			}
+		case <-quit:
+			break loop
 		}
 	}
 }
