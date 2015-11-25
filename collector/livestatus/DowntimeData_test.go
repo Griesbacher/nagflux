@@ -1,13 +1,13 @@
 package livestatus
 
 import (
-	"testing"
 	"github.com/griesbacher/nagflux/logging"
+	"testing"
 )
 
 func TestSanitizeValuesDowntime(t *testing.T) {
 	t.Parallel()
-	down := DowntimeData{Data:Data{fieldSeperator:"&", hostName:"host 1", serviceDisplayName:"service 1", author:"philip"}, endTime:"123"}
+	down := DowntimeData{Data: Data{fieldSeperator: "&", hostName: "host 1", serviceDisplayName: "service 1", author: "philip"}, endTime: "123"}
 	down.sanitizeValues()
 	if down.Data.hostName != `host\ 1` {
 		t.Errorf("The notificationType should be escaped. Expected: %s Got: %s", `host\ 1`, down.Data.hostName)
@@ -17,7 +17,7 @@ func TestSanitizeValuesDowntime(t *testing.T) {
 func TestPrintDowntime(t *testing.T) {
 	t.Parallel()
 	logging.InitTestLogger()
-	down := DowntimeData{Data:Data{fieldSeperator:"&", hostName:"host 1", serviceDisplayName:"service 1", author:"philip"}, endTime:"123"}
+	down := DowntimeData{Data: Data{fieldSeperator: "&", hostName: "host 1", serviceDisplayName: "service 1", author: "philip"}, endTime: "123"}
 	if !didThisPanic(down.Print, 0.8) {
 		t.Errorf("This should panic, due to unsuported influxdb version")
 	}

@@ -8,6 +8,7 @@ import (
 var config Config
 var mutex = &sync.Mutex{}
 
+//InitConfig creates a config object from the give configpath
 func InitConfig(configPath string) {
 	var err error
 	mutex.Lock()
@@ -18,6 +19,7 @@ func InitConfig(configPath string) {
 	}
 }
 
+//GetConfig returns the static config object
 func GetConfig() Config {
 	return config
 }

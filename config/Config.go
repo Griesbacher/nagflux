@@ -22,8 +22,8 @@ type Config struct {
 		Arguments                 string
 		Version                   float32
 		CreateDatabaseIfNotExists bool
-		NastyString              string
-		NastyStringToReplace              string
+		NastyString               string
+		NastyStringToReplace      string
 	}
 	Grafana struct {
 		FieldSeperator string
