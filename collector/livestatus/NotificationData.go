@@ -25,9 +25,9 @@ func (notification NotificationData) Print(version float32) string {
 	notification.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
-		if notification.notificationType == "HOST\\ NOTIFICATION" {
+		if notification.notificationType == `HOST\ NOTIFICATION` {
 			tags = ",type=host_notification"
-		} else if notification.notificationType == "SERVICE\\ NOTIFICATION" {
+		} else if notification.notificationType == `SERVICE\ NOTIFICATION` {
 			tags = ",type=service_notification"
 		} else {
 			logging.GetLogger().Warn("This notification type is not supported:" + notification.notificationType)
@@ -35,7 +35,6 @@ func (notification NotificationData) Print(version float32) string {
 		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), notification.comment)
 		return notification.genInfluxLineWithValue(tags, value)
 	}
-	logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
-	return ""
-
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
+	panic("")
 }

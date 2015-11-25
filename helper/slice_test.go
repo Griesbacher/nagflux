@@ -14,6 +14,7 @@ var SumIntSliceTillPosData = []struct {
 }
 
 func TestSumIntSliceTillPos(t *testing.T) {
+	t.Parallel()
 	for _, data := range SumIntSliceTillPosData {
 		actual := SumIntSliceTillPos(data.slice, data.pos)
 		if actual != data.output {

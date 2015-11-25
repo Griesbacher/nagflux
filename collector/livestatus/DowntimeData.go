@@ -27,6 +27,6 @@ func (downtime DowntimeData) Print(version float32) string {
 		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.endTime))
 		return start + "\n" + end
 	}
-	logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
-	return ""
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	panic("")
 }

@@ -41,3 +41,8 @@ func GetLogger() *factorlog.FactorLog {
 	}
 	return singleLogger
 }
+
+//InitTestLogger creates logger for testing
+func InitTestLogger() {
+	singleLogger = factorlog.New(os.Stderr, factorlog.NewStdFormatter(""))
+}

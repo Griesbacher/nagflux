@@ -15,6 +15,7 @@ var SanitizeInfluxData = []struct {
 }
 
 func TestSanitizeInfluxInput(t *testing.T) {
+	t.Parallel()
 	for _, data := range SanitizeInfluxData {
 		actual := SanitizeInfluxInput(data.input)
 		if actual != data.output {

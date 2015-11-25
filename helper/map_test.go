@@ -21,6 +21,7 @@ func TestCopyMap(t *testing.T) {
 }
 
 func TestPrintMapAsString(t *testing.T) {
+	t.Parallel()
 	map1 := map[string]string{"k1": "v1", "k2": "v2"}
 	result := PrintMapAsString(map1, ";", "=")
 	expected1 := "k1=v1;k2=v2"
