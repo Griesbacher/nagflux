@@ -101,4 +101,12 @@ func TestConnectToLivestatus(t *testing.T) {
 		}
 	}
 	livestatus.StopMockLivestatus()
+
+	connector2 := Connector{logging.GetLogger(), "/live", "file"}
+	csv2 := make(chan []string)
+	finished2 := make(chan bool)
+	go connector2.connectToLivestatus("test\n\n", csv2, finished2)
+	if result := <-finished2; result {
+		t.Error("Expected an error with unkown connection type")
+	}
 }

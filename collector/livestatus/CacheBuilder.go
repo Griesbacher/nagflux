@@ -47,7 +47,7 @@ OutputFormat: csv
 //NewLivestatusCacheBuilder constructor, which also starts it immediately.
 func NewLivestatusCacheBuilder(livestatusConnector *Connector) *CacheBuilder {
 	cache := &CacheBuilder{livestatusConnector, make(chan bool, 2), logging.GetLogger(), Cache{make(map[string]map[string]string)}, &sync.Mutex{}}
-	go cache.run()
+	go cache.run(intervalToCheckLivestatusCache)
 	return cache
 }
 
@@ -59,7 +59,7 @@ func (builder *CacheBuilder) Stop() {
 }
 
 //Loop which caches livestatus downtimes and waits to quit.
-func (builder *CacheBuilder) run() {
+func (builder *CacheBuilder) run(checkInterval time.Duration) {
 	newCache := builder.createLivestatusCache()
 	builder.mutex.Lock()
 	builder.downtimeCache = newCache
@@ -69,7 +69,7 @@ func (builder *CacheBuilder) run() {
 		case <-builder.quit:
 			builder.quit <- true
 			return
-		case <-time.After(intervalToCheckLivestatusCache):
+		case <-time.After(checkInterval):
 			newCache = builder.createLivestatusCache()
 			builder.mutex.Lock()
 			builder.downtimeCache = newCache
