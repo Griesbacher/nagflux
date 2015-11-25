@@ -34,6 +34,6 @@ func (comment CommentData) Print(version float32) string {
 		}
 		return comment.genInfluxLine(tags)
 	}
-	logging.GetLogger().Fatalf("This influxversion [%f] given in the config is not supportet", version)
-	return ""
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	panic("")
 }
