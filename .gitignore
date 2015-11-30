@@ -30,3 +30,4 @@ config.gcfg
 nagflux.dump
 nagflux.dump-errors
 cover.out
+test

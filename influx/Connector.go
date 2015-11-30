@@ -152,17 +152,6 @@ func (connector *Connector) TestIfIsAlive() bool {
 	return result
 }
 
-//ShowSeriesResult represents the JSON query result
-type ShowSeriesResult struct {
-	Results []struct {
-		Series []struct {
-			Columns []string
-			Name    string
-			Values  [][]string
-		}
-	}
-}
-
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestDatabaseExists() bool {
 	resp, _ := http.Get(connector.connectionHost + "/query?q=show%20databases")

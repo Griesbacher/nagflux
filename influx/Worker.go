@@ -31,7 +31,7 @@ type Worker struct {
 	IsRunning    bool
 }
 
-const dataTimeout = time.Duration(10) * time.Second
+const dataTimeout = time.Duration(5) * time.Second
 
 var errorInterrupted = errors.New("Got interrupted")
 var errorBadRequest = errors.New("400 Bad Request")

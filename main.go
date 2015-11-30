@@ -86,7 +86,7 @@ Commandline Parameter:
 		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
 		quit <- true
 	}()
-	loop:
+loop:
 	//Main loop
 	for {
 		select {

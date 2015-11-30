@@ -2,9 +2,9 @@ package livestatus
 
 import (
 	"github.com/griesbacher/nagflux/logging"
+	"reflect"
 	"testing"
 	"time"
-	"reflect"
 )
 
 func TestNewCacheBuilder(t *testing.T) {
