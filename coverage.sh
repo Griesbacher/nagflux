@@ -20,4 +20,4 @@ if ls $dir/*_test.go &> /dev/null; then
 fi
 done
 
-coverage $PackageRoot
+#coverage $PackageRoot
