@@ -67,7 +67,9 @@ func TestEverything(t *testing.T) {
 }
 
 func createTestData() {
-	os.MkdirAll("test/nagios", 0600)
+	if err := os.MkdirAll("test/nagios", 0700); err != nil {
+		panic(err)
+	}
 	nagiosSpoolfile := []byte{}
 	for _, data := range TestData {
 		nagiosSpoolfile = append(nagiosSpoolfile, []byte(data.input)...)
