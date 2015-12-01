@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	address = "localhost:1"
+	address = "localhost:9999"
 	typ     = "tcp"
 )
 
