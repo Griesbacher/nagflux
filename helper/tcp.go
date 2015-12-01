@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+//WaitForPort tries to connect to a server of returns with an error if no connection was made within the time
 func WaitForPort(typ, address string, timeout time.Duration) error {
 	done := make(chan bool)
 	timeOver := make(chan bool)
