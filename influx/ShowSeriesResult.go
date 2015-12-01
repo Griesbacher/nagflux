@@ -14,5 +14,5 @@ type ResultsStruct []struct {
 type SeriesStruct []struct {
 	Columns []string
 	Name    string
-	Values  [][]string
+	Values  [][]interface{}
 }

@@ -26,7 +26,7 @@ var TestData = []struct {
 	output influx.SeriesStruct
 }{
 	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::x	SERVICEDESC::y	SERVICEPERFDATA::Disk c:\ used=4;2;10;1;4	SERVICECHECKCOMMAND::usage
-`, influx.SeriesStruct{{Columns: []string{"time", "fill", "type", "value"}, Name: `x&y&usage&Disk c: used&crit`, Values: [][]string{[]string{"1970-01-01T00:00:01Z", "none", "normal", ""}}}}},
+`, influx.SeriesStruct{{Columns: []string{"time", "fill", "type", "value"}, Name: `x&y&usage&Disk c: used&crit`, Values: [][]interface{}{[]interface{}{"1970-01-01T00:00:01Z", "none", "normal", 10.0}}}}},
 }
 
 var OldConfig string
@@ -39,13 +39,13 @@ func init() {
 	influxParam = os.Getenv(envInflux)
 	if influxParam == "" {
 		influxParam = "http://127.0.0.1:8086"
-		fmt.Printf("%s is not set, using default: %s", envInflux, influxParam)
+		fmt.Printf("%s is not set, using default: %s\n", envInflux, influxParam)
 	}
 
 	livestatusParam = os.Getenv(envLivestatus)
 	if livestatusParam == "" {
 		livestatusParam = "127.0.0.1:6557"
-		fmt.Printf("%s is not set, using default: %s", envLivestatus, livestatusParam)
+		fmt.Printf("%s is not set, using default: %s\n", envLivestatus, livestatusParam)
 	}
 }
 
