@@ -73,7 +73,7 @@ func (mockLive *MockLivestatus) StopMockLivestatus() {
 
 func TestConnectToLivestatus(t *testing.T) {
 	//Create Livestatus mock
-	livestatus := MockLivestatus{"localhost:6557", "tcp", map[string]string{"test\n\n": "foo;bar\n"}, true}
+	livestatus := MockLivestatus{"localhost:6560", "tcp", map[string]string{"test\n\n": "foo;bar\n"}, true}
 
 	go livestatus.StartMockLivestatus()
 	connector := Connector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
