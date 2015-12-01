@@ -21,6 +21,8 @@ database:
         - influx -execute 'show databases'
 
 test:
+    override:
+        - go test -v ./...
     post:
         - bash coverage.sh
         - goveralls -coverprofile=cover.out -service=circle-ci -repotoken=$COVERALLS_TOKEN && rm cover.out
