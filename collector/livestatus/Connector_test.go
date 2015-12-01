@@ -2,6 +2,7 @@ package livestatus
 
 import (
 	"bufio"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"log"
 	"net"
@@ -44,27 +45,31 @@ func (mockLive *MockLivestatus) StartMockLivestatus() {
 			//log.Println(err)
 			continue
 		}
-		connReader := bufio.NewReader(conn)
-		connWriter := bufio.NewWriter(conn)
-		query := ""
-		line, _ := connReader.ReadString('\n')
-		for line != "\n" {
-			query += line
-			line, _ = connReader.ReadString('\n')
-		}
-		query += "\n"
-		answer, found := mockLive.Queries[query]
-		if found == false {
-			answer = "\n\n"
-		}
-		connWriter.WriteString(answer)
-		connWriter.Flush()
-		conn.Close()
+		go mockLive.handle(conn)
 
 		mutex.Lock()
 		isRunning = mockLive.isRunning
 		mutex.Unlock()
 	}
+}
+
+func (mockLive *MockLivestatus) handle(conn net.Conn) {
+	connReader := bufio.NewReader(conn)
+	connWriter := bufio.NewWriter(conn)
+	query := ""
+	line, _ := connReader.ReadString('\n')
+	for line != "\n" {
+		query += line
+		line, _ = connReader.ReadString('\n')
+	}
+	query += "\n"
+	answer, found := mockLive.Queries[query]
+	if found == false {
+		answer = "\n\n"
+	}
+	connWriter.WriteString(answer)
+	connWriter.Flush()
+	conn.Close()
 }
 
 func (mockLive *MockLivestatus) StopMockLivestatus() {
@@ -77,7 +82,9 @@ func TestConnectToLivestatus(t *testing.T) {
 
 	go livestatus.StartMockLivestatus()
 	connector := Connector{logging.GetLogger(), livestatus.LivestatusAddress, livestatus.ConnectionType}
-
+	if err := helper.WaitForPort("tcp", "localhost:6560", time.Duration(2)*time.Second); err != nil {
+		panic(err)
+	}
 	csv := make(chan []string)
 	finished := make(chan bool)
 	go connector.connectToLivestatus("test\n\n", csv, finished)

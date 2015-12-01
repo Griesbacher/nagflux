@@ -17,7 +17,6 @@ database:
         - influxd &> influx.log:
             background: true
         - sleep 5
-        - influx -execute 'create database circle'
         - influx -execute 'show databases'
 
 test:
