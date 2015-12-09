@@ -63,7 +63,7 @@ func TestEverything(t *testing.T) {
 		t.Errorf("Expected data was not found in the influxdb within the timerange: %s", timeout)
 	}
 	quit <- true
-	dropDatabase()
+	//dropDatabase()
 }
 
 func createTestData() {
