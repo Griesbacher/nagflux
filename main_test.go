@@ -14,24 +14,30 @@ import (
 )
 
 const (
-	filename      = "config.gcfg"
-	envInflux     = "NAGFLUX_TEST_INFLUX"
+	filename = "config.gcfg"
+	envInflux = "NAGFLUX_TEST_INFLUX"
 	envLivestatus = "NAGFLUX_TEST_LIVESTATUS"
-	databaseName  = "NAGFLUX_CI_TEST"
-	timeout       = time.Duration(20) * time.Second
+	envSave = "NAGFLUX_TEST_SAVE"
+	databaseName = "NAGFLUX_CI_TEST"
+	timeout = time.Duration(20) * time.Second
 )
 
 var TestData = []struct {
 	input  string
 	output influx.SeriesStruct
 }{
-	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::x	SERVICEDESC::y	SERVICEPERFDATA::Disk c:\ used=4;2;10;1;4	SERVICECHECKCOMMAND::usage
-`, influx.SeriesStruct{{Columns: []string{"time", "fill", "type", "value"}, Name: `x&y&usage&Disk c: used&crit`, Values: [][]interface{}{[]interface{}{"1970-01-01T00:00:01Z", "none", "normal", 10.0}}}}},
+	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::b	SERVICEDESC::b	SERVICEPERFDATA::C:\ use=1;;;;	SERVICECHECKCOMMAND::usage
+`, influx.SeriesStruct{{Columns: []string{"time", "value"}, Name: `b&b&usage&C: use&value`, Values: [][]interface{}{[]interface{}{1000.0, 1.0}}}}},
+	//Basic
+	{`DATATYPE::SERVICEPERFDATA	TIMET::2	HOSTNAME::a	SERVICEDESC::a	SERVICEPERFDATA::rta=1;;;;	SERVICECHECKCOMMAND::ping
+`, influx.SeriesStruct{{Columns: []string{"time", "value"}, Name: `a&a&ping&rta&value`, Values: [][]interface{}{[]interface{}{2000.0, 1.0}}}}},
+	//Test nastystrings
 }
 
 var OldConfig string
 var influxParam string
 var livestatusParam string
+var save bool
 var finished chan bool
 
 func init() {
@@ -47,6 +53,11 @@ func init() {
 		livestatusParam = "127.0.0.1:6557"
 		fmt.Printf("%s is not set, using default: %s\n", envLivestatus, livestatusParam)
 	}
+
+	if os.Getenv(envSave) == "" {
+		save = true
+		fmt.Println("Will save the database")
+	}
 }
 
 func TestEverything(t *testing.T) {
@@ -60,10 +71,13 @@ func TestEverything(t *testing.T) {
 	select {
 	case <-finished:
 	case <-time.After(timeout):
-		t.Errorf("Expected data was not found in the influxdb within the timerange: %s", timeout)
+		result, err := getEverything()
+		t.Errorf("Expected data was not found in the influxdb within the timerange: %s\nError: %+v\nDatabase:%+v", timeout, err, result)
 	}
 	quit <- true
-	//dropDatabase()
+	if !save {
+		dropDatabase()
+	}
 }
 
 func createTestData() {
@@ -101,7 +115,7 @@ func checkDatabase() {
 }
 
 func getEverything() (*influx.ShowSeriesResult, error) {
-	resp, err := http.Get(influxParam + "/query?db=" + url.QueryEscape(databaseName) + "&q=select%20*%20from%20%2F.*%2F")
+	resp, err := http.Get(influxParam + "/query?db=" + url.QueryEscape(databaseName) + "&q=select%20*%20from%20%2F.*%2F&epoch=ms")
 	if err != nil {
 		return nil, err
 	}
