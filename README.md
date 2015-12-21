@@ -39,5 +39,11 @@ else:
 ./nagflux -configPath=/path/to/config.gcfg
 ```
 
+## Debugging
+- If the InfluxDB is not available Nagflux will stop and an log entry will be written.
+- If the Livestatus is not available Nagflux will just write an log entry, but additional informations can't be gathered.
+- If any part of the Tablename is not valid for the InfluxDB an log entry will written and the data is writen to a file which has the same name as the logfile just with the ending '.dump-errors'. You could fix the errors by hand and copy the lines in the NagfluxSpoolfileFolder
+- If the Data can't be send to the InfluxDB, Nagflux will also write them in the '.dump-errors' file, you can handle them the same way.
+
 ## OMD
 Nagflux is fully integrated in [OMD-Labs](https://github.com/ConSol/omd), as well as Histou is. Therefor if you wanna try it out, it's maybe easier to install OMD-Labs.
