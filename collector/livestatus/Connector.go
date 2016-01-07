@@ -54,6 +54,7 @@ func (connector Connector) connectToLivestatus(query string, result chan []strin
 		if length > 0 {
 			csvReader := csv.NewReader(strings.NewReader(string(message)))
 			csvReader.Comma = ';'
+			csvReader.LazyQuotes = true
 			records, err := csvReader.Read()
 			if err != nil {
 				connector.Log.Warn("Query failed while csv parsing:" + query)
