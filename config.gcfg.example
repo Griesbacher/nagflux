@@ -20,7 +20,7 @@ WebserverPort = ""
 [Influx]
 Version = 0.9
 Address = "http://127.0.0.1:8086"
-Arguments = "precision=ms&u=icinga&p=icinga&db=icinga"
+Arguments = "precision=ms&u=root&p=root&db=nagflux"
 CreateDatabaseIfNotExists = true
 NastyString = "\\ "
 NastyStringToReplace = " "
