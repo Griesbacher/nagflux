@@ -7,7 +7,7 @@ import (
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/config"
-	"github.com/griesbacher/nagflux/influx"
+	"github.com/griesbacher/nagflux/target/influx"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
