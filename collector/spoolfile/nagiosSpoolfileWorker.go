@@ -19,7 +19,7 @@ type NagiosSpoolfileWorker struct {
 	workerID               int
 	quit                   chan bool
 	jobs                   chan string
-	results                chan interface{}
+	results                []chan interface{}
 	statistics             statistics.DataReceiver
 	fieldseperator         string
 	livestatusCacheBuilder *livestatus.CacheBuilder
@@ -41,7 +41,7 @@ var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);
 var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results []chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
 		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
@@ -77,14 +77,16 @@ func (w *NagiosSpoolfileWorker) run() {
 			for _, line := range lines {
 				splittedPerformanceData := helper.StringToMap(line, "\t", "::")
 				for singlePerfdata := range w.performanceDataIterator(splittedPerformanceData) {
-					select {
-					case <-w.quit:
-						w.quit <- true
-						return
-					case w.results <- singlePerfdata:
-						queries++
-					case <-time.After(time.Duration(1) * time.Minute):
-						logging.GetLogger().Warn("NagiosSpoolfileWorker: Could not write to buffer")
+					for i := range w.results {
+						select {
+						case <-w.quit:
+							w.quit <- true
+							return
+						case w.results[i] <- singlePerfdata:
+							queries++
+						case <-time.After(time.Duration(1) * time.Minute):
+							logging.GetLogger().Warn("NagiosSpoolfileWorker: Could not write to buffer")
+						}
 					}
 				}
 			}
@@ -92,7 +94,7 @@ func (w *NagiosSpoolfileWorker) run() {
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{Queries: queries, Time: time.Since(startTime)})
+			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{Queries: queries / len(w.results), Time: time.Since(startTime)})
 		case <-time.After(time.Duration(5) * time.Minute):
 			logging.GetLogger().Debug("NagiosSpoolfileWorker: Got nothing to do")
 		}

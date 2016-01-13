@@ -11,14 +11,14 @@ import (
 //DumpfileCollector collects queries from old runs, which could not been completed.
 type DumpfileCollector struct {
 	quit      chan bool
-	jobs      chan interface{}
+	jobs      []chan interface{}
 	dumpFile  string
 	log       *factorlog.FactorLog
 	IsRunning bool
 }
 
 //NewDumpfileCollector constructor, which also starts the collector
-func NewDumpfileCollector(jobs chan interface{}, dumpFile string) *DumpfileCollector {
+func NewDumpfileCollector(jobs []chan interface{}, dumpFile string) *DumpfileCollector {
 	s := &DumpfileCollector{make(chan bool, 2), jobs, dumpFile, logging.GetLogger(), true}
 	go s.run()
 	return s
@@ -43,14 +43,16 @@ func (dump DumpfileCollector) run() {
 			dump.log.Infof("Reading Dumpfile")
 			defer file.Close()
 			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				select {
-				case <-dump.quit:
-					dump.quit <- true
-					return
-				case dump.jobs <- scanner.Text():
-				case <-time.After(time.Duration(1) * time.Second):
-					dump.log.Debug("Read from scanner timed out")
+			for j := range dump.jobs {
+				for scanner.Scan() {
+					select {
+					case <-dump.quit:
+						dump.quit <- true
+						return
+					case dump.jobs[j] <- scanner.Text():
+					case <-time.After(time.Duration(1) * time.Second):
+						dump.log.Debug("Read from scanner timed out")
+					}
 				}
 			}
 			os.Remove(dump.dumpFile)

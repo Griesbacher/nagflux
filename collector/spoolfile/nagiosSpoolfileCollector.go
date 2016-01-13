@@ -24,7 +24,7 @@ type NagiosSpoolfileCollector struct {
 }
 
 //NagiosSpoolfileCollectorFactory creates the give amount of Woker and starts them.
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results []chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
 	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator, livestatusCacheBuilder)

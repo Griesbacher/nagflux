@@ -10,7 +10,7 @@ import (
 //Collector fetches data from livestatus.
 type Collector struct {
 	quit                chan bool
-	jobs                chan interface{}
+	jobs                []chan interface{}
 	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
 	fieldSeperator      string
@@ -45,7 +45,7 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs chan interface{}, livestatusConnector *Connector, fieldSeperator string) *Collector {
+func NewLivestatusCollector(jobs []chan interface{}, livestatusConnector *Connector, fieldSeperator string) *Collector {
 	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
 	go live.run()
 	return live
@@ -80,14 +80,16 @@ func (live Collector) queryData() {
 	go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
 	go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 	jobsFinished := 0
-	for jobsFinished < 3 {
-		select {
-		case job := <-printables:
-			live.jobs <- job
-		case <-finished:
-			jobsFinished++
-		case <-time.After(intervalToCheckLivestatus / 3):
-			live.log.Debug("requestPrintablesFromLivestatus timed out")
+	for jobsFinished < 3*len(live.jobs) {
+		for j := range live.jobs {
+			select {
+			case job := <-printables:
+				live.jobs[j] <- job
+			case <-finished:
+				jobsFinished++
+			case <-time.After(intervalToCheckLivestatus / 3):
+				live.log.Debug("requestPrintablesFromLivestatus timed out")
+			}
 		}
 	}
 }

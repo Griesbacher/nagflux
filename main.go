@@ -51,23 +51,25 @@ Commandline Parameter:
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
+	var resultQueues = make([]chan interface{}, 1)
+	for i := range resultQueues {
+		resultQueues[i] = make(chan interface{}, int(resultQueueLength))
+	}
+	influx := influx.ConnectorFactory(resultQueues[0], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 
-	resultQueue := make(chan interface{}, int(resultQueueLength))
-	influx := influx.ConnectorFactory(resultQueue, cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
-
-	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueue, cfg.Main.DumpFile)
+	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueues, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
-	livestatusCollector := livestatus.NewLivestatusCollector(resultQueue, liveconnector, cfg.Grafana.FieldSeperator)
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, cfg.Grafana.FieldSeperator)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
-	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueue, cfg.Grafana.FieldSeperator, livestatusCache)
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, cfg.Grafana.FieldSeperator, livestatusCache)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
-	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueue, cfg.Main.NagfluxSpoolfileFolder)
+	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
@@ -83,7 +85,7 @@ Commandline Parameter:
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueue)
+		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueues)
 		quit <- true
 	}()
 loop:
@@ -96,11 +98,12 @@ loop:
 				continue
 			}
 			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds()/float64(influx.AmountWorkers())) / updateRate
-			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueue), idleTime*100)
+			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime*100)
 
+			//TODO: fix worker spawn by type
 			if idleTime > 0.25 {
 				influx.RemoveWorker()
-			} else if idleTime < 0.1 && float64(len(resultQueue)) > resultQueueLength*0.8 {
+			} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength*0.8 {
 				influx.AddWorker()
 			}
 		case <-quit:
@@ -110,7 +113,7 @@ loop:
 }
 
 //Wait till the Performance Data is sent.
-func cleanUp(itemsToStop []Stoppable, resultQueue chan interface{}) {
+func cleanUp(itemsToStop []Stoppable, resultQueues []chan interface{}) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()
@@ -119,5 +122,7 @@ func cleanUp(itemsToStop []Stoppable, resultQueue chan interface{}) {
 		item.Stop()
 		time.Sleep(500 * time.Millisecond)
 	}
-	log.Debugf("Remaining queries %d", len(resultQueue))
+	for q := range resultQueues {
+		log.Debugf("Remaining queries %d", len(resultQueues[q]))
+	}
 }

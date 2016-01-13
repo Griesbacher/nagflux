@@ -13,13 +13,13 @@ import (
 //FileCollector provides a interface to nagflux, in which you could insert influxdb queries.
 type FileCollector struct {
 	quit    chan bool
-	results chan interface{}
+	results []chan interface{}
 	folder  string
 	log     *factorlog.FactorLog
 }
 
 //NewNagfluxFileCollector constructor, which also starts the collector.
-func NewNagfluxFileCollector(results chan interface{}, folder string) *FileCollector {
+func NewNagfluxFileCollector(results []chan interface{}, folder string) *FileCollector {
 	s := &FileCollector{make(chan bool, 1), results, folder, logging.GetLogger()}
 	go s.run()
 	return s
@@ -50,13 +50,15 @@ func (nfc FileCollector) run() {
 					if line == "" {
 						continue
 					}
-					select {
-					case <-nfc.quit:
-						nfc.quit <- true
-						return
-					case nfc.results <- line:
-					case <-time.After(time.Duration(1) * time.Minute):
-						nfc.log.Warn("NagfluxFileCollector: Could not write to buffer")
+					for i := range nfc.results {
+						select {
+						case <-nfc.quit:
+							nfc.quit <- true
+							return
+						case nfc.results[i] <- line:
+						case <-time.After(time.Duration(1) * time.Minute):
+							nfc.log.Warn("NagfluxFileCollector: Could not write to buffer")
+						}
 					}
 				}
 				err = os.Remove(currentFile)
