@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	filename = "config.gcfg"
-	envInflux = "NAGFLUX_TEST_INFLUX"
+	filename      = "config.gcfg"
+	envInflux     = "NAGFLUX_TEST_INFLUX"
 	envLivestatus = "NAGFLUX_TEST_LIVESTATUS"
-	envSave = "NAGFLUX_TEST_SAVE"
-	databaseName = "NAGFLUX_CI_TEST"
-	timeout = time.Duration(20) * time.Second
+	envSave       = "NAGFLUX_TEST_SAVE"
+	databaseName  = "NAGFLUX_CI_TEST"
+	timeout       = time.Duration(20) * time.Second
 )
 
 var TestData = []struct {
