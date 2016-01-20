@@ -18,6 +18,7 @@ MinSeverity = "INFO"
 WebserverPort = ""
 
 [Influx]
+Enabled = true
 Version = 0.9
 Address = "http://127.0.0.1:8086"
 Arguments = "precision=ms&u=root&p=root&db=nagflux"
@@ -33,3 +34,9 @@ FieldSeperator = "&"
 Type = "tcp"
 #tcp: 127.0.0.1:6557 or file /var/run/live
 Address = "127.0.0.1:6557"
+
+[Elasticsearch]
+Enabled = true
+Address = "http://localhost:9200"
+Index = "nagflux"
+Version = 2.1

@@ -10,12 +10,13 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
-	"github.com/griesbacher/nagflux/target/influx"
+	_ "github.com/griesbacher/nagflux/target/influx"
 	"github.com/kdar/factorlog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+	"github.com/griesbacher/nagflux/target/elasticsearch"
 )
 
 //Stoppable represents every daemonlike struct which can be stopped
@@ -55,8 +56,8 @@ Commandline Parameter:
 	for i := range resultQueues {
 		resultQueues[i] = make(chan interface{}, int(resultQueueLength))
 	}
-	influx := influx.ConnectorFactory(resultQueues[0], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
-
+	//influx := influx.ConnectorFactory(resultQueues[0], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
+	elasticsearch := elasticsearch.ConnectorFactory(resultQueues[0], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
 	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueues, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
@@ -85,27 +86,27 @@ Commandline Parameter:
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, influx}, resultQueues)
+		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, elasticsearch}, resultQueues)
 		quit <- true
 	}()
-loop:
+	loop:
 	//Main loop
 	for {
 		select {
 		case <-time.After(time.Duration(updateRate) * time.Second):
-			queriesSend, measureTime, err := statisticUser.GetData("send")
+			/*queriesSend, measureTime, err := statisticUser.GetData("send")
 			if err != nil {
 				continue
 			}
-			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds()/float64(influx.AmountWorkers())) / updateRate
-			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime*100)
+			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
+			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime * 100)
 
-			//TODO: fix worker spawn by type
+		//TODO: fix worker spawn by type
 			if idleTime > 0.25 {
 				influx.RemoveWorker()
-			} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength*0.8 {
+			} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
 				influx.AddWorker()
-			}
+			}*/
 		case <-quit:
 			break loop
 		}

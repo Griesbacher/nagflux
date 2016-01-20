@@ -18,6 +18,7 @@ type Config struct {
 		WebserverPort string
 	}
 	Influx struct {
+		Enabled                   bool
 		Address                   string
 		Arguments                 string
 		Version                   float32
@@ -31,5 +32,11 @@ type Config struct {
 	Livestatus struct {
 		Type    string
 		Address string
+	}
+	Elasticsearch struct {
+		Enabled bool
+		Address string
+		Index   string
+		Version float32
 	}
 }
