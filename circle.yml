@@ -1,3 +1,8 @@
+general:
+    branches:
+        only:
+            - master
+
 dependencies:
     pre:
         - go get github.com/axw/gocov/gocov
