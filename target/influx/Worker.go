@@ -3,14 +3,14 @@ package influx
 import (
 	"bytes"
 	"errors"
-	"github.com/griesbacher/nagflux/collector/livestatus"
-	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -20,7 +20,7 @@ type Worker struct {
 	workerID     int
 	quit         chan bool
 	quitInternal chan bool
-	jobs         chan interface{}
+	jobs         chan collector.Printable
 	connection   string
 	dumpFile     string
 	statistics   statistics.DataReceiver
@@ -40,7 +40,7 @@ var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
 //WorkerGenerator generates a new Worker and starts it.
-func WorkerGenerator(jobs chan interface{}, connection, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
+func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
 		worker := &Worker{
 			workerId, make(chan bool),
@@ -65,8 +65,8 @@ func (worker *Worker) Stop() {
 
 //Tries to send data all the time.
 func (worker Worker) run() {
-	var queries []interface{}
-	var query interface{}
+	var queries []collector.Printable
+	var query collector.Printable
 	for {
 		if worker.connector.IsAlive() {
 			if worker.connector.DatabaseExists() {
@@ -117,7 +117,7 @@ func (worker Worker) waitForExternalQuit() bool {
 }
 
 //Sends the given queries to the influxdb.
-func (worker Worker) sendBuffer(queries []interface{}) {
+func (worker Worker) sendBuffer(queries []collector.Printable) {
 	if len(queries) == 0 {
 		return
 	}
@@ -201,7 +201,7 @@ func (worker Worker) dumpRemainingQueries(remainingQueries []string) {
 //Reads the queries from the global queue and returns them as string.
 func (worker Worker) readQueriesFromQueue() []string {
 	var queries []string
-	var query interface{}
+	var query collector.Printable
 	stop := false
 	for !stop {
 		select {
@@ -294,24 +294,22 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 	}
 }
 
-//Converts an interface{} to a string.
-func (worker Worker) castJobToString(job interface{}) (string, error) {
+//Converts an collector.Printable to a string.
+func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	var result string
 	var err error
 	switch jobCast := job.(type) {
-	case spoolfile.PerformanceData:
+	case collector.Printable:
 		if worker.version >= 0.9 {
-			result = jobCast.String()
+			result = jobCast.PrintForInfluxDB(worker.version)
 		} else {
 			worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
 			err = errors.New("This influxversion given in the config is not supportet")
 		}
 	case string:
 		result = jobCast
-	case livestatus.Printable:
-		result = jobCast.Print(worker.version)
 	default:
-		worker.log.Fatal("Could not cast object:", job)
+		worker.log.Fatalf("Could not cast object:%s, %+v", reflect.TypeOf(jobCast), job)
 		err = errors.New("Could not cast object")
 	}
 	if len(result) > 1 && result[len(result)-1:] != "\n" {

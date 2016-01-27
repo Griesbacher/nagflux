@@ -25,7 +25,7 @@ func (live *Data) sanitizeValues() {
 
 //Generates the Influxdb tablename.
 func (live Data) getTablename() string {
-	return fmt.Sprintf("%s%s%s%smessages", live.hostName, live.fieldSeperator, live.serviceDisplayName, live.fieldSeperator)
+	return fmt.Sprintf("messages,host=%s,service=%s", live.hostName, live.serviceDisplayName)
 }
 
 //Generates the linedata which can be parsed from influxdb

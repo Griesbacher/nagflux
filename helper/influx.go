@@ -14,3 +14,11 @@ func SanitizeInfluxInput(input string) string {
 
 	return input
 }
+
+func SanitizeMap(input map[string]string) map[string]string {
+	result := map[string]string{}
+	for k, v := range input {
+		result[SanitizeInfluxInput(k)] = SanitizeInfluxInput(v)
+	}
+	return result
+}

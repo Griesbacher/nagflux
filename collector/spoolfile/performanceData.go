@@ -2,9 +2,9 @@ package spoolfile
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/helper"
-	"errors"
-"strings"
+	"strings"
 )
 
 //PerformanceData represents the nagios perfdata
@@ -30,26 +30,47 @@ func (p *PerformanceData) genTablename() string {
 		p.performanceType)
 }
 
-func (p *PerformanceData) String() string {
-	tableName := p.genTablename()
+func (p PerformanceData) PrintForInfluxDB(version float32) string {
+	tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
+	if p.service == "" {
+		tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().Influx.HostcheckAlias))
+	} else {
+		tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
+	}
+	tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s,performanceType=%s`,
+		helper.SanitizeInfluxInput(p.command),
+		helper.SanitizeInfluxInput(p.performanceLabel),
+		helper.SanitizeInfluxInput(p.performanceType),
+	)
 	if p.unit != "" {
 		tableName += fmt.Sprintf(`,unit=%s`, p.unit)
 	}
-
 	if len(p.tags) > 0 {
-		tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(p.tags, ",", "="))
+		tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 	}
-
-	tableName += fmt.Sprintf(` value=%s %s`, p.value, p.time)
+	tableName += fmt.Sprintf(" value=%s %s\n", p.value, p.time)
 	return tableName
 }
 
-func (p* PerformanceData) PrintForElastic(ver float32, index string) (string, error) {
-	if ver >= 2 {
-		table := strings.Replace(p.genTablename(), `\`, "", -1)
-		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metric"}}`, index)+"\n"
-		data := fmt.Sprintf(`{"value":%s,"@timestamp":%s,"@table":"%s"}`, p.value, p.time, table)+"\n"
-		return head + data, nil
+func (p PerformanceData) PrintForElasticsearch(version float32, index string) string {
+	if version >= 2 {
+		if p.service == "" {
+			p.service = "hostcheck"
+		} else {
+			p.service = p.service
+		}
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metric"}}`, index) + "\n"
+		data := fmt.Sprintf(
+			`{"value":%s,"@timestamp":%s,"@hostname":"%s","@service":"%s","@command":"%s","@performanceLabel":"%s","@performanceType":"%s"}`,
+			p.value,
+			p.time,
+			strings.Replace(p.hostname, `\`, "", -1),
+			strings.Replace(p.service, `\`, "", -1),
+			strings.Replace(p.command, `\`, "", -1),
+			strings.Replace(p.performanceLabel, `\`, "", -1),
+			strings.Replace(p.performanceType, `\`, "", -1),
+		) + "\n"
+		return head + data
 	}
-	return "", errors.New("This Elasticsearch-Version is not supported")
+	return ""
 }

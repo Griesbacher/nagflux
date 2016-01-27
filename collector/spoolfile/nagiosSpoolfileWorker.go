@@ -2,6 +2,7 @@ package spoolfile
 
 import (
 	"errors"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
@@ -19,7 +20,7 @@ type NagiosSpoolfileWorker struct {
 	workerID               int
 	quit                   chan bool
 	jobs                   chan string
-	results                []chan interface{}
+	results                map[string]chan collector.Printable
 	statistics             statistics.DataReceiver
 	fieldseperator         string
 	livestatusCacheBuilder *livestatus.CacheBuilder
@@ -41,7 +42,7 @@ var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);
 var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results []chan interface{}, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[string]chan collector.Printable, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
 		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
@@ -77,12 +78,12 @@ func (w *NagiosSpoolfileWorker) run() {
 			for _, line := range lines {
 				splittedPerformanceData := helper.StringToMap(line, "\t", "::")
 				for singlePerfdata := range w.performanceDataIterator(splittedPerformanceData) {
-					for i := range w.results {
+					for _, r := range w.results {
 						select {
 						case <-w.quit:
 							w.quit <- true
 							return
-						case w.results[i] <- singlePerfdata:
+						case r <- singlePerfdata:
 							queries++
 						case <-time.After(time.Duration(1) * time.Minute):
 							logging.GetLogger().Warn("NagiosSpoolfileWorker: Could not write to buffer")
@@ -113,23 +114,22 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 		return ch
 	}
 
-	currentHostname := helper.SanitizeInfluxInput(input[hostname])
 	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
-		currentService = helper.SanitizeInfluxInput(input[servicedesc])
+		currentService = input[servicedesc]
 	}
 
 	go func() {
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
-				hostname:         currentHostname,
+				hostname:         input[hostname],
 				service:          currentService,
 				command:          currentCommand,
 				time:             currentTime,
-				performanceLabel: helper.SanitizeInfluxInput(value[1]),
-				unit:             helper.SanitizeInfluxInput(value[3]),
+				performanceLabel: value[1],
+				unit:             value[3],
 				fieldseperator:   w.fieldseperator,
 				tags:             map[string]string{},
 			}
@@ -206,7 +206,7 @@ func (w *NagiosSpoolfileWorker) searchAltCommand(perfData, command string) strin
 	if len(search) == 1 && len(search[0]) == 2 {
 		result = search[0][1]
 	}
-	return helper.SanitizeInfluxInput(splitCommandInput(result))
+	return splitCommandInput(result)
 }
 
 //Cuts the command at the first !.

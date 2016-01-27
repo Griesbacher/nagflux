@@ -25,6 +25,7 @@ type Config struct {
 		CreateDatabaseIfNotExists bool
 		NastyString               string
 		NastyStringToReplace      string
+		HostcheckAlias            string
 	}
 	Grafana struct {
 		FieldSeperator string

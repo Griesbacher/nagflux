@@ -2,6 +2,7 @@ package influx
 
 import (
 	"encoding/json"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
@@ -18,7 +19,7 @@ type Connector struct {
 	dumpFile       string
 	workers        []*Worker
 	maxWorkers     int
-	jobs           chan interface{}
+	jobs           chan collector.Printable
 	quit           chan bool
 	log            *factorlog.FactorLog
 	version        float32
@@ -30,7 +31,7 @@ type Connector struct {
 var regexDatabaseName = regexp.MustCompile(`.*db=(.*)`)
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
-func ConnectorFactory(jobs chan interface{}, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
+func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionArgs, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
 	var databaseName string
 	for _, argument := range strings.Split(connectionArgs, "&") {
 		hits := regexDatabaseName.FindStringSubmatch(argument)

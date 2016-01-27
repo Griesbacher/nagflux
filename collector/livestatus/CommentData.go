@@ -17,7 +17,7 @@ func (comment *CommentData) sanitizeValues() {
 }
 
 //Print srints the data in influxdb lineformat
-func (comment CommentData) Print(version float32) string {
+func (comment CommentData) PrintForInfluxDB(version float32) string {
 	comment.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
@@ -36,4 +36,8 @@ func (comment CommentData) Print(version float32) string {
 	}
 	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
 	panic("")
+}
+
+func (comment CommentData) PrintForElasticsearch(version float32, index string) string {
+	return ""
 }

@@ -2,6 +2,7 @@ package livestatus
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"time"
@@ -10,7 +11,7 @@ import (
 //Collector fetches data from livestatus.
 type Collector struct {
 	quit                chan bool
-	jobs                []chan interface{}
+	jobs                map[string]chan collector.Printable
 	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
 	fieldSeperator      string
@@ -45,7 +46,7 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs []chan interface{}, livestatusConnector *Connector, fieldSeperator string) *Collector {
+func NewLivestatusCollector(jobs map[string]chan collector.Printable, livestatusConnector *Connector, fieldSeperator string) *Collector {
 	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
 	go live.run()
 	return live
@@ -74,17 +75,17 @@ func (live Collector) run() {
 
 //Queries livestatus and returns the data to the gobal queue
 func (live Collector) queryData() {
-	printables := make(chan Printable)
+	printables := make(chan collector.Printable)
 	finished := make(chan bool)
 	go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
 	go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
 	go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 	jobsFinished := 0
 	for jobsFinished < 3*len(live.jobs) {
-		for j := range live.jobs {
+		for _, j := range live.jobs {
 			select {
 			case job := <-printables:
-				live.jobs[j] <- job
+				j <- job
 			case <-finished:
 				jobsFinished++
 			case <-time.After(intervalToCheckLivestatus / 3):
@@ -94,7 +95,7 @@ func (live Collector) queryData() {
 	}
 }
 
-func (live Collector) requestPrintablesFromLivestatus(query string, addTimestampToQuery bool, printables chan Printable, outerFinish chan bool) {
+func (live Collector) requestPrintablesFromLivestatus(query string, addTimestampToQuery bool, printables chan collector.Printable, outerFinish chan bool) {
 	queryWithTimestamp := query
 	if addTimestampToQuery {
 		queryWithTimestamp = addTimestampToLivestatusQuery(query)

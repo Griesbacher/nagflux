@@ -2,6 +2,7 @@ package nagflux
 
 import (
 	"bufio"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"os"
@@ -11,14 +12,14 @@ import (
 //DumpfileCollector collects queries from old runs, which could not been completed.
 type DumpfileCollector struct {
 	quit      chan bool
-	jobs      []chan interface{}
+	jobs      map[string]chan collector.Printable
 	dumpFile  string
 	log       *factorlog.FactorLog
 	IsRunning bool
 }
 
 //NewDumpfileCollector constructor, which also starts the collector
-func NewDumpfileCollector(jobs []chan interface{}, dumpFile string) *DumpfileCollector {
+func NewDumpfileCollector(jobs map[string]chan collector.Printable, dumpFile string) *DumpfileCollector {
 	s := &DumpfileCollector{make(chan bool, 2), jobs, dumpFile, logging.GetLogger(), true}
 	go s.run()
 	return s
@@ -43,13 +44,13 @@ func (dump DumpfileCollector) run() {
 			dump.log.Infof("Reading Dumpfile")
 			defer file.Close()
 			scanner := bufio.NewScanner(file)
-			for j := range dump.jobs {
+			for range dump.jobs {
 				for scanner.Scan() {
 					select {
 					case <-dump.quit:
 						dump.quit <- true
 						return
-					case dump.jobs[j] <- scanner.Text():
+					//case dump.jobs[j] <- scanner.Text(): //TODO: create printable
 					case <-time.After(time.Duration(1) * time.Second):
 						dump.log.Debug("Read from scanner timed out")
 					}

@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
@@ -10,13 +11,13 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
-	_ "github.com/griesbacher/nagflux/target/influx"
+	"github.com/griesbacher/nagflux/target/elasticsearch"
+	"github.com/griesbacher/nagflux/target/influx"
 	"github.com/kdar/factorlog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"github.com/griesbacher/nagflux/target/elasticsearch"
 )
 
 //Stoppable represents every daemonlike struct which can be stopped
@@ -52,12 +53,18 @@ Commandline Parameter:
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
-	var resultQueues = make([]chan interface{}, 1)
-	for i := range resultQueues {
-		resultQueues[i] = make(chan interface{}, int(resultQueueLength))
+	resultQueues := map[string]chan collector.Printable{}
+	stoppables := []Stoppable{}
+	if cfg.Influx.Enabled {
+		resultQueues["influx"] = make(chan collector.Printable, int(resultQueueLength))
+		influx := influx.ConnectorFactory(resultQueues["influx"], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
+		stoppables = append(stoppables, influx)
 	}
-	//influx := influx.ConnectorFactory(resultQueues[0], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
-	elasticsearch := elasticsearch.ConnectorFactory(resultQueues[0], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
+	if cfg.Elasticsearch.Enabled {
+		resultQueues["elastic"] = make(chan collector.Printable, int(resultQueueLength))
+		elasticsearch := elasticsearch.ConnectorFactory(resultQueues["elastic"], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
+		stoppables = append(stoppables, elasticsearch)
+	}
 	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueues, cfg.Main.DumpFile)
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
@@ -86,15 +93,16 @@ Commandline Parameter:
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		cleanUp([]Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector, elasticsearch}, resultQueues)
+		stoppables = append(stoppables, []Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector}...)
+		cleanUp(stoppables, resultQueues)
 		quit <- true
 	}()
-	loop:
+loop:
 	//Main loop
 	for {
 		select {
 		case <-time.After(time.Duration(updateRate) * time.Second):
-			/*queriesSend, measureTime, err := statisticUser.GetData("send")
+		/*queriesSend, measureTime, err := statisticUser.GetData("send")
 			if err != nil {
 				continue
 			}
@@ -114,7 +122,7 @@ Commandline Parameter:
 }
 
 //Wait till the Performance Data is sent.
-func cleanUp(itemsToStop []Stoppable, resultQueues []chan interface{}) {
+func cleanUp(itemsToStop []Stoppable, resultQueues map[string]chan collector.Printable) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()
@@ -123,7 +131,7 @@ func cleanUp(itemsToStop []Stoppable, resultQueues []chan interface{}) {
 		item.Stop()
 		time.Sleep(500 * time.Millisecond)
 	}
-	for q := range resultQueues {
-		log.Debugf("Remaining queries %d", len(resultQueues[q]))
+	for _, q := range resultQueues {
+		log.Debugf("Remaining queries %d", len(q))
 	}
 }

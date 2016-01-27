@@ -19,7 +19,7 @@ func (downtime *DowntimeData) sanitizeValues() {
 }
 
 //Print prints the data in influxdb lineformat
-func (downtime DowntimeData) Print(version float32) string {
+func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 	downtime.sanitizeValues()
 	if version >= 0.9 {
 		tags := ",type=downtime,author=" + downtime.author
@@ -29,4 +29,8 @@ func (downtime DowntimeData) Print(version float32) string {
 	}
 	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
 	panic("")
+}
+
+func (downtime DowntimeData) PrintForElasticsearch(version float32, index string) string {
+	return ""
 }

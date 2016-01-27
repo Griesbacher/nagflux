@@ -21,7 +21,7 @@ func (notification *NotificationData) sanitizeValues() {
 }
 
 //Print prints the data in influxdb lineformat
-func (notification NotificationData) Print(version float32) string {
+func (notification NotificationData) PrintForInfluxDB(version float32) string {
 	notification.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
@@ -37,4 +37,8 @@ func (notification NotificationData) Print(version float32) string {
 	}
 	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
 	panic("")
+}
+
+func (notification NotificationData) PrintForElasticsearch(version float32, index string) string {
+	return ""
 }
