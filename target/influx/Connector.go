@@ -3,6 +3,7 @@ package influx
 import (
 	"encoding/json"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
@@ -26,6 +27,7 @@ type Connector struct {
 	isAlive        bool
 	databaseExists bool
 	databaseName   string
+	httpClient     http.Client
 }
 
 var regexDatabaseName = regexp.MustCompile(`.*db=(.*)`)
@@ -39,14 +41,21 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 			databaseName = hits[1]
 		}
 	}
-	s := &Connector{connectionHost, connectionArgs, dumpFile, make([]*Worker, workerAmount), maxWorkers, jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName}
+	timeout := time.Duration(5 * time.Second)
+	client := http.Client{Timeout: timeout}
+	s := &Connector{
+		connectionHost, connectionArgs, dumpFile, make([]*Worker, workerAmount), maxWorkers,
+		jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName, client,
+	}
 
-	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s)
-
+	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s, data.InfluxDB)
 	s.TestIfIsAlive()
+	if !s.isAlive {
+		s.log.Info("Waiting for InfluxDB server")
+	}
 	for i := 0; i < 5 && !s.isAlive; i++ {
-		time.Sleep(time.Duration(2) * time.Second)
 		s.TestIfIsAlive()
+		s.log.Info(".")
 	}
 	if !s.isAlive {
 		s.log.Panic("Influxdb not running")
@@ -74,7 +83,10 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
-		gen := WorkerGenerator(connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs, connector.dumpFile, connector.version, connector)
+		gen := WorkerGenerator(
+			connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs,
+			connector.dumpFile, connector.version, connector, data.InfluxDB,
+		)
 		connector.workers = append(connector.workers, gen(oldLength+2))
 		connector.log.Infof("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}
@@ -139,7 +151,7 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive() bool {
-	resp, err := http.Get(connector.connectionHost + "/ping")
+	resp, err := connector.httpClient.Get(connector.connectionHost + "/ping")
 	result := false
 	if err != nil {
 		return result

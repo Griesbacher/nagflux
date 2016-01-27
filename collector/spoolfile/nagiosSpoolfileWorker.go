@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
@@ -20,9 +21,8 @@ type NagiosSpoolfileWorker struct {
 	workerID               int
 	quit                   chan bool
 	jobs                   chan string
-	results                map[string]chan collector.Printable
+	results                map[data.Datatype]chan collector.Printable
 	statistics             statistics.DataReceiver
-	fieldseperator         string
 	livestatusCacheBuilder *livestatus.CacheBuilder
 }
 
@@ -42,10 +42,10 @@ var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);
 var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[string]chan collector.Printable, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), fieldseperator, livestatusCacheBuilder}
+		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), livestatusCacheBuilder}
 		workerID++
 		go s.run()
 		return s
@@ -130,7 +130,6 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 				time:             currentTime,
 				performanceLabel: value[1],
 				unit:             value[3],
-				fieldseperator:   w.fieldseperator,
 				tags:             map[string]string{},
 			}
 

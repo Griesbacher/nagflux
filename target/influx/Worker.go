@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/collector/nagflux"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"reflect"
 	"sync"
 	"time"
 )
@@ -29,6 +30,7 @@ type Worker struct {
 	connector    *Connector
 	httpClient   http.Client
 	IsRunning    bool
+	datatype     data.Datatype
 }
 
 const dataTimeout = time.Duration(5) * time.Second
@@ -40,15 +42,15 @@ var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
 //WorkerGenerator generates a new Worker and starts it.
-func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
+func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile string, version float32, connector *Connector, datatype data.Datatype) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
 		worker := &Worker{
 			workerId, make(chan bool),
 			make(chan bool, 1), jobs,
-			connection, dumpFile,
+			connection, nagflux.GenDumpfileName(dumpFile, datatype),
 			statistics.NewCmdStatisticReceiver(),
 			logging.GetLogger(), version,
-			connector, http.Client{}, true}
+			connector, http.Client{}, true, datatype}
 		go worker.run()
 		return worker
 	}
@@ -298,20 +300,14 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	var result string
 	var err error
-	switch jobCast := job.(type) {
-	case collector.Printable:
-		if worker.version >= 0.9 {
-			result = jobCast.PrintForInfluxDB(worker.version)
-		} else {
-			worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
-			err = errors.New("This influxversion given in the config is not supportet")
-		}
-	case string:
-		result = jobCast
-	default:
-		worker.log.Fatalf("Could not cast object:%s, %+v", reflect.TypeOf(jobCast), job)
-		err = errors.New("Could not cast object")
+
+	if worker.version >= 0.9 {
+		result = job.PrintForInfluxDB(worker.version)
+	} else {
+		worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
+		err = errors.New("This influxversion given in the config is not supportet")
 	}
+
 	if len(result) > 1 && result[len(result)-1:] != "\n" {
 		result += "\n"
 	}

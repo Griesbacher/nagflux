@@ -17,11 +17,11 @@ type PerformanceData struct {
 	unit             string
 	time             string
 	value            string
-	fieldseperator   string
 	tags             map[string]string
 }
 
-func (p *PerformanceData) genTablename() string {
+/*
+func (p PerformanceData) genTablename() string {
 	return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s`,
 		p.hostname, p.fieldseperator,
 		p.service, p.fieldseperator,
@@ -29,27 +29,30 @@ func (p *PerformanceData) genTablename() string {
 		p.performanceLabel, p.fieldseperator,
 		p.performanceType)
 }
-
+*/
 func (p PerformanceData) PrintForInfluxDB(version float32) string {
-	tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
-	if p.service == "" {
-		tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().Influx.HostcheckAlias))
-	} else {
-		tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
+	if version >= 0.9 {
+		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
+		if p.service == "" {
+			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().Influx.HostcheckAlias))
+		} else {
+			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
+		}
+		tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s,performanceType=%s`,
+			helper.SanitizeInfluxInput(p.command),
+			helper.SanitizeInfluxInput(p.performanceLabel),
+			helper.SanitizeInfluxInput(p.performanceType),
+		)
+		if p.unit != "" {
+			tableName += fmt.Sprintf(`,unit=%s`, p.unit)
+		}
+		if len(p.tags) > 0 {
+			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
+		}
+		tableName += fmt.Sprintf(" value=%s %s\n", p.value, p.time)
+		return tableName
 	}
-	tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s,performanceType=%s`,
-		helper.SanitizeInfluxInput(p.command),
-		helper.SanitizeInfluxInput(p.performanceLabel),
-		helper.SanitizeInfluxInput(p.performanceType),
-	)
-	if p.unit != "" {
-		tableName += fmt.Sprintf(`,unit=%s`, p.unit)
-	}
-	if len(p.tags) > 0 {
-		tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
-	}
-	tableName += fmt.Sprintf(" value=%s %s\n", p.value, p.time)
-	return tableName
+	return ""
 }
 
 func (p PerformanceData) PrintForElasticsearch(version float32, index string) string {
@@ -59,7 +62,7 @@ func (p PerformanceData) PrintForElasticsearch(version float32, index string) st
 		} else {
 			p.service = p.service
 		}
-		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metric"}}`, index) + "\n"
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, index) + "\n"
 		data := fmt.Sprintf(
 			`{"value":%s,"@timestamp":%s,"@hostname":"%s","@service":"%s","@command":"%s","@performanceLabel":"%s","@performanceType":"%s"}`,
 			p.value,

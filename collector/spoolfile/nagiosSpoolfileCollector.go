@@ -3,6 +3,7 @@ package spoolfile
 import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"io/ioutil"
 	"path"
@@ -25,10 +26,10 @@ type NagiosSpoolfileCollector struct {
 }
 
 //NagiosSpoolfileCollectorFactory creates the give amount of Woker and starts them.
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results map[string]chan collector.Printable, fieldseperator string, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
-	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, fieldseperator, livestatusCacheBuilder)
+	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, livestatusCacheBuilder)
 
 	for w := 0; w < workerAmount; w++ {
 		s.workers[w] = gen()

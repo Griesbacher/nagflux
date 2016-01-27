@@ -3,6 +3,7 @@ package nagflux
 import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
@@ -14,13 +15,13 @@ import (
 //FileCollector provides a interface to nagflux, in which you could insert influxdb queries.
 type FileCollector struct {
 	quit    chan bool
-	results map[string]chan collector.Printable
+	results map[data.Datatype]chan collector.Printable
 	folder  string
 	log     *factorlog.FactorLog
 }
 
 //NewNagfluxFileCollector constructor, which also starts the collector.
-func NewNagfluxFileCollector(results map[string]chan collector.Printable, folder string) *FileCollector {
+func NewNagfluxFileCollector(results map[data.Datatype]chan collector.Printable, folder string) *FileCollector {
 	s := &FileCollector{make(chan bool, 1), results, folder, logging.GetLogger()}
 	go s.run()
 	return s

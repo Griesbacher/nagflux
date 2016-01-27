@@ -27,9 +27,6 @@ type Config struct {
 		NastyStringToReplace      string
 		HostcheckAlias            string
 	}
-	Grafana struct {
-		FieldSeperator string
-	}
 	Livestatus struct {
 		Type    string
 		Address string

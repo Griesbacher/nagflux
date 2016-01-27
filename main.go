@@ -8,6 +8,7 @@ import (
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/config"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
@@ -53,28 +54,33 @@ Commandline Parameter:
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
-	resultQueues := map[string]chan collector.Printable{}
+	resultQueues := map[data.Datatype]chan collector.Printable{}
 	stoppables := []Stoppable{}
 	if cfg.Influx.Enabled {
-		resultQueues["influx"] = make(chan collector.Printable, int(resultQueueLength))
-		influx := influx.ConnectorFactory(resultQueues["influx"], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
+		resultQueues[data.InfluxDB] = make(chan collector.Printable, int(resultQueueLength))
+		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
 		stoppables = append(stoppables, influx)
+		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.InfluxDB], cfg.Main.DumpFile, data.InfluxDB)
+		stoppables = append(stoppables, influxDumpFileCollector)
 	}
+
 	if cfg.Elasticsearch.Enabled {
-		resultQueues["elastic"] = make(chan collector.Printable, int(resultQueueLength))
-		elasticsearch := elasticsearch.ConnectorFactory(resultQueues["elastic"], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
+		resultQueues[data.Elasticsearch] = make(chan collector.Printable, int(resultQueueLength))
+		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
 		stoppables = append(stoppables, elasticsearch)
+		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.Elasticsearch], cfg.Main.DumpFile, data.Elasticsearch)
+		stoppables = append(stoppables, elasticDumpFileCollector)
 	}
-	dumpFileCollector := nagflux.NewDumpfileCollector(resultQueues, cfg.Main.DumpFile)
+
 	//Some time for the dumpfile to fill the queue
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
-	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, cfg.Grafana.FieldSeperator)
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
-	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, cfg.Grafana.FieldSeperator, livestatusCache)
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder)
@@ -93,7 +99,7 @@ Commandline Parameter:
 	go func() {
 		<-interruptChannel
 		log.Warn("Got Interrupted")
-		stoppables = append(stoppables, []Stoppable{livestatusCollector, livestatusCache, nagiosCollector, dumpFileCollector, nagfluxCollector}...)
+		stoppables = append(stoppables, []Stoppable{livestatusCollector, livestatusCache, nagiosCollector, nagfluxCollector}...)
 		cleanUp(stoppables, resultQueues)
 		quit <- true
 	}()
@@ -122,7 +128,7 @@ loop:
 }
 
 //Wait till the Performance Data is sent.
-func cleanUp(itemsToStop []Stoppable, resultQueues map[string]chan collector.Printable) {
+func cleanUp(itemsToStop []Stoppable, resultQueues map[data.Datatype]chan collector.Printable) {
 	log.Info("Cleaning up...")
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()

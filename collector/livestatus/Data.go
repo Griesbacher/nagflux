@@ -7,7 +7,6 @@ import (
 
 //Data contains basic data extracted from livestatusqueries.
 type Data struct {
-	fieldSeperator     string
 	hostName           string
 	serviceDisplayName string
 	comment            string

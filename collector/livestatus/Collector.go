@@ -3,6 +3,7 @@ package livestatus
 import (
 	"fmt"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"time"
@@ -11,10 +12,9 @@ import (
 //Collector fetches data from livestatus.
 type Collector struct {
 	quit                chan bool
-	jobs                map[string]chan collector.Printable
+	jobs                map[data.Datatype]chan collector.Printable
 	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
-	fieldSeperator      string
 }
 
 const (
@@ -46,8 +46,8 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs map[string]chan collector.Printable, livestatusConnector *Connector, fieldSeperator string) *Collector {
-	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), fieldSeperator}
+func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, livestatusConnector *Connector) *Collector {
+	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger()}
 	go live.run()
 	return live
 }
@@ -117,13 +117,13 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 				}
 			case QueryForComments:
 				if len(line) == 6 {
-					printables <- CommentData{Data{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- CommentData{Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForComments out of range", line)
 				}
 			case QueryForDowntimes:
 				if len(line) == 6 {
-					printables <- DowntimeData{Data{live.fieldSeperator, line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- DowntimeData{Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForDowntimes out of range", line)
 				}
@@ -148,16 +148,16 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 	case "HOST NOTIFICATION":
 		if len(line) == 10 {
 			//Custom
-			return &NotificationData{Data{live.fieldSeperator, line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+			return &NotificationData{Data{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 		} else if len(line) == 9 {
-			return &NotificationData{Data{live.fieldSeperator, line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		}
 	case "SERVICE NOTIFICATION":
 		if len(line) == 11 {
 			//Custom
-			return &NotificationData{Data{live.fieldSeperator, line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+			return &NotificationData{Data{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
 		} else if len(line) == 10 {
-			return &NotificationData{Data{live.fieldSeperator, line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+			return &NotificationData{Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 		}
 
 	}

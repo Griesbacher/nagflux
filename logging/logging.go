@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const logFormat = "%{Date} %{Time} %{Severity}: %{SafeMessage}"
+const logFormat = "%{Date} %{Time} %{Severity}: %{Message}"
 const logColors = "%{Color \"white\" \"DEBUG\"}%{Color \"magenta\" \"WARN\"}%{Color \"red\" \"CRITICAL\"}"
 
 var singleLogger *factorlog.FactorLog

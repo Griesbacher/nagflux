@@ -26,9 +26,6 @@ CreateDatabaseIfNotExists = true
 NastyString = "\\ "
 NastyStringToReplace = " "
 
-[Grafana]
-FieldSeperator = "&"
-
 [Livestatus]
 #tcp or file
 Type = "tcp"

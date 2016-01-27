@@ -6,7 +6,6 @@ import (
 
 //Cache contains stored data
 type Cache struct {
-	//TODO: remove struct construct
 	downtime map[string]map[string]string
 }
 
