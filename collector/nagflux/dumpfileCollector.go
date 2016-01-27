@@ -7,9 +7,9 @@ import (
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
+	"io"
 	"os"
 	"time"
-	"io"
 )
 
 //DumpfileCollector collects queries from old runs, which could not been completed.
@@ -43,7 +43,6 @@ func (dump *DumpfileCollector) Stop() {
 
 //Searches for old file and parses it.
 func (dump DumpfileCollector) run() {
-	fmt.Println(dump.dumpFile)
 	if _, err := os.Stat(dump.dumpFile); os.IsNotExist(err) {
 		dump.log.Debugf("Dumpfile: %s not found, skipping... (Everything is fine)", dump.dumpFile)
 	} else {

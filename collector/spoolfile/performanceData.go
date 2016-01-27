@@ -20,16 +20,6 @@ type PerformanceData struct {
 	tags             map[string]string
 }
 
-/*
-func (p PerformanceData) genTablename() string {
-	return fmt.Sprintf(`%s%s%s%s%s%s%s%s%s`,
-		p.hostname, p.fieldseperator,
-		p.service, p.fieldseperator,
-		p.command, p.fieldseperator,
-		p.performanceLabel, p.fieldseperator,
-		p.performanceType)
-}
-*/
 func (p PerformanceData) PrintForInfluxDB(version float32) string {
 	if version >= 0.9 {
 		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))

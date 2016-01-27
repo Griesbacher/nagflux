@@ -9,6 +9,7 @@ type Config struct {
 		MaxInfluxWorker        int
 		DumpFile               string
 		NagfluxSpoolfileFolder string
+		FieldSeparator         string
 	}
 	Log struct {
 		LogFile     string

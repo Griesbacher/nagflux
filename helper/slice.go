@@ -12,3 +12,16 @@ func SumIntSliceTillPos(slice []int, pos int) int {
 	}
 	return sum
 }
+
+//Contains checks if all values are within the list
+func Contains(hay []string, needles []string) bool {
+	hit := 0
+	for _, a := range hay {
+		for _, b := range needles {
+			if a == b {
+				hit++
+			}
+		}
+	}
+	return hit == len(needles)
+}

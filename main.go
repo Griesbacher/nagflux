@@ -56,6 +56,7 @@ Commandline Parameter:
 	log = logging.GetLogger()
 	resultQueues := map[data.Datatype]chan collector.Printable{}
 	stoppables := []Stoppable{}
+	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 	if cfg.Influx.Enabled {
 		resultQueues[data.InfluxDB] = make(chan collector.Printable, int(resultQueueLength))
 		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
@@ -83,7 +84,7 @@ Commandline Parameter:
 	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
-	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder)
+	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder, fieldSeparator)
 
 	statisticUser := statistics.NewSimpleStatisticsUser()
 	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
