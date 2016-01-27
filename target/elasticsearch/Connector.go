@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"time"
@@ -9,11 +10,11 @@ import (
 //Connector makes the basic connection to an influxdb.
 type Connector struct {
 	connectionHost string
-	index string
+	index          string
 	dumpFile       string
 	workers        []*Worker
 	maxWorkers     int
-	jobs           chan interface{}
+	jobs           chan collector.Printable
 	quit           chan bool
 	log            *factorlog.FactorLog
 	version        float32
@@ -21,9 +22,8 @@ type Connector struct {
 	databaseExists bool
 }
 
-
 //ConnectorFactory Constructor which will create some workers if the connection is established.
-func ConnectorFactory(jobs chan interface{}, connectionHost, index, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
+func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
 	s := &Connector{connectionHost, index, dumpFile, make([]*Worker, workerAmount), maxWorkers, jobs, make(chan bool), logging.GetLogger(), version, true, true} //TODO: change boolean to false
 
 	gen := WorkerGenerator(jobs, connectionHost+"/_bulk", index, dumpFile, version, s)
@@ -59,7 +59,7 @@ func ConnectorFactory(jobs chan interface{}, connectionHost, index, dumpFile str
 func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
-		gen := WorkerGenerator(connector.jobs, connector.connectionHost+"/_bulk",connector.index, connector.dumpFile, connector.version, connector)
+		gen := WorkerGenerator(connector.jobs, connector.connectionHost+"/_bulk", connector.index, connector.dumpFile, connector.version, connector)
 		connector.workers = append(connector.workers, gen(oldLength+2))
 		connector.log.Infof("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}

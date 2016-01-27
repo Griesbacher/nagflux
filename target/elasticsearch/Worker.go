@@ -3,8 +3,7 @@ package elasticsearch
 import (
 	"bytes"
 	"errors"
-	"github.com/griesbacher/nagflux/collector/livestatus"
-	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
@@ -20,7 +19,7 @@ type Worker struct {
 	workerID     int
 	quit         chan bool
 	quitInternal chan bool
-	jobs         chan interface{}
+	jobs         chan collector.Printable
 	connection   string
 	dumpFile     string
 	statistics   statistics.DataReceiver
@@ -41,7 +40,7 @@ var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
 //WorkerGenerator generates a new Worker and starts it.
-func WorkerGenerator(jobs chan interface{}, connection, index, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
+func WorkerGenerator(jobs chan collector.Printable, connection, index, dumpFile string, version float32, connector *Connector) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
 		worker := &Worker{
 			workerId, make(chan bool),
@@ -66,8 +65,8 @@ func (worker *Worker) Stop() {
 
 //Tries to send data all the time.
 func (worker Worker) run() {
-	var queries []interface{}
-	var query interface{}
+	var queries []collector.Printable
+	var query collector.Printable
 	for {
 		if worker.connector.IsAlive() {
 			if worker.connector.DatabaseExists() {
@@ -118,7 +117,7 @@ func (worker Worker) waitForExternalQuit() bool {
 }
 
 //Sends the given queries to the influxdb.
-func (worker Worker) sendBuffer(queries []interface{}) {
+func (worker Worker) sendBuffer(queries []collector.Printable) {
 	if len(queries) == 0 {
 		return
 	}
@@ -167,7 +166,7 @@ func (worker Worker) sendBuffer(queries []interface{}) {
 		}
 		if sendErr != nil {
 			//if there is still an error dump the queries and go on
-			worker.dumpErrorQueries("\n\n" + sendErr.Error() + "\n", lineQueries)
+			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
 		}
 
 	}
@@ -202,7 +201,7 @@ func (worker Worker) dumpRemainingQueries(remainingQueries []string) {
 //Reads the queries from the global queue and returns them as string.
 func (worker Worker) readQueriesFromQueue() []string {
 	var queries []string
-	var query interface{}
+	var query collector.Printable
 	stop := false
 	for !stop {
 		select {
@@ -283,7 +282,7 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 			worker.log.Critical(err)
 		}
 	}
-	if f, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, 0600); err != nil {
+	if f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600); err != nil {
 		worker.log.Critical(err)
 	} else {
 		defer f.Close()
@@ -295,22 +294,19 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 	}
 }
 
-//Converts an interface{} to a string.
-func (worker Worker) castJobToString(job interface{}) (string, error) {
+//Converts an collector.Printable to a string.
+func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	var result string
 	var err error
-	switch jobCast := job.(type) {
-	case spoolfile.PerformanceData:
-		result, err = jobCast.PrintForElastic(worker.version, worker.index)
-	case string:
-		result = "" //TODO: fix
-	case livestatus.Printable:
-		result = "" //TODO: fix
-	default:
-		worker.log.Fatal("Could not cast object:", job)
-		err = errors.New("Could not cast object")
+
+	if worker.version >= 2 {
+		result = job.PrintForElasticsearch(worker.version,worker.index)
+	} else {
+		worker.log.Fatalf("This elasticsearch version [%f] given in the config is not supportet", worker.version)
+		err = errors.New("This elasticsearch version given in the config is not supportet")
 	}
-	if len(result) > 1 && result[len(result) - 1:] != "\n" {
+
+	if len(result) > 1 && result[len(result)-1:] != "\n" {
 		result += "\n"
 	}
 	return result, err
