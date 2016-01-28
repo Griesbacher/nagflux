@@ -140,6 +140,8 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 	startTime := time.Now()
 	sendErr := worker.sendData([]byte(dataToSend), true)
 	if sendErr != nil {
+		worker.connector.TestIfIsAlive()
+		worker.connector.TestDatabaseExists()
 		for i := 0; i < 3; i++ {
 			switch sendErr {
 			case errorBadRequest:

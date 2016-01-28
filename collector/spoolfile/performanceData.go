@@ -31,16 +31,15 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 			helper.SanitizeInfluxInput(p.command),
 			helper.SanitizeInfluxInput(p.performanceLabel),
 		)
-		if p.unit != "" {
-			tableName += fmt.Sprintf(`,unit=%s`, p.unit)
-		}
 		if len(p.tags) > 0 {
 			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 		}
 
 		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
+		if p.unit != "" {
+			tableName += fmt.Sprintf(`,unit="%s"`, p.unit)
+		}
 		tableName += fmt.Sprintf(" %s\n", p.time)
-
 		return tableName
 	}
 	return ""
