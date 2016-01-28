@@ -35,7 +35,7 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 		}
 		if p.unit != "" {
-			tableName += fmt.Sprintf(`,unit="%s"`, p.unit)
+			tableName += fmt.Sprintf(`,unit=%s`, p.unit)
 		}
 
 		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
