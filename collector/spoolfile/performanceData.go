@@ -13,11 +13,10 @@ type PerformanceData struct {
 	service          string
 	command          string
 	performanceLabel string
-	performanceType  string
 	unit             string
 	time             string
-	value            string
 	tags             map[string]string
+	fields           map[string]string
 }
 
 func (p PerformanceData) PrintForInfluxDB(version float32) string {
@@ -28,10 +27,9 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 		} else {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
 		}
-		tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s,performanceType=%s`,
+		tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s`,
 			helper.SanitizeInfluxInput(p.command),
 			helper.SanitizeInfluxInput(p.performanceLabel),
-			helper.SanitizeInfluxInput(p.performanceType),
 		)
 		if p.unit != "" {
 			tableName += fmt.Sprintf(`,unit=%s`, p.unit)
@@ -39,7 +37,10 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 		if len(p.tags) > 0 {
 			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 		}
-		tableName += fmt.Sprintf(" value=%s %s\n", p.value, p.time)
+
+		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
+		tableName += fmt.Sprintf(" %s\n", p.time)
+
 		return tableName
 	}
 	return ""
@@ -54,14 +55,14 @@ func (p PerformanceData) PrintForElasticsearch(version float32, index string) st
 		}
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, index) + "\n"
 		data := fmt.Sprintf(
-			`{"value":%s,"@timestamp":%s,"@hostname":"%s","@service":"%s","@command":"%s","@performanceLabel":"%s","@performanceType":"%s"}`,
-			p.value,
+			`{"value":%s,"@timestamp":%s,"@hostname":"%s","@service":"%s","@command":"%s","@performanceLabel":"%s"}`,
+			"", //p.value,
 			p.time,
 			strings.Replace(p.hostname, `\`, "", -1),
 			strings.Replace(p.service, `\`, "", -1),
 			strings.Replace(p.command, `\`, "", -1),
 			strings.Replace(p.performanceLabel, `\`, "", -1),
-			strings.Replace(p.performanceType, `\`, "", -1),
+			//strings.Replace(p.performanceType, `\`, "", -1),
 		) + "\n"
 		return head + data
 	}

@@ -56,6 +56,9 @@ Commandline Parameter:
 	log = logging.GetLogger()
 	resultQueues := map[data.Datatype]chan collector.Printable{}
 	stoppables := []Stoppable{}
+	if len(cfg.Main.FieldSeparator) < 1 {
+		fmt.Errorf("FieldSeparator is too short!")
+	}
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 	if cfg.Influx.Enabled {
 		resultQueues[data.InfluxDB] = make(chan collector.Printable, int(resultQueueLength))

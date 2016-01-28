@@ -2,6 +2,7 @@ package spoolfile
 
 import (
 	"errors"
+	"fmt"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/data"
@@ -131,6 +132,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 				performanceLabel: value[1],
 				unit:             value[3],
 				tags:             map[string]string{},
+				fields:           map[string]string{},
 			}
 
 			for i, data := range value {
@@ -143,7 +145,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 					//Add downtime tag if needed
 					if performanceType == "value" && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service, input[timet]) {
-						perf.tags["downtime"] = "1"
+						perf.tags["downtime"] = "true"
 					}
 
 					if performanceType == "warn" || performanceType == "crit" {
@@ -152,12 +154,10 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						if len(rangeHits) == 1 {
 							perf.tags["type"] = "normal"
 							perf.tags["fill"] = "none"
-							perf.value = helper.StringIntToStringFloat(rangeHits[0][0])
-							perf.performanceType = performanceType
-							ch <- perf
+							perf.fields[performanceType] = helper.StringIntToStringFloat(rangeHits[0][0])
+
 						} else if len(rangeHits) == 2 {
 							//If there is a range with no infinity as border, create two points
-							perf.performanceType = performanceType
 							if strings.Contains(data, "@") {
 								perf.tags["fill"] = "inner"
 							} else {
@@ -165,23 +165,21 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 							}
 
 							for i, tag := range []string{"min", "max"} {
-								tmpPerf := perf
-								tmpPerf.tags = helper.CopyMap(perf.tags)
-								tmpPerf.tags["type"] = tag
-								tmpPerf.value = helper.StringIntToStringFloat(rangeHits[i][0])
-								ch <- tmpPerf
+								perf.tags["type"] = tag
+								tagKey := fmt.Sprintf("%s-%s", performanceType, tag)
+								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
 						} else {
 							logging.GetLogger().Warn("Regexmatching went wrong", rangeHits)
 						}
 
 					} else {
-						perf.value = helper.StringIntToStringFloat(data)
-						perf.performanceType = performanceType
-						ch <- perf
+						perf.fields[performanceType] = helper.StringIntToStringFloat(data)
+
 					}
 				}
 			}
+			ch <- perf
 		}
 		close(ch)
 	}()

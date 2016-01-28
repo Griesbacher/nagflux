@@ -300,7 +300,7 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	var err error
 
 	if worker.version >= 2 {
-		result = job.PrintForElasticsearch(worker.version,worker.index)
+		result = job.PrintForElasticsearch(worker.version, worker.index)
 	} else {
 		worker.log.Fatalf("This elasticsearch version [%f] given in the config is not supportet", worker.version)
 		err = errors.New("This elasticsearch version given in the config is not supportet")
