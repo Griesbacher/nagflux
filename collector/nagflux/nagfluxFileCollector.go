@@ -21,6 +21,11 @@ type FileCollector struct {
 	fieldSeparator rune
 }
 
+/*
+table&timestamp&value&t_taag&f_fiield
+foo&1&2&123&"""asdf"""
+*/
+
 var requiredFields = []string{"table", "timestamp", "value"}
 
 //NewNagfluxFileCollector constructor, which also starts the collector.
