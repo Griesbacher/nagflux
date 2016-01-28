@@ -86,11 +86,27 @@ func (nfc FileCollector) parseFile(filename string) []NagfluxPrintable {
 		nfc.log.Warnf("The file %s doesn't contain all of these fields: %s", filename, requiredFields)
 		return result
 	}
+
+	tagIndices := map[int]string{}
+	fieldIndices := map[int]string{}
+
+	for i, v := range records[0] {
+		if v[:2] == "t_" {
+			tagIndices[i] = v[2:]
+		} else if v[:2] == "f_" {
+			fieldIndices[i] = v[2:]
+		} else if helper.Contains(requiredFields, []string{v}) {
+			continue
+		} else {
+			nfc.log.Warnf("This column does not fit the requirements: %s. Tags should start with t_, fields with f_", v)
+		}
+	}
+
 	for i, r := range records {
 		if i == 0 {
 			continue
 		}
-		currentPrintable := NagfluxPrintable{Store: map[string]string{}}
+		currentPrintable := NagfluxPrintable{tags: map[string]string{}, fields: map[string]string{}}
 		for i, v := range r {
 			if records[0][i] == requiredFields[0] {
 				currentPrintable.Table = v
@@ -98,8 +114,12 @@ func (nfc FileCollector) parseFile(filename string) []NagfluxPrintable {
 				currentPrintable.Timestamp = v
 			} else if records[0][i] == requiredFields[2] {
 				currentPrintable.Value = v
+			} else if val, ok := tagIndices[i]; ok {
+				currentPrintable.tags[val] = v
+			} else if val, ok := fieldIndices[i]; ok {
+				currentPrintable.fields[val] = v
 			} else {
-				currentPrintable.Store[records[0][i]] = v
+				nfc.log.Warnf("This should not happen: %s->%s", records[0][i], v)
 			}
 		}
 		result = append(result, currentPrintable)

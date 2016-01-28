@@ -10,20 +10,22 @@ type NagfluxPrintable struct {
 	Table     string
 	Timestamp string
 	Value     string
-	Store     map[string]string
+	tags      map[string]string
+	fields    map[string]string
 }
 
 func (p NagfluxPrintable) PrintForInfluxDB(version float32) string {
 	line := helper.SanitizeInfluxInput(p.Table)
-	cleanStore := map[string]string{}
-	for k, v := range p.Store {
-		cleanStore[helper.SanitizeInfluxInput(k)] = helper.SanitizeInfluxInput(v)
+	p.tags = helper.SanitizeMap(p.tags)
+	if len(p.tags) > 0 {
+		line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 	}
-	tags := helper.PrintMapAsString(cleanStore, ",", "=")
-	if tags != "" {
-		line += "," + tags
+	p.fields = helper.SanitizeMap(p.fields)
+	line += fmt.Sprintf(` value=%s`, p.Value)
+	if len(p.fields) > 0 {
+		line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
 	}
-	return fmt.Sprintf("%s value=%s %s", line, helper.SanitizeInfluxInput(p.Value), p.Timestamp)
+	return fmt.Sprintf("%s %s", line, p.Timestamp)
 }
 
 func (p NagfluxPrintable) PrintForElasticsearch(version float32, index string) string {

@@ -165,7 +165,7 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 							}
 
 							for i, tag := range []string{"min", "max"} {
-								perf.fields["type"] = fmt.Sprintf(`"%s"`,tag)
+								perf.fields["type"] = fmt.Sprintf(`"%s"`, tag)
 								tagKey := fmt.Sprintf("%s-%s", performanceType, tag)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
