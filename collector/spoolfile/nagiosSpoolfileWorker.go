@@ -152,20 +152,20 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 						//Range handling
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
-							perf.tags["type"] = `"normal"`
-							perf.tags["fill"] = `"none"`
+							perf.tags["type"] = "normal"
+							perf.tags["fill"] = "none"
 							perf.fields[performanceType] = helper.StringIntToStringFloat(rangeHits[0][0])
 
 						} else if len(rangeHits) == 2 {
 							//If there is a range with no infinity as border, create two points
 							if strings.Contains(data, "@") {
-								perf.tags["fill"] = `"inner"`
+								perf.tags["fill"] = "inner"
 							} else {
-								perf.tags["fill"] = `"outer"`
+								perf.tags["fill"] = "outer"
 							}
 
 							for i, tag := range []string{"min", "max"} {
-								perf.tags["type"] = fmt.Sprintf(`"%s"`, tag)
+								perf.tags["type"] = tag
 								tagKey := fmt.Sprintf("%s-%s", performanceType, tag)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
