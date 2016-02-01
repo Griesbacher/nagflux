@@ -167,8 +167,10 @@ func (connector *Connector) TestIfIsAlive() bool {
 
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestDatabaseExists() bool {
-	resp, _ := http.Get(connector.connectionHost + "/query?q=show%20databases")
-
+	resp, err := http.Get(connector.connectionHost + "/query?q=show%20databases")
+	if err != nil {
+		return false
+	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 
@@ -188,8 +190,10 @@ func (connector *Connector) TestDatabaseExists() bool {
 
 //CreateDatabase creates the database.
 func (connector *Connector) CreateDatabase() bool {
-	resp, _ := http.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
-
+	resp, err := http.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
+	if err != nil {
+		return false
+	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	if string(body) == `results":[{}]}` {
