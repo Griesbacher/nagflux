@@ -69,6 +69,7 @@ Commandline Parameter:
 	}
 
 	if cfg.Elasticsearch.Enabled {
+		log.Fatal("Elasticsearch is not supported so far. Please disable the feature till further updates :(") //TODO: remove
 		resultQueues[data.Elasticsearch] = make(chan collector.Printable, int(resultQueueLength))
 		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
 		stoppables = append(stoppables, elasticsearch)
