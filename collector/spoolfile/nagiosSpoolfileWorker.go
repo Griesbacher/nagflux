@@ -150,11 +150,9 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 
 					if performanceType == "warn" || performanceType == "crit" {
 						//Range handling
-						typeLabel := performanceType + "-type"
 						fillLabel := performanceType + "-fill"
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
-							perf.tags[typeLabel] = "normal"
 							perf.tags[fillLabel] = "none"
 							perf.fields[performanceType] = helper.StringIntToStringFloat(rangeHits[0][0])
 
@@ -167,7 +165,6 @@ func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string)
 							}
 
 							for i, tag := range []string{"min", "max"} {
-								perf.tags[typeLabel] = tag
 								tagKey := fmt.Sprintf("%s-%s", performanceType, tag)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
