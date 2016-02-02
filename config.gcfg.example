@@ -26,6 +26,7 @@ Arguments = "precision=ms&u=root&p=root&db=nagflux"
 CreateDatabaseIfNotExists = true
 NastyString = "\\ "
 NastyStringToReplace = " "
+HostcheckAlias = "hostcheck"
 
 [Livestatus]
 #tcp or file
