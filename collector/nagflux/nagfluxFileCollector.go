@@ -113,18 +113,20 @@ func (nfc FileCollector) parseFile(filename string) []NagfluxPrintable {
 		}
 		currentPrintable := NagfluxPrintable{tags: map[string]string{}, fields: map[string]string{}}
 		for i, v := range r {
-			if records[0][i] == requiredFields[0] {
-				currentPrintable.Table = v
-			} else if records[0][i] == requiredFields[1] {
-				currentPrintable.Timestamp = v
-			} else if records[0][i] == requiredFields[2] {
-				currentPrintable.Value = v
-			} else if val, ok := tagIndices[i]; ok {
-				currentPrintable.tags[val] = v
-			} else if val, ok := fieldIndices[i]; ok {
-				currentPrintable.fields[val] = v
-			} else {
-				nfc.log.Warnf("This should not happen: %s->%s", records[0][i], v)
+			if v != "" {
+				if records[0][i] == requiredFields[0] {
+					currentPrintable.Table = v
+				} else if records[0][i] == requiredFields[1] {
+					currentPrintable.Timestamp = v
+				} else if records[0][i] == requiredFields[2] {
+					currentPrintable.Value = v
+				} else if val, ok := tagIndices[i]; ok {
+					currentPrintable.tags[val] = v
+				} else if val, ok := fieldIndices[i]; ok {
+					currentPrintable.fields[val] = v
+				} else {
+					nfc.log.Warnf("This should not happen: %s->%s", records[0][i], v)
+				}
 			}
 		}
 		result = append(result, currentPrintable)

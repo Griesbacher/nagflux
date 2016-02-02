@@ -31,3 +31,4 @@ nagflux.dump
 nagflux.dump-errors
 cover.out
 test
+nagflux.dump.influx-errors
