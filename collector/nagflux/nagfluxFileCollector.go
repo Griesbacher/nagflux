@@ -72,8 +72,8 @@ func (nfc FileCollector) run() {
 	}
 }
 
-func (nfc FileCollector) parseFile(filename string) []NagfluxPrintable {
-	result := []NagfluxPrintable{}
+func (nfc FileCollector) parseFile(filename string) []Printable {
+	result := []Printable{}
 	csvfile, err := os.Open(filename)
 	if err != nil {
 		nfc.log.Warn(err)
@@ -111,7 +111,7 @@ func (nfc FileCollector) parseFile(filename string) []NagfluxPrintable {
 		if i == 0 {
 			continue
 		}
-		currentPrintable := NagfluxPrintable{tags: map[string]string{}, fields: map[string]string{}}
+		currentPrintable := Printable{tags: map[string]string{}, fields: map[string]string{}}
 		for i, v := range r {
 			if v != "" {
 				if records[0][i] == requiredFields[0] {

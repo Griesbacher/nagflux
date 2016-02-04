@@ -14,5 +14,8 @@ type ResultsStruct []struct {
 type SeriesStruct []struct {
 	Columns []string
 	Name    string
-	Values  [][]interface{}
+	Values  []SeriesValue
 }
+
+//SeriesValue is list of values for a certain timestamp
+type SeriesValue []interface{}

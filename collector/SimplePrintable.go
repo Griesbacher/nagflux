@@ -8,6 +8,7 @@ type SimplePrintable struct {
 	Datatype data.Datatype
 }
 
+//PrintForInfluxDB generates an String for InfluxDB
 func (p SimplePrintable) PrintForInfluxDB(version float32) string {
 	if p.Datatype == data.InfluxDB {
 		return p.Text
@@ -15,6 +16,7 @@ func (p SimplePrintable) PrintForInfluxDB(version float32) string {
 	return ""
 }
 
+//PrintForElasticsearch generates an String for Elasticsearch
 func (p SimplePrintable) PrintForElasticsearch(version float32, index string) string {
 	if p.Datatype == data.Elasticsearch {
 		return p.Text

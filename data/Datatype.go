@@ -4,6 +4,8 @@ package data
 type Datatype string
 
 const (
-	InfluxDB      Datatype = "influx"
+	//InfluxDB enum
+	InfluxDB Datatype = "influx"
+	//Elasticsearch enum
 	Elasticsearch Datatype = "elastic"
 )

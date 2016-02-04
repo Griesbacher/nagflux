@@ -5,8 +5,8 @@ import (
 	"github.com/griesbacher/nagflux/helper"
 )
 
-//NagfluxPrintable converts from nagfluxfile format to X
-type NagfluxPrintable struct {
+//Printable converts from nagfluxfile format to X
+type Printable struct {
 	Table     string
 	Timestamp string
 	Value     string
@@ -14,7 +14,8 @@ type NagfluxPrintable struct {
 	fields    map[string]string
 }
 
-func (p NagfluxPrintable) PrintForInfluxDB(version float32) string {
+//PrintForInfluxDB prints the data in influxdb lineformat
+func (p Printable) PrintForInfluxDB(version float32) string {
 	line := helper.SanitizeInfluxInput(p.Table)
 	p.tags = helper.SanitizeMap(p.tags)
 	if len(p.tags) > 0 {
@@ -28,7 +29,8 @@ func (p NagfluxPrintable) PrintForInfluxDB(version float32) string {
 	return fmt.Sprintf("%s %s", line, p.Timestamp)
 }
 
-func (p NagfluxPrintable) PrintForElasticsearch(version float32, index string) string {
+//PrintForElasticsearch prints in the elasticsearch json format
+func (p Printable) PrintForElasticsearch(version float32, index string) string {
 	return ""
 }
 

@@ -22,6 +22,7 @@ type DumpfileCollector struct {
 	dataType  data.Datatype
 }
 
+//GenDumpfileName returns the name of an dumpfile
 func GenDumpfileName(filename string, ending data.Datatype) string {
 	return fmt.Sprintf("%s.%s", filename, ending)
 }

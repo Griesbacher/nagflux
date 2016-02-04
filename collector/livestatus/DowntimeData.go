@@ -18,7 +18,7 @@ func (downtime *DowntimeData) sanitizeValues() {
 	downtime.endTime = helper.SanitizeInfluxInput(downtime.endTime)
 }
 
-//Print prints the data in influxdb lineformat
+//PrintForInfluxDB prints the data in influxdb lineformat
 func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 	downtime.sanitizeValues()
 	if version >= 0.9 {
@@ -31,6 +31,7 @@ func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 	panic("")
 }
 
+//PrintForElasticsearch prints in the elasticsearch json format
 func (downtime DowntimeData) PrintForElasticsearch(version float32, index string) string {
 	return ""
 }

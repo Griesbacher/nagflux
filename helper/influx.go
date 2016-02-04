@@ -17,6 +17,7 @@ func SanitizeInfluxInput(input string) string {
 	return input
 }
 
+//SanitizeMap calls SanitizeInfluxInput in key and value
 func SanitizeMap(input map[string]string) map[string]string {
 	result := map[string]string{}
 	for k, v := range input {

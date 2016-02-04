@@ -19,6 +19,7 @@ type PerformanceData struct {
 	fields           map[string]string
 }
 
+//PrintForInfluxDB prints the data in influxdb lineformat
 func (p PerformanceData) PrintForInfluxDB(version float32) string {
 	if version >= 0.9 {
 		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
@@ -45,6 +46,7 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 	return ""
 }
 
+//PrintForElasticsearch prints in the elasticsearch json format
 func (p PerformanceData) PrintForElasticsearch(version float32, index string) string {
 	if version >= 2 {
 		if p.service == "" {

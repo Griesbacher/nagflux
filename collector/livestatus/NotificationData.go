@@ -20,7 +20,7 @@ func (notification *NotificationData) sanitizeValues() {
 	notification.notificationLevel = helper.SanitizeInfluxInput(notification.notificationLevel)
 }
 
-//Print prints the data in influxdb lineformat
+//PrintForInfluxDB prints the data in influxdb lineformat
 func (notification NotificationData) PrintForInfluxDB(version float32) string {
 	notification.sanitizeValues()
 	if version >= 0.9 {
@@ -39,6 +39,7 @@ func (notification NotificationData) PrintForInfluxDB(version float32) string {
 	panic("")
 }
 
+//PrintForElasticsearch prints in the elasticsearch json format
 func (notification NotificationData) PrintForElasticsearch(version float32, index string) string {
 	return ""
 }

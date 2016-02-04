@@ -16,7 +16,7 @@ func (comment *CommentData) sanitizeValues() {
 	comment.entryType = helper.SanitizeInfluxInput(comment.entryType)
 }
 
-//Print srints the data in influxdb lineformat
+//PrintForInfluxDB prints the data in influxdb lineformat
 func (comment CommentData) PrintForInfluxDB(version float32) string {
 	comment.sanitizeValues()
 	if version >= 0.9 {
@@ -38,6 +38,7 @@ func (comment CommentData) PrintForInfluxDB(version float32) string {
 	panic("")
 }
 
+//PrintForElasticsearch prints in the elasticsearch json format
 func (comment CommentData) PrintForElasticsearch(version float32, index string) string {
 	return ""
 }
