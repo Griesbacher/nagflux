@@ -24,15 +24,17 @@ const (
 
 var TestData = []struct {
 	input  string
-	output influx.SeriesStruct
+	output influx.SeriesValue
 }{
-	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::b	SERVICEDESC::b	SERVICEPERFDATA::C:\ use=1;;;;	SERVICECHECKCOMMAND::usage
-`, influx.SeriesStruct{{Columns: []string{"time", "value"}, Name: `b&b&usage&C: use&value`, Values: [][]interface{}{[]interface{}{1000.0, 1.0}}}}},
-	//Basic
-	{`DATATYPE::SERVICEPERFDATA	TIMET::2	HOSTNAME::a	SERVICEDESC::a	SERVICEPERFDATA::rta=1;;;;	SERVICECHECKCOMMAND::ping
-`, influx.SeriesStruct{{Columns: []string{"time", "value"}, Name: `a&a&ping&rta&value`, Values: [][]interface{}{[]interface{}{2000.0, 1.0}}}}},
-	//Test nastystrings
+	//Nasty
+	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::h1	SERVICEDESC::s1	SERVICEPERFDATA::C:\ use=1;;;;	SERVICECHECKCOMMAND::usage
+`, []interface{}{1000.0, "usage", "h1", "C: use", "s1", 1.0}},
+	//Normal
+	{`DATATYPE::SERVICEPERFDATA	TIMET::2	HOSTNAME::h2	SERVICEDESC::s2	SERVICEPERFDATA::rta=2;;;;	SERVICECHECKCOMMAND::ping
+`, []interface{}{2000.0, "ping", "h2", "rta", "s2", 2.0}},
 }
+var TestDataName = `metrics`
+var TestDataColumns = []string{"time", "command", "host", "performanceLabel", "service", "value"}
 
 var OldConfig string
 var influxParam string
@@ -99,14 +101,19 @@ func checkDatabase() {
 		query, _ := getEverything()
 		result := (*query).Results[0]
 		hits := 0
+		if len(result.Series) == 0 || TestDataName != result.Series[0].Name || !reflect.DeepEqual(TestDataColumns, result.Series[0].Columns) {
+			continue
+		}
 		for _, testData := range TestData {
-			for _, series := range result.Series {
-				if reflect.DeepEqual(series, testData.output[0]) {
+			for _, values := range result.Series[0].Values {
+				if reflect.DeepEqual(values, testData.output) {
 					hits++
-					fmt.Println("hit")
+					//fmt.Println("hit")
+					break
 				}
 			}
 		}
+
 		if hits == len(TestData) {
 			finished <- true
 			return
@@ -115,7 +122,7 @@ func checkDatabase() {
 }
 
 func getEverything() (*influx.ShowSeriesResult, error) {
-	resp, err := http.Get(influxParam + "/query?db=" + url.QueryEscape(databaseName) + "&q=select%20*%20from%20%2F.*%2F&epoch=ms")
+	resp, err := http.Get(influxParam + "/query?db=" + url.QueryEscape(databaseName) + "&q=select%20*%20from%20metrics&epoch=ms")
 	if err != nil {
 		return nil, err
 	}
@@ -145,15 +152,17 @@ func createConfig() {
 	MaxInfluxWorker = 5
 	DumpFile = "nagflux.dump"
 	NagfluxSpoolfileFolder = "test/nagflux"
+	FieldSeparator = "&"
 
 [Log]
 	LogFile = ""
-	MinSeverity = "DEBUG"
+	MinSeverity = "WARN"
 
 [Monitoring]
 	WebserverPort = ""
 
 [Influx]
+    	Enabled = true
 	Version = 0.9
 	Address = "%s"
 	Arguments = "precision=ms&db=%s"
@@ -161,12 +170,16 @@ func createConfig() {
 	NastyString = "\\ "
 	NastyStringToReplace = " "
 
-[Grafana]
-	FieldSeperator = "&"
-
 [Livestatus]
 	Type = "tcp"
-	Address = "%s"`, influxParam, databaseName, livestatusParam))
+	Address = "%s"
+
+[Elasticsearch]
+	    Enabled = false
+	    Address = "http://localhost:9200"
+	    Index = "nagflux"
+	    Version = 2.1
+	`, influxParam, databaseName, livestatusParam))
 	if err := ioutil.WriteFile(filename, config, 0644); err != nil {
 		panic(err)
 	}

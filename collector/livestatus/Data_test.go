@@ -9,7 +9,7 @@ import (
 
 func TestDataSanitizeValues(t *testing.T) {
 	t.Parallel()
-	live1 := Data{"&", "host", "service", "comm\\ent a", "0", "author"}
+	live1 := Data{"host", "service", "comm\\ent a", "0", "author"}
 	live2 := live1
 	live2.sanitizeValues()
 	if !reflect.DeepEqual(live1, live2) {
@@ -19,8 +19,8 @@ func TestDataSanitizeValues(t *testing.T) {
 
 func TestGetTablename(t *testing.T) {
 	t.Parallel()
-	live := Data{"&", "host", "service", "comment", "0", "author"}
-	tablename := fmt.Sprintf("%s%s%s%smessages", live.hostName, "&", live.serviceDisplayName, "&")
+	live := Data{"host", "service", "comment", "0", "author"}
+	tablename := fmt.Sprintf("messages,host=%s,service=%s", live.hostName, live.serviceDisplayName)
 	if live.getTablename() != tablename {
 		t.Error("Tablename should match")
 	}
@@ -32,7 +32,7 @@ func TestGetTablename(t *testing.T) {
 
 func TestGenInfluxLineWithValue(t *testing.T) {
 	t.Parallel()
-	live := Data{"&", "host", "service", "comment", "0", "author"}
+	live := Data{"host", "service", "comment", "0", "author"}
 
 	expected := fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), ",author="+live.author, "special text", helper.CastStringTimeFromSToMs(live.entryTime))
 	result := live.genInfluxLineWithValue("", "special text")
@@ -43,7 +43,7 @@ func TestGenInfluxLineWithValue(t *testing.T) {
 
 func TestGenInfluxLine(t *testing.T) {
 	t.Parallel()
-	live := Data{"&", "host", "service", "comment", "0", "author"}
+	live := Data{"host", "service", "comment", "0", "author"}
 	expected := fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), ",a=1,b=2,author="+live.author, "comment", helper.CastStringTimeFromSToMs(live.entryTime))
 	result := live.genInfluxLine(",a=1,b=2")
 	if expected != result {
