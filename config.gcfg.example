@@ -1,41 +1,41 @@
 [main]
-NagiosSpoolfileFolder = "/var/spool/nagios"
-NagiosSpoolfileWorker = 1
-InfluxWorker = 2
-MaxInfluxWorker = 5
-DumpFile = "nagflux.dump"
-NagfluxSpoolfileFolder = "/var/spool/nagflux"
-FieldSeparator = "&"
+    NagiosSpoolfileFolder = "/var/spool/nagios"
+    NagiosSpoolfileWorker = 1
+    InfluxWorker = 2
+    MaxInfluxWorker = 5
+    DumpFile = "nagflux.dump"
+    NagfluxSpoolfileFolder = "/var/spool/nagflux"
+    FieldSeparator = "&"
 
 [Log]
-#leave empty for stdout
-LogFile = ""
-#List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
-MinSeverity = "INFO"
+    #leave empty for stdout
+    LogFile = ""
+    #List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
+    MinSeverity = "INFO"
 
 [Monitoring]
-#leave empty to disable
-#WebserverPort = ":7000"
-WebserverPort = ""
+    #leave empty to disable
+    #WebserverPort = ":7000"
+    WebserverPort = ""
 
 [Influx]
-Enabled = true
-Version = 0.9
-Address = "http://127.0.0.1:8086"
-Arguments = "precision=ms&u=root&p=root&db=nagflux"
-CreateDatabaseIfNotExists = true
-NastyString = "\\ "
-NastyStringToReplace = " "
-HostcheckAlias = "hostcheck"
+    Enabled = true
+    Version = 0.9
+    Address = "http://127.0.0.1:8086"
+    Arguments = "precision=ms&u=root&p=root&db=nagflux"
+    CreateDatabaseIfNotExists = true
+    NastyString = "\\ "
+    NastyStringToReplace = " "
+    HostcheckAlias = "hostcheck"
 
 [Livestatus]
-#tcp or file
-Type = "tcp"
-#tcp: 127.0.0.1:6557 or file /var/run/live
-Address = "127.0.0.1:6557"
+    #tcp or file
+    Type = "tcp"
+    #tcp: 127.0.0.1:6557 or file /var/run/live
+    Address = "127.0.0.1:6557"
 
 [Elasticsearch]
-Enabled = true
-Address = "http://localhost:9200"
-Index = "nagflux"
-Version = 2.1
+    Enabled = false
+    Address = "http://localhost:9200"
+    Index = "nagflux"
+    Version = 2.1
