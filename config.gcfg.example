@@ -39,3 +39,6 @@
     Address = "http://localhost:9200"
     Index = "nagflux"
     Version = 2.1
+    HostcheckAlias = "hostcheck"
+    NumberOfShards = 1
+    NumberOfReplicas = 1

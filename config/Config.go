@@ -33,9 +33,12 @@ type Config struct {
 		Address string
 	}
 	Elasticsearch struct {
-		Enabled bool
-		Address string
-		Index   string
-		Version float32
+		Enabled          bool
+		Address          string
+		Index            string
+		Version          float32
+		HostcheckAlias   string
+		NumberOfShards   int
+		NumberOfReplicas int
 	}
 }
