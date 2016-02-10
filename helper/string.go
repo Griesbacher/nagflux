@@ -1,8 +1,19 @@
 package helper
 
 import (
+	"strconv"
 	"strings"
 )
+
+//IsStringANumber returns true if the given string can be casted to int or float.
+func IsStringANumber(input string) bool {
+	_, floatErr := strconv.ParseFloat(input, 32)
+	if floatErr == nil {
+		return true
+	}
+	_, intErr := strconv.ParseInt(input, 10, 32)
+	return intErr == nil
+}
 
 //StringToMap splits a string by two splitter an returns a map.
 func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]string {

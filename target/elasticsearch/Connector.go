@@ -1,9 +1,13 @@
 package elasticsearch
 
 import (
+	"fmt"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/config"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
+	"net/http"
 	"time"
 )
 
@@ -20,11 +24,18 @@ type Connector struct {
 	version        float32
 	isAlive        bool
 	databaseExists bool
+	httpClient     http.Client
 }
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
 func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
-	s := &Connector{connectionHost, index, dumpFile, make([]*Worker, workerAmount), maxWorkers, jobs, make(chan bool), logging.GetLogger(), version, true, true} //TODO: change boolean to false
+	if connectionHost[len(connectionHost)-1] != '/' {
+		connectionHost += "/"
+	}
+	s := &Connector{connectionHost, index, dumpFile, make([]*Worker, workerAmount), maxWorkers,
+		jobs, make(chan bool), logging.GetLogger(), version,
+		false, false, http.Client{Timeout: time.Duration(5 * time.Second)},
+	}
 
 	gen := WorkerGenerator(jobs, connectionHost+"/_bulk", index, dumpFile, version, s)
 
@@ -34,7 +45,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dump
 		s.TestIfIsAlive()
 	}
 	if !s.isAlive {
-		s.log.Panic("Influxdb not running")
+		s.log.Panic("Elasticsearch not running")
 	}
 	s.TestDatabaseExists()
 	for i := 0; i < 5 && !s.databaseExists; i++ {
@@ -95,7 +106,7 @@ func (connector Connector) DatabaseExists() bool {
 func (connector *Connector) Stop() {
 	connector.quit <- true
 	<-connector.quit
-	connector.log.Debug("InfluxConnectorFactory stopped")
+	connector.log.Debug("ElasticsearchConnectorFactory stopped")
 }
 
 //Waits just for the end.
@@ -124,15 +135,158 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive() bool {
-	return true //TODO: fix
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost, "HEAD")
+	connector.isAlive = result
+	return result
 }
 
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestDatabaseExists() bool {
-	return true //TODO: fix
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index, "HEAD")
+	connector.databaseExists = result
+	return result
 }
 
 //CreateDatabase creates the database.
 func (connector *Connector) CreateDatabase() bool {
-	return true //TODO: fix
+	mapping := fmt.Sprintf(MappingIndex, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
+	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index, "PUT", mapping)
+	if !createIndex {
+		return false
+	}
+	createMessages, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/messages/_mapping", "PUT", MappingMessages)
+	if !createMessages {
+		return false
+	}
+	createPerfdata, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/perfdata/_mapping", "PUT", MappingPerfdata)
+	if !createPerfdata {
+		return false
+	}
+	return true
 }
+
+//MappingIndex is the mapping for the nagflux index
+const MappingIndex = `{
+  "settings": {
+    "index": {
+      "number_of_shards": "%d",
+      "number_of_replicas": "%d",
+	  "refresh_interval": "60s"
+    }
+  },
+  "mappings": {
+    "_default_": {
+	  "dynamic_templates": [
+        {
+          "strings": {
+            "match": "*",
+            "match_mapping_type": "string",
+            "mapping":   { "type": "string", "index": "not_analyzed" }
+          }
+        }
+      ],
+      "_source": {
+        "enabled": false
+      },
+      "_all": {
+        "enabled": false
+      }
+    }
+  }
+}`
+
+//MappingMessages is the mapping used to store messages
+const MappingMessages = `{
+  "messages": {
+    "properties": {
+      "timestamp": {
+        "format": "strict_date_optional_time||epoch_millis",
+        "type": "date"
+      },
+      "autor": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "type": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "value": {
+        "index": "not_analyzed",
+        "type": "string"
+      }
+    }
+  }
+}`
+
+//MappingPerfdata is the mapping used to store performancedata
+const MappingPerfdata = `{
+  "perfdata": {
+    "properties": {
+      "timestamp": {
+        "format": "strict_date_optional_time||epoch_millis",
+        "type": "date"
+      },
+      "hostname": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "service": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "command": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "performanceLabel": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "value": {
+        "index": "no",
+        "type": "float"
+      },
+      "warn": {
+        "index": "no",
+        "type": "float"
+      },
+      "warn-min": {
+        "index": "no",
+        "type": "float"
+      },
+      "warn-max": {
+        "index": "no",
+        "type": "float"
+      },
+      "warn-fill": {
+        "index": "no",
+        "type": "string"
+      },
+      "crit": {
+        "index": "no",
+        "type": "float"
+      },
+      "crit-min": {
+        "index": "no",
+        "type": "float"
+      },
+      "crit-max": {
+        "index": "no",
+        "type": "float"
+      },
+      "crit-fill": {
+        "index": "no",
+        "type": "string"
+      },
+      "min": {
+        "index": "no",
+        "type": "float"
+      },
+      "max": {
+        "index": "no",
+        "type": "float"
+      }
+    }
+  }
+}`

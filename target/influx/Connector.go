@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/data"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
@@ -151,16 +152,7 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive() bool {
-	resp, err := connector.httpClient.Get(connector.connectionHost + "/ping")
-	result := false
-	if err != nil {
-		return result
-	}
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		result = true
-	}
-
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+"/ping", "GET")
 	connector.isAlive = result
 	return result
 }
