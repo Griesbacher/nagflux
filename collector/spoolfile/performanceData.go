@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/helper"
-	"strings"
 )
 
 //PerformanceData represents the nagios perfdata
@@ -50,21 +49,21 @@ func (p PerformanceData) PrintForInfluxDB(version float32) string {
 func (p PerformanceData) PrintForElasticsearch(version float32, index string) string {
 	if version >= 2 {
 		if p.service == "" {
-			p.service = "hostcheck"
+			p.service = config.GetConfig().Influx.HostcheckAlias
 		} else {
 			p.service = p.service
 		}
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, index) + "\n"
 		data := fmt.Sprintf(
-			`{"value":%s,"@timestamp":%s,"@hostname":"%s","@service":"%s","@command":"%s","@performanceLabel":"%s"}`,
-			"", //p.value,
-			p.time,
-			strings.Replace(p.hostname, `\`, "", -1),
-			strings.Replace(p.service, `\`, "", -1),
-			strings.Replace(p.command, `\`, "", -1),
-			strings.Replace(p.performanceLabel, `\`, "", -1),
-			//strings.Replace(p.performanceType, `\`, "", -1),
-		) + "\n"
+			`{"timestamp":%s,"hostname":"%s","service":"%s","command":"%s","performanceLabel":"%s"`,
+			p.time, p.hostname, p.service, p.command, p.performanceLabel,
+		)
+		if p.unit != "" {
+			data += fmt.Sprintf(`,"unit":"%s"`, p.unit)
+		}
+		data += helper.CreateJSONFromStringMap(p.tags)
+		data += helper.CreateJSONFromStringMap(p.fields)
+		data += "}\n"
 		return head + data
 	}
 	return ""
