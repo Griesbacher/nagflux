@@ -33,5 +33,12 @@ func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 
 //PrintForElasticsearch prints in the elasticsearch json format
 func (downtime DowntimeData) PrintForElasticsearch(version float32, index string) string {
-	return ""
+	if version >= 2.0 {
+		typ := `downtime`
+		start := downtime.genElasticLineWithValue(index, typ, strings.TrimSpace("Downtime start: <br>"+downtime.comment), downtime.entryTime)
+		end := downtime.genElasticLineWithValue(index, typ, strings.TrimSpace("Downtime end: <br>"+downtime.comment), downtime.endTime)
+		return start + "\n" + end
+	}
+	logging.GetLogger().Criticalf("This elasticsearchversion [%f] given in the config is not supportet", version)
+	panic("")
 }

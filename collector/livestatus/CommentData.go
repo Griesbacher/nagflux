@@ -21,16 +21,8 @@ func (comment CommentData) PrintForInfluxDB(version float32) string {
 	comment.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
-		if comment.entryType == "1" {
-			tags = ",type=comment"
-		} else if comment.entryType == "2" {
-			tags = ",type=downtime"
-		} else if comment.entryType == "3" {
-			tags = ",type=flapping"
-		} else if comment.entryType == "4" {
-			tags = ",type=acknowledgement"
-		} else {
-			logging.GetLogger().Warn("This comment type is not supported:" + comment.entryType)
+		if text := commentIDToText(comment.entryType); text != "" {
+			tags = ",type=" + text
 		}
 		return comment.genInfluxLine(tags)
 	}
@@ -40,5 +32,25 @@ func (comment CommentData) PrintForInfluxDB(version float32) string {
 
 //PrintForElasticsearch prints in the elasticsearch json format
 func (comment CommentData) PrintForElasticsearch(version float32, index string) string {
+	if version >= 2.0 {
+		typ := commentIDToText(comment.entryType)
+		return comment.genElasticLineWithValue(index, typ, comment.comment, comment.entryTime)
+	}
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	panic("")
+}
+
+func commentIDToText(id string) string {
+	switch id {
+	case "1":
+		return "comment"
+	case "2":
+		return "downtime"
+	case "3":
+		return "flapping"
+	case "4":
+		return "acknowledgement"
+	}
+	logging.GetLogger().Warn("This comment type is not supported:" + id)
 	return ""
 }

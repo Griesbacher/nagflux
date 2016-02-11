@@ -25,12 +25,8 @@ func (notification NotificationData) PrintForInfluxDB(version float32) string {
 	notification.sanitizeValues()
 	if version >= 0.9 {
 		var tags string
-		if notification.notificationType == `HOST\ NOTIFICATION` {
-			tags = ",type=host_notification"
-		} else if notification.notificationType == `SERVICE\ NOTIFICATION` {
-			tags = ",type=service_notification"
-		} else {
-			logging.GetLogger().Warn("This notification type is not supported:" + notification.notificationType)
+		if text := notificationToText(notification.notificationType); text != "" {
+			tags = ",type=" + text
 		}
 		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), notification.comment)
 		return notification.genInfluxLineWithValue(tags, value)
@@ -41,5 +37,25 @@ func (notification NotificationData) PrintForInfluxDB(version float32) string {
 
 //PrintForElasticsearch prints in the elasticsearch json format
 func (notification NotificationData) PrintForElasticsearch(version float32, index string) string {
+	if version >= 2.0 {
+		text := notificationToText(notification.notificationType)
+		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), notification.comment)
+		return notification.genElasticLineWithValue(index, text, value, notification.entryTime)
+	}
+	return ""
+}
+
+func notificationToText(input string) string {
+	switch input {
+	case `HOST NOTIFICATION`:
+		return "host_notification"
+	case `HOST\ NOTIFICATION`:
+		return "host_notification"
+	case `SERVICE NOTIFICATION`:
+		return "service_notification"
+	case `SERVICE\ NOTIFICATION`:
+		return "service_notification"
+	}
+	logging.GetLogger().Warn("This notification type is not supported:" + input)
 	return ""
 }

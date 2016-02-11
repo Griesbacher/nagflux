@@ -3,6 +3,7 @@ package livestatus
 import (
 	"fmt"
 	"github.com/griesbacher/nagflux/helper"
+	"strings"
 )
 
 //Data contains basic data extracted from livestatusqueries.
@@ -36,4 +37,13 @@ func (live Data) genInfluxLine(tags string) string {
 func (live Data) genInfluxLineWithValue(tags, text string) string {
 	tags += ",author=" + live.author
 	return fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), tags, text, helper.CastStringTimeFromSToMs(live.entryTime))
+}
+
+func (live Data) genElasticLineWithValue(index, typ, value, timestamp string) string {
+	value = strings.Replace(value, `"`, `\"`, -1)
+	head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"messages"}}`, index) + "\n"
+	data := fmt.Sprintf(`{"timestamp":%s,"value":"%s","author":"%s","host":"%s","service":"%s","type":"%s"}`+"\n",
+		helper.CastStringTimeFromSToMs(timestamp), value, live.author, live.hostName, live.serviceDisplayName, typ,
+	)
+	return head + data
 }

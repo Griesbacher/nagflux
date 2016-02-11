@@ -55,11 +55,15 @@ func (p PerformanceData) PrintForElasticsearch(version float32, index string) st
 		}
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, index) + "\n"
 		data := fmt.Sprintf(
-			`{"timestamp":%s,"hostname":"%s","service":"%s","command":"%s","performanceLabel":"%s"`,
-			p.time, p.hostname, p.service, p.command, p.performanceLabel,
+			`{"timestamp":%s,"host":"%s","service":"%s","command":"%s","performanceLabel":"%s"`,
+			p.time,
+			helper.SanitizeElasicInput(p.hostname),
+			helper.SanitizeElasicInput(p.service),
+			helper.SanitizeElasicInput(p.command),
+			helper.SanitizeElasicInput(p.performanceLabel),
 		)
 		if p.unit != "" {
-			data += fmt.Sprintf(`,"unit":"%s"`, p.unit)
+			data += fmt.Sprintf(`,"unit":"%s"`, helper.SanitizeElasicInput(p.unit))
 		}
 		data += helper.CreateJSONFromStringMap(p.tags)
 		data += helper.CreateJSONFromStringMap(p.fields)

@@ -31,25 +31,13 @@ func (p Printable) PrintForInfluxDB(version float32) string {
 
 //PrintForElasticsearch prints in the elasticsearch json format
 func (p Printable) PrintForElasticsearch(version float32, index string) string {
+	if version >= 2 {
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"%s"}}`, index, p.Table) + "\n"
+		data := fmt.Sprintf(`{"timestamp":%s,"value":%s`, p.Timestamp, helper.GenJSONValueString(p.Value))
+		data += helper.CreateJSONFromStringMap(p.tags)
+		data += helper.CreateJSONFromStringMap(p.fields)
+		data += "}\n"
+		return head + data
+	}
 	return ""
 }
-
-/*
-func convertStringToX(input string, dataType data.Datatype) string {
-	if _, err := strconv.ParseFloat(input, 32); err == nil {
-		//Float
-		return input
-	} else if _, err := strconv.ParseInt(input, 10, 0); err == nil {
-		//Int
-		return input
-	}else if _, err := strconv.ParseBool(input); err == nil {
-		//Bool
-		return input
-	}
-	//String
-	if data.InfluxDB == data.InfluxDB {
-		return fmt.Sprintf(`"%s"`, input)
-	}
-	return input
-}
-*/
