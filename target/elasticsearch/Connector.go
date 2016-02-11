@@ -37,7 +37,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dump
 		false, false, http.Client{Timeout: time.Duration(5 * time.Second)},
 	}
 
-	gen := WorkerGenerator(jobs, connectionHost+"/_bulk", index, dumpFile, version, s)
+	gen := WorkerGenerator(jobs, connectionHost+"_bulk", index, dumpFile, version, s)
 
 	s.TestIfIsAlive()
 	for i := 0; i < 5 && !s.isAlive; i++ {
@@ -165,7 +165,7 @@ func (connector *Connector) CreateDatabase() bool {
 	return true
 }
 
-//MappingIndex is the mapping for the nagflux index
+//MappingIndex is the mapping for the nagflux index //TODO:change source back to false
 const MappingIndex = `{
   "settings": {
     "index": {
@@ -186,7 +186,7 @@ const MappingIndex = `{
         }
       ],
       "_source": {
-        "enabled": false
+        "enabled": true
       },
       "_all": {
         "enabled": false
@@ -199,11 +199,19 @@ const MappingIndex = `{
 const MappingMessages = `{
   "messages": {
     "properties": {
+        "host": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "service": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
       "timestamp": {
         "format": "strict_date_optional_time||epoch_millis",
         "type": "date"
       },
-      "autor": {
+      "author": {
         "index": "not_analyzed",
         "type": "string"
       },
@@ -227,7 +235,7 @@ const MappingPerfdata = `{
         "format": "strict_date_optional_time||epoch_millis",
         "type": "date"
       },
-      "hostname": {
+      "host": {
         "index": "not_analyzed",
         "type": "string"
       },

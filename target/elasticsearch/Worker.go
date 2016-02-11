@@ -2,7 +2,9 @@ package elasticsearch
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
@@ -10,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -31,7 +34,7 @@ type Worker struct {
 	index        string
 }
 
-const dataTimeout = time.Duration(5) * time.Second
+const dataTimeout = time.Duration(20) * time.Second
 
 var errorInterrupted = errors.New("Got interrupted")
 var errorBadRequest = errors.New("400 Bad Request")
@@ -78,7 +81,7 @@ func (worker Worker) run() {
 					return
 				case query = <-worker.jobs:
 					queries = append(queries, query)
-					if len(queries) == 1000 {
+					if len(queries) == 9000 { //9000 ~= 2,4 MB
 						worker.sendBuffer(queries)
 						queries = queries[:0]
 					}
@@ -219,7 +222,7 @@ func (worker Worker) readQueriesFromQueue() []string {
 
 //sends the raw data to influxdb and returns an err if given.
 func (worker Worker) sendData(rawData []byte, log bool) error {
-	//fmt.Println(string(rawData))
+	//worker.log.Debug("Bytes:", len(rawData))
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
 		worker.log.Warn(err)
@@ -231,28 +234,32 @@ func (worker Worker) sendData(rawData []byte, log bool) error {
 		return errorHTTPClient
 	}
 	defer resp.Body.Close()
-	worker.log.Debug(resp.Status)
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+	jsonSrc, _ := ioutil.ReadAll(resp.Body)
+	var result JSONResult
+	json.Unmarshal(jsonSrc, &result)
+	if !result.Errors {
 		//OK
 		return nil
-	} else if resp.StatusCode == 500 {
-		//Temporarily timeout
-		if log {
-			worker.logHTTPResponse(resp)
-		}
-		return error500
-	} else if resp.StatusCode == 400 {
-		//Bad Request
-		if log {
-			worker.logHTTPResponse(resp)
-		}
-		return errorBadRequest
 	}
-	//HTTP Error
+	//Bad Request
 	if log {
-		worker.logHTTPResponse(resp)
+		worker.printErrors(result, rawData)
+		worker.log.Warn(result.Items)
 	}
-	return errorFailedToSend
+	return nil //TODO: return error
+}
+
+func (worker Worker) printErrors(result JSONResult, rawData []byte) {
+	errors := []map[int]string{{}}
+	for index, item := range result.Items {
+		if item.Create.Status != 201 {
+			errors = append(errors, map[int]string{index * 2: strings.Replace(item.Create.Error.CausedBy.Reason, "\n", "", -1) + "\n"})
+		}
+	}
+
+	ioutil.WriteFile("currupt.json", rawData, 0644)
+	ioutil.WriteFile("error.json", []byte(fmt.Sprintf("%v", errors)), 0644)
+	panic("")
 }
 
 //Logs a http response to warn.
