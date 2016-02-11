@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 )
 
 var SanitizeInfluxData = []struct {
@@ -21,11 +21,11 @@ var SanitizeInfluxDataMap = []struct {
 	input  map[string]string
 	output map[string]string
 }{
-	{map[string]string{"a a":"'asdf'"}, map[string]string{`a\ a`:"asdf"}},
-	{map[string]string{"":"a,a"}, map[string]string{"":`a\,a`}},
-	{map[string]string{", ":"aa"}, map[string]string{`\,\ `:"aa"}},
-	{map[string]string{`c:\ `:""}, map[string]string{`c:\\ `:""}},
-	{map[string]string{"":""}, map[string]string{"":""}},
+	{map[string]string{"a a": "'asdf'"}, map[string]string{`a\ a`: "asdf"}},
+	{map[string]string{"": "a,a"}, map[string]string{"": `a\,a`}},
+	{map[string]string{", ": "aa"}, map[string]string{`\,\ `: "aa"}},
+	{map[string]string{`c:\ `: ""}, map[string]string{`c:\\ `: ""}},
+	{map[string]string{"": ""}, map[string]string{"": ""}},
 }
 
 func TestSanitizeInfluxInput(t *testing.T) {
