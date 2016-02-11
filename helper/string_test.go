@@ -63,3 +63,23 @@ func TestCastStringTimeFromSToMs(t *testing.T) {
 		}
 	}
 }
+
+var IsStringANumberData = []struct {
+	input    string
+	expected bool
+}{
+	{"1", true},
+	{"1.0", true},
+	{"1,0", false},
+	{"a", false},
+}
+
+func TestIsStringANumber(t *testing.T) {
+	t.Parallel()
+	for _, data := range IsStringANumberData {
+		actual := IsStringANumber(data.input)
+		if actual != data.expected {
+			t.Errorf("IsStringANumber(%s): expected:%s, actual:%s", data.input, data.expected, actual)
+		}
+	}
+}
