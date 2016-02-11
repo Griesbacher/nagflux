@@ -9,7 +9,7 @@ import (
 func CreateJSONFromStringMap(input map[string]string) string {
 	result := ""
 	for k, v := range input {
-		result += fmt.Sprintf(`,"%s":%s`, k, GenJSONValueString(v))
+		result += fmt.Sprintf(`,%s:%s`, GenJSONValueString(k), GenJSONValueString(v))
 	}
 	return result
 }
