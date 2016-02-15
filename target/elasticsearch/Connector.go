@@ -158,14 +158,14 @@ func (connector *Connector) CreateDatabase() bool {
 	if !createMessages {
 		return false
 	}
-	createPerfdata, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/perfdata/_mapping", "PUT", MappingPerfdata)
+	createPerfdata, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/metrics/_mapping", "PUT", MappingMetrics)
 	if !createPerfdata {
 		return false
 	}
 	return true
 }
 
-//MappingIndex is the mapping for the nagflux index //TODO:change source back to false
+//MappingIndex is the mapping for the nagflux index
 const MappingIndex = `{
   "settings": {
     "index": {
@@ -186,7 +186,7 @@ const MappingIndex = `{
         }
       ],
       "_source": {
-        "enabled": true
+        "enabled": false
       },
       "_all": {
         "enabled": false
@@ -219,7 +219,7 @@ const MappingMessages = `{
         "index": "not_analyzed",
         "type": "string"
       },
-      "value": {
+      "message": {
         "index": "not_analyzed",
         "type": "string"
       }
@@ -228,7 +228,7 @@ const MappingMessages = `{
 }`
 
 //MappingPerfdata is the mapping used to store performancedata
-const MappingPerfdata = `{
+const MappingMetrics = `{
   "perfdata": {
     "properties": {
       "timestamp": {

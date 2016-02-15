@@ -34,7 +34,7 @@ func TestGenInfluxLineWithValue(t *testing.T) {
 	t.Parallel()
 	live := Data{"host", "service", "comment", "0", "author"}
 
-	expected := fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), ",author="+live.author, "special text", helper.CastStringTimeFromSToMs(live.entryTime))
+	expected := fmt.Sprintf("%s%s message=\"%s\" %s", live.getTablename(), ",author="+live.author, "special text", helper.CastStringTimeFromSToMs(live.entryTime))
 	result := live.genInfluxLineWithValue("", "special text")
 	if expected != result {
 		t.Errorf("Expected:%s\nResult:%s", expected, result)
@@ -44,7 +44,7 @@ func TestGenInfluxLineWithValue(t *testing.T) {
 func TestGenInfluxLine(t *testing.T) {
 	t.Parallel()
 	live := Data{"host", "service", "comment", "0", "author"}
-	expected := fmt.Sprintf("%s%s value=\"%s\" %s", live.getTablename(), ",a=1,b=2,author="+live.author, "comment", helper.CastStringTimeFromSToMs(live.entryTime))
+	expected := fmt.Sprintf("%s%s message=\"%s\" %s", live.getTablename(), ",a=1,b=2,author="+live.author, "comment", helper.CastStringTimeFromSToMs(live.entryTime))
 	result := live.genInfluxLine(",a=1,b=2")
 	if expected != result {
 		t.Errorf("Expected:%s\nResult:%s", expected, result)

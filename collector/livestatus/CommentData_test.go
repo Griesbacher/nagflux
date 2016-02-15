@@ -9,15 +9,15 @@ var PrintCommentData = []struct {
 	output string
 }{
 	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "1"},
-		`messages,host=host\ 1,service=service\ 1,type=comment,author=philip value="hallo world" 000`},
+		`messages,host=host\ 1,service=service\ 1,type=comment,author=philip message="hallo world" 000`},
 	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "2"},
-		`messages,host=host\ 1,service=service\ 1,type=downtime,author=philip value="hallo world" 000`},
+		`messages,host=host\ 1,service=service\ 1,type=downtime,author=philip message="hallo world" 000`},
 	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "3"},
-		`messages,host=host\ 1,service=service\ 1,type=flapping,author=philip value="hallo world" 000`},
+		`messages,host=host\ 1,service=service\ 1,type=flapping,author=philip message="hallo world" 000`},
 	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "4"},
-		`messages,host=host\ 1,service=service\ 1,type=acknowledgement,author=philip value="hallo world" 000`},
+		`messages,host=host\ 1,service=service\ 1,type=acknowledgement,author=philip message="hallo world" 000`},
 	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "5"},
-		`messages,host=host\ 1,service=service\ 1,author=philip value="hallo world" 000`},
+		`messages,host=host\ 1,service=service\ 1,author=philip message="hallo world" 000`},
 }
 
 func TestSanitizeValuesComment(t *testing.T) {
