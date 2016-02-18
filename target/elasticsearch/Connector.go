@@ -204,7 +204,6 @@ const NagfluxTemplate = `{
     "metrics": {
       "properties": {
         "max": {
-          "index": "no",
           "type": "float"
         },
         "performanceLabel": {
@@ -212,11 +211,9 @@ const NagfluxTemplate = `{
           "type": "string"
         },
         "warn-max": {
-          "index": "no",
           "type": "float"
         },
         "warn-fill": {
-          "index": "no",
           "type": "string"
         },
         "command": {
@@ -224,23 +221,18 @@ const NagfluxTemplate = `{
           "type": "string"
         },
         "warn": {
-          "index": "no",
           "type": "float"
         },
         "crit-max": {
-          "index": "no",
           "type": "float"
         },
         "crit-fill": {
-          "index": "no",
           "type": "string"
         },
         "min": {
-          "index": "no",
           "type": "float"
         },
         "crit": {
-          "index": "no",
           "type": "float"
         },
         "service": {
@@ -252,7 +244,6 @@ const NagfluxTemplate = `{
           "type": "string"
         },
         "value": {
-          "index": "no",
           "type": "float"
         },
         "timestamp": {
@@ -260,11 +251,9 @@ const NagfluxTemplate = `{
           "type": "date"
         },
         "warn-min": {
-          "index": "no",
           "type": "float"
         },
         "crit-min": {
-          "index": "no",
           "type": "float"
         }
       }
