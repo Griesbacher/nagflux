@@ -144,7 +144,7 @@ func (connector *Connector) TestIfIsAlive() bool {
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestTemplateExists() bool {
 	result, body := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template", "GET", "")
-	if result && strings.Contains(body, `"nagflux":`) {
+	if result && strings.Contains(body, fmt.Sprintf(`"%s":`, connector.index)) {
 		connector.templateExists = true
 	} else {
 		connector.templateExists = false
@@ -154,8 +154,8 @@ func (connector *Connector) TestTemplateExists() bool {
 
 //createTemplate creates the nagflux template.
 func (connector *Connector) createTemplate() bool {
-	mapping := fmt.Sprintf(NagfluxTemplate, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
-	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template/nagflux", "PUT", mapping)
+	mapping := fmt.Sprintf(NagfluxTemplate, connector.index, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
+	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template/"+connector.index, "PUT", mapping)
 	if !createIndex {
 		return false
 	}
@@ -164,7 +164,7 @@ func (connector *Connector) createTemplate() bool {
 
 //NagfluxTemplate creates a template for settings and mapping for nagflux indices.
 const NagfluxTemplate = `{
-  "template": "nagflux*",
+  "template": "%s-*",
   "settings": {
     "index": {
       "number_of_shards": "%d",
