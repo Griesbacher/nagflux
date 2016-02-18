@@ -141,7 +141,7 @@ func (connector *Connector) TestIfIsAlive() bool {
 	return result
 }
 
-//TestDatabaseExists test active if the database exists.
+//TestTemplateExists test active if the template exists.
 func (connector *Connector) TestTemplateExists() bool {
 	result, body := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template", "GET", "")
 	if result && strings.Contains(body, fmt.Sprintf(`"%s":`, connector.index)) {
