@@ -40,5 +40,6 @@ type Config struct {
 		HostcheckAlias   string
 		NumberOfShards   int
 		NumberOfReplicas int
+		IndexRotation    string
 	}
 }

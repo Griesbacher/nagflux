@@ -8,14 +8,14 @@
     FieldSeparator = "&"
 
 [Log]
-    #leave empty for stdout
+    # leave empty for stdout
     LogFile = ""
-    #List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
+    # List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
     MinSeverity = "INFO"
 
 [Monitoring]
-    #leave empty to disable
-    #WebserverPort = ":7000"
+    # leave empty to disable
+    # WebserverPort = ":7000"
     WebserverPort = ""
 
 [Influx]
@@ -24,14 +24,15 @@
     Address = "http://127.0.0.1:8086"
     Arguments = "precision=ms&u=root&p=root&db=nagflux"
     CreateDatabaseIfNotExists = true
-    NastyString = "\\ "
-    NastyStringToReplace = " "
+    # leave empty to disable
+    NastyString = ""
+    NastyStringToReplace = ""
     HostcheckAlias = "hostcheck"
 
 [Livestatus]
-    #tcp or file
+    # tcp or file
     Type = "tcp"
-    #tcp: 127.0.0.1:6557 or file /var/run/live
+    # tcp: 127.0.0.1:6557 or file /var/run/live
     Address = "127.0.0.1:6557"
 
 [Elasticsearch]
@@ -42,3 +43,5 @@
     HostcheckAlias = "hostcheck"
     NumberOfShards = 1
     NumberOfReplicas = 1
+    # Sorts the indices "monthly" or "yearly"
+    IndexRotation = "monthly"
