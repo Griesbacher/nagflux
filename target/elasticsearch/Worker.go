@@ -91,7 +91,7 @@ func (worker Worker) run() {
 				}
 			} else {
 				//Test Database
-				worker.connector.TestDatabaseExists()
+				worker.connector.TestTemplateExists()
 				worker.log.Critical("Database does not exists, waiting for the end to come")
 				if worker.waitForExternalQuit() {
 					return

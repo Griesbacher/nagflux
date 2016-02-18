@@ -8,6 +8,7 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -23,7 +24,7 @@ type Connector struct {
 	log            *factorlog.FactorLog
 	version        float32
 	isAlive        bool
-	databaseExists bool
+	templateExists bool
 	httpClient     http.Client
 }
 
@@ -47,16 +48,16 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dump
 	if !s.isAlive {
 		s.log.Panic("Elasticsearch not running")
 	}
-	s.TestDatabaseExists()
-	for i := 0; i < 5 && !s.databaseExists; i++ {
+	s.TestTemplateExists()
+	for i := 0; i < 5 && !s.templateExists; i++ {
 		time.Sleep(time.Duration(2) * time.Second)
 		if createDatabaseIfNotExists {
-			s.CreateDatabase()
+			s.createTemplate()
 		}
-		s.TestDatabaseExists()
+		s.TestTemplateExists()
 	}
-	if !s.databaseExists {
-		s.log.Panic("Database does not exists and was not able to created")
+	if !s.templateExists {
+		s.log.Panic("Template does not exists and was not able to created")
 	}
 
 	for w := 0; w < workerAmount; w++ {
@@ -99,7 +100,7 @@ func (connector Connector) IsAlive() bool {
 
 //DatabaseExists does the database exist.
 func (connector Connector) DatabaseExists() bool {
-	return connector.databaseExists
+	return connector.templateExists
 }
 
 //Stop the connector and its workers.
@@ -141,160 +142,153 @@ func (connector *Connector) TestIfIsAlive() bool {
 }
 
 //TestDatabaseExists test active if the database exists.
-func (connector *Connector) TestDatabaseExists() bool {
-	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index, "HEAD")
-	connector.databaseExists = result
-	return result
+func (connector *Connector) TestTemplateExists() bool {
+	result, body := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template", "GET", "")
+	if result && strings.Contains(body, `"nagflux":`) {
+		connector.templateExists = true
+	} else {
+		connector.templateExists = false
+	}
+	return connector.templateExists
 }
 
-//CreateDatabase creates the database.
-func (connector *Connector) CreateDatabase() bool {
-	mapping := fmt.Sprintf(MappingIndex, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
-	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index, "PUT", mapping)
+//createTemplate creates the nagflux template.
+func (connector *Connector) createTemplate() bool {
+	mapping := fmt.Sprintf(NagfluxTemplate, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
+	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template/nagflux", "PUT", mapping)
 	if !createIndex {
-		return false
-	}
-	createMessages, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/messages/_mapping", "PUT", MappingMessages)
-	if !createMessages {
-		return false
-	}
-	createPerfdata, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+connector.index+"/metrics/_mapping", "PUT", MappingMetrics)
-	if !createPerfdata {
 		return false
 	}
 	return true
 }
 
-//MappingIndex is the mapping for the nagflux index
-const MappingIndex = `{
+//NagfluxTemplate creates a template for settings and mapping for nagflux indices.
+const NagfluxTemplate = `{
+  "template": "nagflux*",
   "settings": {
     "index": {
       "number_of_shards": "%d",
       "number_of_replicas": "%d",
-	  "refresh_interval": "60s"
+      "refresh_interval": "300s"
     }
   },
   "mappings": {
-    "_default_": {
-	  "dynamic_templates": [
-        {
-          "strings": {
-            "match": "*",
-            "match_mapping_type": "string",
-            "mapping":   { "type": "string", "index": "not_analyzed" }
-          }
+    "messages": {
+      "properties": {
+        "service": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "author": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "host": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "type": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "message": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "strict_date_optional_time||epoch_millis",
+          "type": "date"
         }
-      ],
+      }
+    },
+    "metrics": {
+      "properties": {
+        "max": {
+          "index": "no",
+          "type": "float"
+        },
+        "performanceLabel": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "warn-max": {
+          "index": "no",
+          "type": "float"
+        },
+        "warn-fill": {
+          "index": "no",
+          "type": "string"
+        },
+        "command": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "warn": {
+          "index": "no",
+          "type": "float"
+        },
+        "crit-max": {
+          "index": "no",
+          "type": "float"
+        },
+        "crit-fill": {
+          "index": "no",
+          "type": "string"
+        },
+        "min": {
+          "index": "no",
+          "type": "float"
+        },
+        "crit": {
+          "index": "no",
+          "type": "float"
+        },
+        "service": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "host": {
+          "index": "not_analyzed",
+          "type": "string"
+        },
+        "value": {
+          "index": "no",
+          "type": "float"
+        },
+        "timestamp": {
+          "format": "strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "warn-min": {
+          "index": "no",
+          "type": "float"
+        },
+        "crit-min": {
+          "index": "no",
+          "type": "float"
+        }
+      }
+    },
+    "_default_": {
       "_source": {
         "enabled": false
       },
+      "dynamic_templates": [
+        {
+          "strings": {
+            "mapping": {
+              "index": "not_analyzed",
+              "type": "string"
+            },
+            "match_mapping_type": "string",
+            "match": "*"
+          }
+        }
+      ],
       "_all": {
         "enabled": false
       }
     }
-  }
-}`
-
-//MappingMessages is the mapping used to store messages
-const MappingMessages = `{
-  "messages": {
-    "properties": {
-        "host": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "service": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "timestamp": {
-        "format": "strict_date_optional_time||epoch_millis",
-        "type": "date"
-      },
-      "author": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "type": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "message": {
-        "index": "not_analyzed",
-        "type": "string"
-      }
-    }
-  }
-}`
-
-//MappingPerfdata is the mapping used to store performancedata
-const MappingMetrics = `{
-  "perfdata": {
-    "properties": {
-      "timestamp": {
-        "format": "strict_date_optional_time||epoch_millis",
-        "type": "date"
-      },
-      "host": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "service": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "command": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "performanceLabel": {
-        "index": "not_analyzed",
-        "type": "string"
-      },
-      "value": {
-        "index": "no",
-        "type": "float"
-      },
-      "warn": {
-        "index": "no",
-        "type": "float"
-      },
-      "warn-min": {
-        "index": "no",
-        "type": "float"
-      },
-      "warn-max": {
-        "index": "no",
-        "type": "float"
-      },
-      "warn-fill": {
-        "index": "no",
-        "type": "string"
-      },
-      "crit": {
-        "index": "no",
-        "type": "float"
-      },
-      "crit-min": {
-        "index": "no",
-        "type": "float"
-      },
-      "crit-max": {
-        "index": "no",
-        "type": "float"
-      },
-      "crit-fill": {
-        "index": "no",
-        "type": "string"
-      },
-      "min": {
-        "index": "no",
-        "type": "float"
-      },
-      "max": {
-        "index": "no",
-        "type": "float"
-      }
-    }
-  }
+  },
+  "aliases": {}
 }`
