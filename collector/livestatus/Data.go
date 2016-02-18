@@ -41,7 +41,7 @@ func (live Data) genInfluxLineWithValue(tags, text string) string {
 
 func (live Data) genElasticLineWithValue(index, typ, value, timestamp string) string {
 	value = strings.Replace(value, `"`, `\"`, -1)
-	head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"messages"}}`, index) + "\n"
+	head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"messages"}}`, helper.GenIndex(index, timestamp)) + "\n"
 	data := fmt.Sprintf(`{"timestamp":%s,"message":"%s","author":"%s","host":"%s","service":"%s","type":"%s"}`+"\n",
 		helper.CastStringTimeFromSToMs(timestamp), value, live.author, live.hostName, live.serviceDisplayName, typ,
 	)

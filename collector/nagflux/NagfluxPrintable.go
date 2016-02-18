@@ -32,7 +32,7 @@ func (p Printable) PrintForInfluxDB(version float32) string {
 //PrintForElasticsearch prints in the elasticsearch json format
 func (p Printable) PrintForElasticsearch(version float32, index string) string {
 	if version >= 2 {
-		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"%s"}}`, index, p.Table) + "\n"
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"%s"}}`, helper.GenIndex(index, p.Timestamp), p.Table) + "\n"
 		data := fmt.Sprintf(`{"timestamp":%s,"value":%s`, p.Timestamp, helper.GenJSONValueString(p.Value))
 		data += helper.CreateJSONFromStringMap(p.tags)
 		data += helper.CreateJSONFromStringMap(p.fields)

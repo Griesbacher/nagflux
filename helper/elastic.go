@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/config"
 	"strings"
 )
 
@@ -28,4 +29,18 @@ func SanitizeElasicInput(input string) string {
 	input = strings.Replace(input, `\`, `\\`, -1)
 	input = strings.Replace(input, `"`, `\"`, -1)
 	return input
+}
+
+//GenIndex generates an index depending on the config, ending with year and month
+func GenIndex(index, timeString string) string {
+	rotation := config.GetConfig().Elasticsearch.IndexRotation
+	year, month := GetYearMonthFromStringTimeMs(timeString)
+	switch rotation {
+	case "monthly":
+		return fmt.Sprintf("%s-%d.%02d", index, year, month)
+	case "yearly":
+		return fmt.Sprintf("%s-%d", index, year)
+	default:
+		panic(fmt.Sprintf("The given IndexRotation[%s] is not supported", rotation))
+	}
 }

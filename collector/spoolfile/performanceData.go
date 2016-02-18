@@ -53,7 +53,7 @@ func (p PerformanceData) PrintForElasticsearch(version float32, index string) st
 		} else {
 			p.service = p.service
 		}
-		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, index) + "\n"
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, helper.GenIndex(index, p.time)) + "\n"
 		data := fmt.Sprintf(
 			`{"timestamp":%s,"host":"%s","service":"%s","command":"%s","performanceLabel":"%s"`,
 			p.time,

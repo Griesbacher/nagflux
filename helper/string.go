@@ -1,8 +1,10 @@
 package helper
 
 import (
+	"github.com/griesbacher/nagflux/logging"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //IsStringANumber returns true if the given string can be casted to int or float.
@@ -45,4 +47,14 @@ func StringIntToStringFloat(inputInt string) string {
 //CastStringTimeFromSToMs adds three zeros to the timestring to cast from Seconds to Milliseconds.
 func CastStringTimeFromSToMs(time string) string {
 	return time + "000"
+}
+
+//GetYearMonthFromStringTimeMs returns the year and the month of a string which is in ms.
+func GetYearMonthFromStringTimeMs(timeString string) (int, int) {
+	i, err := strconv.ParseInt(timeString[:len(timeString)-3], 10, 64)
+	if err != nil {
+		logging.GetLogger().Warn(err.Error())
+	}
+	date := time.Unix(i, 0)
+	return date.Year(), int(date.Month())
 }
