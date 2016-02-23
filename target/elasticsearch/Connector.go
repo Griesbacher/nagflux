@@ -255,6 +255,9 @@ const NagfluxTemplate = `{
         },
         "crit-min": {
           "type": "float"
+        },
+        "downtime": {
+          "type": "boolean"
         }
       }
     },
