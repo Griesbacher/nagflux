@@ -169,7 +169,7 @@ const NagfluxTemplate = `{
     "index": {
       "number_of_shards": "%d",
       "number_of_replicas": "%d",
-      "refresh_interval": "300s"
+      "refresh_interval": "60s"
     }
   },
   "mappings": {
