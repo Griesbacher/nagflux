@@ -54,8 +54,9 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 	if !s.isAlive {
 		s.log.Info("Waiting for InfluxDB server")
 	}
-	for i := 0; i < 24 && !s.isAlive; i++ {
+	for i := 0; i < 12 && !s.isAlive; i++ {
 		s.TestIfIsAlive()
+		time.Sleep(5)
 		s.log.Info(".")
 	}
 	if !s.isAlive {
