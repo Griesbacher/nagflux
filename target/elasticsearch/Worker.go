@@ -81,7 +81,7 @@ func (worker Worker) run() {
 					return
 				case query = <-worker.jobs:
 					queries = append(queries, query)
-					if len(queries) == 9000 { //9000 ~= 2,4 MB
+					if len(queries) == 10000 { //9000 ~= 2,4 MB
 						worker.sendBuffer(queries)
 						queries = queries[:0]
 					}
@@ -222,7 +222,7 @@ func (worker Worker) readQueriesFromQueue() []string {
 
 //sends the raw data to influxdb and returns an err if given.
 func (worker Worker) sendData(rawData []byte, log bool) error {
-	//worker.log.Debug("Bytes:", len(rawData))
+	worker.log.Debug(string(rawData))
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
 		worker.log.Warn(err)
@@ -257,8 +257,8 @@ func (worker Worker) printErrors(result JSONResult, rawData []byte) {
 		}
 	}
 
-	ioutil.WriteFile("currupt.json", rawData, 0644)
-	ioutil.WriteFile("error.json", []byte(fmt.Sprintf("%v", errors)), 0644)
+	ioutil.WriteFile(worker.dumpFile+".currupt.json", rawData, 0644)
+	ioutil.WriteFile(worker.dumpFile+".error.json", []byte(fmt.Sprintf("%v", errors)), 0644)
 	panic("")
 }
 

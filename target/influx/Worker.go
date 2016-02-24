@@ -80,7 +80,7 @@ func (worker Worker) run() {
 					return
 				case query = <-worker.jobs:
 					queries = append(queries, query)
-					if len(queries) == 300 {
+					if len(queries) == 4000 {
 						worker.sendBuffer(queries)
 						queries = queries[:0]
 					}
