@@ -2,6 +2,7 @@ package livestatus
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/helper"
 	"strings"
 )
@@ -25,6 +26,9 @@ func (live *Data) sanitizeValues() {
 
 //Generates the Influxdb tablename.
 func (live Data) getTablename() string {
+	if live.serviceDisplayName == "" {
+		live.serviceDisplayName = config.GetConfig().Influx.HostcheckAlias
+	}
 	return fmt.Sprintf("messages,host=%s,service=%s", live.hostName, live.serviceDisplayName)
 }
 
@@ -41,6 +45,9 @@ func (live Data) genInfluxLineWithValue(tags, text string) string {
 
 func (live Data) genElasticLineWithValue(index, typ, value, timestamp string) string {
 	value = strings.Replace(value, `"`, `\"`, -1)
+	if live.serviceDisplayName == "" {
+		live.serviceDisplayName = config.GetConfig().Elasticsearch.HostcheckAlias
+	}
 	head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"messages"}}`, helper.GenIndex(index, timestamp)) + "\n"
 	data := fmt.Sprintf(`{"timestamp":%s,"message":"%s","author":"%s","host":"%s","service":"%s","type":"%s"}`+"\n",
 		helper.CastStringTimeFromSToMs(timestamp), value, live.author, live.hostName, live.serviceDisplayName, typ,
