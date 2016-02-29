@@ -153,7 +153,7 @@ def parse_message(json_object, tags, time_index, value_index, host, service):
         data.write('t_')
         data.write(tag[1])
         data.write(escape_for_influxdb(args.separator))
-    data.write('value')
+    data.write('t_message')
     data.write(args.separator)
     data.write('time')
     data.write(args.separator)
@@ -228,7 +228,7 @@ def gen_metrics_string(m_data, host, service, command, perfLabel):
     out = StringIO()
     fix_tags = ['t_host', 't_service', 't_command', 't_performanceLabel', 'table']
     fix_values = [host, service, command, perfLabel, 'metrics']
-    ava_tags = ['value', 'f_min', 'f_max',
+    ava_tags = ['t_value', 'f_min', 'f_max',
                 'f_warn', 'f_warn-min', 'f_warn_max', 'f_crit', 'f_crit-min', 'f_crit-max',
                 't_warn-fill', 't_crit-fill',
                 't_unit']

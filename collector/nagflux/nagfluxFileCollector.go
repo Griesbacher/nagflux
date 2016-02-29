@@ -26,7 +26,7 @@ table&timestamp&value&t_tag&f_field
 foo&1&2&123&"""asdf"""
 */
 
-var requiredFields = []string{"table", "time", "value"}
+var requiredFields = []string{"table", "time"}
 
 //NewNagfluxFileCollector constructor, which also starts the collector.
 func NewNagfluxFileCollector(results map[data.Datatype]chan collector.Printable, folder string, fieldSeparator rune) *FileCollector {
