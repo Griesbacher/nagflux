@@ -27,7 +27,7 @@ func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.endTime))
 		return start + "\n" + end
 	}
-	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
 	panic("")
 }
 
@@ -39,6 +39,6 @@ func (downtime DowntimeData) PrintForElasticsearch(version float32, index string
 		end := downtime.genElasticLineWithValue(index, typ, strings.TrimSpace("Downtime end: <br>"+downtime.comment), downtime.endTime)
 		return start + "\n" + end
 	}
-	logging.GetLogger().Criticalf("This elasticsearchversion [%f] given in the config is not supportet", version)
+	logging.GetLogger().Criticalf("This elasticsearchversion [%f] given in the config is not supported", version)
 	panic("")
 }

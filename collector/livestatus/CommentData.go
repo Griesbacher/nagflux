@@ -26,7 +26,7 @@ func (comment CommentData) PrintForInfluxDB(version float32) string {
 		}
 		return comment.genInfluxLine(tags)
 	}
-	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
 	panic("")
 }
 
@@ -36,7 +36,7 @@ func (comment CommentData) PrintForElasticsearch(version float32, index string) 
 		typ := commentIDToText(comment.entryType)
 		return comment.genElasticLineWithValue(index, typ, comment.comment, comment.entryTime)
 	}
-	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supportet", version)
+	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
 	panic("")
 }
 

@@ -306,8 +306,8 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	if worker.version >= 0.9 {
 		result = job.PrintForInfluxDB(worker.version)
 	} else {
-		worker.log.Fatalf("This influxversion [%f] given in the config is not supportet", worker.version)
-		err = errors.New("This influxversion given in the config is not supportet")
+		worker.log.Fatalf("This influxversion [%f] given in the config is not supported", worker.version)
+		err = errors.New("This influxversion given in the config is not supported")
 	}
 
 	if len(result) > 1 && result[len(result)-1:] != "\n" {
