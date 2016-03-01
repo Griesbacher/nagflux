@@ -1,5 +1,11 @@
 ## v0.2.0 - upcomming
+
+### Features
 - Elasticsearch support
+- New Importformat
+
+### Fixes
+-  Version Bug
 
 ### Breaks
 - The old InfluxDB layout is not valid anymore. To convert the old data use the Pythonscript in CONVERTER.
