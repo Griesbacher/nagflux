@@ -39,7 +39,7 @@ func TestContains(t *testing.T) {
 	for _, data := range ContainsData {
 		actual := Contains(data.hay, data.needls)
 		if actual != data.output {
-			t.Errorf("SanitizeInfluxData(%d): expected:%d, actual:%d", data.hay, data.output, actual)
+			t.Errorf("SanitizeInfluxData(%s): expected:%t, actual:%t", data.hay, data.output, actual)
 		}
 	}
 }

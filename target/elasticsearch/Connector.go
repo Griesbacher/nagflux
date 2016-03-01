@@ -22,14 +22,14 @@ type Connector struct {
 	jobs           chan collector.Printable
 	quit           chan bool
 	log            *factorlog.FactorLog
-	version        float32
+	version        string
 	isAlive        bool
 	templateExists bool
 	httpClient     http.Client
 }
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
-func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dumpFile string, workerAmount, maxWorkers int, version float32, createDatabaseIfNotExists bool) *Connector {
+func ConnectorFactory(jobs chan collector.Printable, connectionHost, index, dumpFile, version string, workerAmount, maxWorkers int, createDatabaseIfNotExists bool) *Connector {
 	if connectionHost[len(connectionHost)-1] != '/' {
 		connectionHost += "/"
 	}

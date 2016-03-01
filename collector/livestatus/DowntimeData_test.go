@@ -18,11 +18,11 @@ func TestPrintDowntime(t *testing.T) {
 	t.Parallel()
 	logging.InitTestLogger()
 	down := DowntimeData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip"}, endTime: "123"}
-	if !didThisPanic(down.PrintForInfluxDB, 0.8) {
+	if !didThisPanic(down.PrintForInfluxDB, "0.8") {
 		t.Errorf("This should panic, due to unsuported influxdb version")
 	}
 
-	result := down.PrintForInfluxDB(0.9)
+	result := down.PrintForInfluxDB("0.9")
 	expected := `messages,host=host\ 1,service=service\ 1,type=downtime,author=philip value="Downtime start: <br>" 000
 messages,host=host\ 1,service=service\ 1,type=downtime,author=philip value="Downtime end: <br>" 123000`
 	if result != expected {

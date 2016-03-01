@@ -15,23 +15,26 @@ type Printable struct {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (p Printable) PrintForInfluxDB(version float32) string {
-	line := helper.SanitizeInfluxInput(p.Table)
-	p.tags = helper.SanitizeMap(p.tags)
-	if len(p.tags) > 0 {
-		line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
+func (p Printable) PrintForInfluxDB(version string) string {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
+		line := helper.SanitizeInfluxInput(p.Table)
+		p.tags = helper.SanitizeMap(p.tags)
+		if len(p.tags) > 0 {
+			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
+		}
+		p.fields = helper.SanitizeMap(p.fields)
+		line += fmt.Sprintf(` value=%s`, p.Value)
+		if len(p.fields) > 0 {
+			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
+		}
+		return fmt.Sprintf("%s %s", line, p.Timestamp)
 	}
-	p.fields = helper.SanitizeMap(p.fields)
-	line += fmt.Sprintf(` value=%s`, p.Value)
-	if len(p.fields) > 0 {
-		line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
-	}
-	return fmt.Sprintf("%s %s", line, p.Timestamp)
+	return ""
 }
 
 //PrintForElasticsearch prints in the elasticsearch json format
-func (p Printable) PrintForElasticsearch(version float32, index string) string {
-	if version >= 2 {
+func (p Printable) PrintForElasticsearch(version, index string) string {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"%s"}}`, helper.GenIndex(index, p.Timestamp), p.Table) + "\n"
 		data := fmt.Sprintf(`{"timestamp":%s,"value":%s`, p.Timestamp, helper.GenJSONValueString(p.Value))
 		data += helper.CreateJSONFromStringMap(p.tags)

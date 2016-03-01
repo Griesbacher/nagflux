@@ -6,6 +6,7 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/data"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
@@ -26,7 +27,7 @@ type Worker struct {
 	dumpFile     string
 	statistics   statistics.DataReceiver
 	log          *factorlog.FactorLog
-	version      float32
+	version      string
 	connector    *Connector
 	httpClient   http.Client
 	IsRunning    bool
@@ -42,7 +43,7 @@ var errorFailedToSend = errors.New("Could not send data")
 var error500 = errors.New("Error 500")
 
 //WorkerGenerator generates a new Worker and starts it.
-func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile string, version float32, connector *Connector, datatype data.Datatype) func(workerId int) *Worker {
+func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile, version string, connector *Connector, datatype data.Datatype) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
 		worker := &Worker{
 			workerId, make(chan bool),
@@ -303,10 +304,10 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 	var result string
 	var err error
 
-	if worker.version >= 0.9 {
+	if helper.VersionOrdinal(worker.version) >= helper.VersionOrdinal("0.9") {
 		result = job.PrintForInfluxDB(worker.version)
 	} else {
-		worker.log.Fatalf("This influxversion [%f] given in the config is not supported", worker.version)
+		worker.log.Fatalf("This influxversion [%s] given in the config is not supported", worker.version)
 		err = errors.New("This influxversion given in the config is not supported")
 	}
 

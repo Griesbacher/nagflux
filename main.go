@@ -57,12 +57,12 @@ Commandline Parameter:
 	resultQueues := map[data.Datatype]chan collector.Printable{}
 	stoppables := []Stoppable{}
 	if len(cfg.Main.FieldSeparator) < 1 {
-		fmt.Errorf("FieldSeparator is too short!")
+		panic("FieldSeparator is too short!")
 	}
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 	if cfg.Influx.Enabled {
 		resultQueues[data.InfluxDB] = make(chan collector.Printable, int(resultQueueLength))
-		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.Version, cfg.Influx.CreateDatabaseIfNotExists)
+		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Influx.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.CreateDatabaseIfNotExists)
 		stoppables = append(stoppables, influx)
 		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.InfluxDB], cfg.Main.DumpFile, data.InfluxDB)
 		stoppables = append(stoppables, influxDumpFileCollector)
@@ -71,7 +71,7 @@ Commandline Parameter:
 	if cfg.Elasticsearch.Enabled {
 		//log.Fatal("Elasticsearch is not supported so far. Please disable the feature till further updates :(") //TODO: remove
 		resultQueues[data.Elasticsearch] = make(chan collector.Printable, int(resultQueueLength))
-		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Elasticsearch.Version, true)
+		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Elasticsearch.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true)
 		stoppables = append(stoppables, elasticsearch)
 		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.Elasticsearch], cfg.Main.DumpFile, data.Elasticsearch)
 		stoppables = append(stoppables, elasticDumpFileCollector)

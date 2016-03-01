@@ -22,7 +22,7 @@ type Config struct {
 		Enabled                   bool
 		Address                   string
 		Arguments                 string
-		Version                   float32
+		Version                   string
 		CreateDatabaseIfNotExists bool
 		NastyString               string
 		NastyStringToReplace      string
@@ -36,7 +36,7 @@ type Config struct {
 		Enabled          bool
 		Address          string
 		Index            string
-		Version          float32
+		Version          string
 		HostcheckAlias   string
 		NumberOfShards   int
 		NumberOfReplicas int

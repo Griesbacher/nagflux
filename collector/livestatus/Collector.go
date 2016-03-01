@@ -18,9 +18,9 @@ type Collector struct {
 }
 
 const (
-//Updateinterval on livestatus data.
+	//Updateinterval on livestatus data.
 	intervalToCheckLivestatus = time.Duration(2) * time.Minute
-//QueryForNotifications livestatusquery for notifications.
+	//QueryForNotifications livestatusquery for notifications.
 	QueryForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
@@ -29,14 +29,14 @@ Negate:
 OutputFormat: csv
 
 `
-//QueryForComments livestatusquery for comments
+	//QueryForComments livestatusquery for comments
 	QueryForComments = `GET comments
 Columns: host_name service_display_name comment entry_time author entry_type
 Filter: entry_time > %d
 OutputFormat: csv
 
 `
-//QueryForDowntimes livestatusquery for downtimes
+	//QueryForDowntimes livestatusquery for downtimes
 	QueryForDowntimes = `GET downtimes
 Columns: host_name service_display_name comment entry_time author end_time
 Filter: entry_time > %d
@@ -140,7 +140,7 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 }
 
 func addTimestampToLivestatusQuery(query string) string {
-	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus / 100 * -150).Unix())
+	return fmt.Sprintf(query, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix())
 }
 
 func (live Collector) handleQueryForNotifications(line []string) *NotificationData {

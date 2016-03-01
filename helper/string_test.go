@@ -79,7 +79,7 @@ func TestIsStringANumber(t *testing.T) {
 	for _, data := range IsStringANumberData {
 		actual := IsStringANumber(data.input)
 		if actual != data.expected {
-			t.Errorf("IsStringANumber(%s): expected:%s, actual:%s", data.input, data.expected, actual)
+			t.Errorf("IsStringANumber(%s): expected:%t, actual:%t", data.input, data.expected, actual)
 		}
 	}
 }

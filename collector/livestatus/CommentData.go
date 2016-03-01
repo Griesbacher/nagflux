@@ -17,9 +17,9 @@ func (comment *CommentData) sanitizeValues() {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (comment CommentData) PrintForInfluxDB(version float32) string {
+func (comment CommentData) PrintForInfluxDB(version string) string {
 	comment.sanitizeValues()
-	if version >= 0.9 {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		var tags string
 		if text := commentIDToText(comment.entryType); text != "" {
 			tags = ",type=" + text
@@ -31,8 +31,8 @@ func (comment CommentData) PrintForInfluxDB(version float32) string {
 }
 
 //PrintForElasticsearch prints in the elasticsearch json format
-func (comment CommentData) PrintForElasticsearch(version float32, index string) string {
-	if version >= 2.0 {
+func (comment CommentData) PrintForElasticsearch(version, index string) string {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		typ := commentIDToText(comment.entryType)
 		return comment.genElasticLineWithValue(index, typ, comment.comment, comment.entryTime)
 	}

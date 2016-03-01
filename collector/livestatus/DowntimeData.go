@@ -19,9 +19,9 @@ func (downtime *DowntimeData) sanitizeValues() {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
+func (downtime DowntimeData) PrintForInfluxDB(version string) string {
 	downtime.sanitizeValues()
-	if version >= 0.9 {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		tags := ",type=downtime,author=" + downtime.author
 		start := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime start: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.entryTime))
 		end := fmt.Sprintf("%s%s value=\"%s\" %s", downtime.getTablename(), tags, strings.TrimSpace("Downtime end: <br>"+downtime.comment), helper.CastStringTimeFromSToMs(downtime.endTime))
@@ -32,8 +32,8 @@ func (downtime DowntimeData) PrintForInfluxDB(version float32) string {
 }
 
 //PrintForElasticsearch prints in the elasticsearch json format
-func (downtime DowntimeData) PrintForElasticsearch(version float32, index string) string {
-	if version >= 2.0 {
+func (downtime DowntimeData) PrintForElasticsearch(version, index string) string {
+	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		typ := `downtime`
 		start := downtime.genElasticLineWithValue(index, typ, strings.TrimSpace("Downtime start: <br>"+downtime.comment), downtime.entryTime)
 		end := downtime.genElasticLineWithValue(index, typ, strings.TrimSpace("Downtime end: <br>"+downtime.comment), downtime.endTime)
