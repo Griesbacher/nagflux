@@ -17,7 +17,7 @@ dependencies:
 
 database:
     override:
-        - wget https://s3.amazonaws.com/influxdb/influxdb_0.9.5.1_amd64.deb
+        - wget https://s3.amazonaws.com/influxdb/influxdb_0.10.1-1_amd64.deb
         - sudo dpkg -i influxdb_0.9.5.1_amd64.deb
         - influxd &> influx.log:
             background: true
