@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/collector/modGearman"
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/config"
@@ -69,7 +70,6 @@ Commandline Parameter:
 	}
 
 	if cfg.Elasticsearch.Enabled {
-		//log.Fatal("Elasticsearch is not supported so far. Please disable the feature till further updates :(") //TODO: remove
 		resultQueues[data.Elasticsearch] = make(chan collector.Printable, int(resultQueueLength))
 		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Elasticsearch.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true)
 		stoppables = append(stoppables, elasticsearch)
@@ -83,6 +83,18 @@ Commandline Parameter:
 	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
 	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
+
+	if cfg.ModGearman.Enabled {
+		log.Infof("Starting Mod_Gearman: %s [%s]", cfg.ModGearman.Address, cfg.ModGearman.Queue)
+		secret := modGearman.GetSecret(cfg.ModGearman.Secret, cfg.ModGearman.SecretFile)
+		gearmanWorker := modGearman.NewGearmanWorker(cfg.ModGearman.Address,
+			cfg.ModGearman.Queue,
+			secret,
+			resultQueues,
+			livestatusCache,
+		)
+		stoppables = append(stoppables, gearmanWorker)
+	}
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
 	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache)
