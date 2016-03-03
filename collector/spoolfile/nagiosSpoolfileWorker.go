@@ -42,11 +42,16 @@ var rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
 var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
 var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
+//NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
+func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileWorker {
+	return &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), livestatusCacheBuilder}
+}
+
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
-		s := &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), livestatusCacheBuilder}
+		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder)
 		workerID++
 		go s.run()
 		return s
@@ -78,7 +83,7 @@ func (w *NagiosSpoolfileWorker) run() {
 			queries := 0
 			for _, line := range lines {
 				splittedPerformanceData := helper.StringToMap(line, "\t", "::")
-				for singlePerfdata := range w.performanceDataIterator(splittedPerformanceData) {
+				for singlePerfdata := range w.PerformanceDataIterator(splittedPerformanceData) {
 					for _, r := range w.results {
 						select {
 						case <-w.quit:
@@ -103,8 +108,8 @@ func (w *NagiosSpoolfileWorker) run() {
 	}
 }
 
-//Iterator to loop over generated perf data.
-func (w *NagiosSpoolfileWorker) performanceDataIterator(input map[string]string) <-chan PerformanceData {
+//PerformanceDataIterator returns an iterator to loop over generated perf data.
+func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string) <-chan PerformanceData {
 	ch := make(chan PerformanceData)
 	typ := findType(input)
 	if typ == "" {
