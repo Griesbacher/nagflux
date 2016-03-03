@@ -11,6 +11,13 @@ type Config struct {
 		NagfluxSpoolfileFolder string
 		FieldSeparator         string
 	}
+	ModGearman struct {
+		Enabled    bool
+		Address    string
+		Queue      string
+		Secret     string
+		SecretFile string
+	}
 	Log struct {
 		LogFile     string
 		MinSeverity string
