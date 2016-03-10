@@ -9,7 +9,6 @@ import (
 type Printable struct {
 	Table     string
 	Timestamp string
-	Value     string
 	tags      map[string]string
 	fields    map[string]string
 }
@@ -22,10 +21,10 @@ func (p Printable) PrintForInfluxDB(version string) string {
 		if len(p.tags) > 0 {
 			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
 		}
+		line += " "
 		p.fields = helper.SanitizeMap(p.fields)
-		line += fmt.Sprintf(` value=%s`, p.Value)
 		if len(p.fields) > 0 {
-			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
+			line += fmt.Sprintf(`%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
 		}
 		return fmt.Sprintf("%s %s", line, p.Timestamp)
 	}
@@ -36,7 +35,7 @@ func (p Printable) PrintForInfluxDB(version string) string {
 func (p Printable) PrintForElasticsearch(version, index string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"%s"}}`, helper.GenIndex(index, p.Timestamp), p.Table) + "\n"
-		data := fmt.Sprintf(`{"timestamp":%s,"value":%s`, p.Timestamp, helper.GenJSONValueString(p.Value))
+		data := fmt.Sprintf(`{"timestamp":%s`, p.Timestamp)
 		data += helper.CreateJSONFromStringMap(p.tags)
 		data += helper.CreateJSONFromStringMap(p.fields)
 		data += "}\n"
