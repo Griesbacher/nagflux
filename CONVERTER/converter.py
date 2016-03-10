@@ -206,6 +206,8 @@ def dump_messages(messages):
 
 
 def parse_perf_type(data, perfType, json_object, tags, time_index, value_index):
+    if perfType == "value":
+        perfType = "f_value"
     for value in json_object['values']:
         time = value[time_index]
         if time not in data:
@@ -237,7 +239,7 @@ def gen_metrics_string(m_data, host, service, command, perfLabel):
     out = StringIO()
     fix_tags = ['t_host', 't_service', 't_command', 't_performanceLabel', 'table']
     fix_values = [host, service, command, perfLabel, 'metrics']
-    ava_tags = ['t_value', 'f_min', 'f_max',
+    ava_tags = ['f_value', 'f_min', 'f_max',
                 'f_warn', 'f_warn-min', 'f_warn_max', 'f_crit', 'f_crit-min', 'f_crit-max',
                 't_warn-fill', 't_crit-fill',
                 't_unit']
@@ -272,7 +274,6 @@ def dump_metrics(metrics):
                 if perfLabel == command_const:
                     continue
                 for perfType in metrics[host][service][perfLabel]:
-
                     result = query_data_for_table(args.url, metrics[host][service][perfLabel][perfType])
                     if result['results'] and len(result['results'][0]) > 0:
                         json_object, tags, time_index, value_index = parse_object(result)
