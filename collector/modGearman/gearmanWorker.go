@@ -14,6 +14,7 @@ import (
 	"net"
 	"os"
 	"time"
+	"github.com/griesbacher/nagflux/config"
 )
 
 //GearmanWorker queries the gearmanserver and adds the extraced perfdata to the queue.
@@ -80,7 +81,28 @@ func (g GearmanWorker) run(address, queue string) {
 		return
 	}
 	go g.worker.Work()
+	go g.handleLoad()
 
+}
+
+func (g GearmanWorker) handleLoad() {
+	bufferLimit := int(float32(config.GetConfig().Main.BufferSize) * 0.90)
+	for {
+		for _, r := range g.results {
+			if len(r) > bufferLimit {
+				g.worker.Lock()
+				for len(r) > bufferLimit {
+					time.Sleep(time.Duration(100) * time.Millisecond)
+				}
+				g.worker.Unlock()
+			}
+		}
+		select {
+		case <-g.quit:
+			g.quit <- true
+		case <-time.After(time.Duration(1) * time.Second):
+		}
+	}
 }
 
 func (g GearmanWorker) handelJob(job worker.Job) ([]byte, error) {
@@ -96,9 +118,6 @@ func (g GearmanWorker) handelJob(job worker.Job) ([]byte, error) {
 	for singlePerfdata := range g.nagiosSpoolfileWorker.PerformanceDataIterator(splittedPerformanceData) {
 		for _, r := range g.results {
 			select {
-			case <-g.quit:
-				g.quit <- true
-				return job.Data(), nil
 			case r <- singlePerfdata:
 			case <-time.After(time.Duration(1) * time.Minute):
 				logging.GetLogger().Warn("GearmanWorker: Could not write to buffer")
