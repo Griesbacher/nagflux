@@ -86,12 +86,15 @@ def gen_structur(tables):
                 metrics[match.group(1)] = {
                     service: {match.group(4): {match.group(5): t}, command_const: match.group(3)}}
         else:
-            match = re.search(message_regex, t)
-            if match:
-                if match.group(1) in messages:
-                    messages[match.group(1)][match.group(2)] = t
+            t_match = re.search(message_regex, t)
+            if t_match:
+                service = t_match.group(2)
+                if t_match.group(2) == "":
+                    service = args.alias
+                if t_match.group(1) in messages:
+                    messages[t_match.group(1)][service] = t
                 else:
-                    messages[match.group(1)] = {match.group(2): t}
+                    messages[t_match.group(1)] = {service: t}
     return metrics, messages
 
 
@@ -187,12 +190,12 @@ def dump_messages(messages):
     i = 0
     for host in messages:
         for serivce in messages[host]:
-            json_object, tags, time_index, value_index = parse_object(
-                    query_data_for_table(args.url, messages[host][serivce])
-            )
-            csv = parse_message(json_object, tags, time_index, value_index, host, serivce)
-            write_data_to_file(csv, args.target, str(i) + ".txt")
-            i += 1
+            result = query_data_for_table(args.url, messages[host][serivce])
+            if result['results'] and len(result['results'][0]) > 0:
+                json_object, tags, time_index, value_index = parse_object(result)
+                csv = parse_message(json_object, tags, time_index, value_index, host, serivce)
+                write_data_to_file(csv, args.target, str(i) + ".txt")
+                i += 1
     return i
 
 
@@ -263,10 +266,11 @@ def dump_metrics(metrics):
                 if perfLabel == command_const:
                     continue
                 for perfType in metrics[host][service][perfLabel]:
-                    json_object, tags, time_index, value_index = parse_object(
-                            query_data_for_table(args.url, metrics[host][service][perfLabel][perfType])
-                    )
-                    parse_perf_type(data, perfType, json_object, tags, time_index, value_index)
+
+                    result = query_data_for_table(args.url, metrics[host][service][perfLabel][perfType])
+                    if result['results'] and len(result['results'][0]) > 0:
+                        json_object, tags, time_index, value_index = parse_object(result)
+                        parse_perf_type(data, perfType, json_object, tags, time_index, value_index)
                 out = gen_metrics_string(data, host, service, command, perfLabel)
                 write_data_to_file(out, args.target, str(i) + ".txt")
                 i += 1
