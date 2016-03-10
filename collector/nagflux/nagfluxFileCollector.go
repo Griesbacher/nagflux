@@ -118,8 +118,6 @@ func (nfc FileCollector) parseFile(filename string) []Printable {
 					currentPrintable.Table = v
 				} else if records[0][i] == requiredFields[1] {
 					currentPrintable.Timestamp = v
-				} else if records[0][i] == requiredFields[2] {
-					currentPrintable.Value = v
 				} else if val, ok := tagIndices[i]; ok {
 					currentPrintable.tags[val] = v
 				} else if val, ok := fieldIndices[i]; ok {
