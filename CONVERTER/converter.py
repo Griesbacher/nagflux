@@ -128,7 +128,13 @@ def query_data_for_table(url, table):
 
 def escape_for_influxdb(string):
     if not isinstance(string, str):
-        string = str(string)
+        if v == 2:
+            if isinstance(string, unicode):
+                string = string.encode('utf-8')
+            else:
+                string = str(string)
+        elif v == 3:
+            string = str(string)
     return string.replace(' ', '\ ').replace(',', '\,')
 
 
