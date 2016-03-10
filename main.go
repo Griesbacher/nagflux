@@ -62,7 +62,7 @@ Commandline Parameter:
 	}
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 	if cfg.Influx.Enabled {
-		resultQueues[data.InfluxDB] = make(chan collector.Printable, int(resultQueueLength))
+		resultQueues[data.InfluxDB] = make(chan collector.Printable, cfg.Main.BufferSize)
 		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Influx.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.CreateDatabaseIfNotExists)
 		stoppables = append(stoppables, influx)
 		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.InfluxDB], cfg.Main.DumpFile, data.InfluxDB)
@@ -70,7 +70,7 @@ Commandline Parameter:
 	}
 
 	if cfg.Elasticsearch.Enabled {
-		resultQueues[data.Elasticsearch] = make(chan collector.Printable, int(resultQueueLength))
+		resultQueues[data.Elasticsearch] = make(chan collector.Printable, cfg.Main.BufferSize)
 		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Elasticsearch.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true)
 		stoppables = append(stoppables, elasticsearch)
 		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.Elasticsearch], cfg.Main.DumpFile, data.Elasticsearch)

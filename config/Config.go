@@ -10,6 +10,7 @@ type Config struct {
 		DumpFile               string
 		NagfluxSpoolfileFolder string
 		FieldSeparator         string
+		BufferSize int
 	}
 	ModGearman struct {
 		Enabled    bool

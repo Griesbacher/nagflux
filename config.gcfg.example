@@ -6,6 +6,7 @@
     DumpFile = "nagflux.dump"
     NagfluxSpoolfileFolder = "/var/spool/nagflux"
     FieldSeparator = "&"
+    BufferSize = 10000
 
 [Log]
     # leave empty for stdout
