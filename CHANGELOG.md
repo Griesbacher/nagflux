@@ -1,4 +1,4 @@
-## v0.2.0 - upcomming
+## v0.2.0 - 10.3.2016
 
 ### Features
 - Elasticsearch support
