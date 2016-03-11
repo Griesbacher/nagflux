@@ -7,6 +7,9 @@ import (
 
 //SanitizeInfluxInput adds backslashes to special chars.
 func SanitizeInfluxInput(input string) string {
+	if string(input[0]) == `"` && string(input[len(input)-1]) == `"`{
+		return input
+	}
 	if config.GetConfig().Influx.NastyString != "" {
 		input = strings.Replace(input, config.GetConfig().Influx.NastyString, config.GetConfig().Influx.NastyStringToReplace, -1)
 	}
