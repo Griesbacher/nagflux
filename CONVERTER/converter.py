@@ -162,7 +162,7 @@ def parse_message(json_object, tags, time_index, value_index, host, service):
         data.write('t_')
         data.write(tag[1])
         data.write(escape_for_influxdb(args.separator))
-    data.write('t_message')
+    data.write('f_message')
     data.write(args.separator)
     data.write('time')
     data.write(args.separator)
