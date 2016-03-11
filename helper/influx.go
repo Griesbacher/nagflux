@@ -7,10 +7,10 @@ import (
 
 //SanitizeInfluxInput adds backslashes to special chars.
 func SanitizeInfluxInput(input string) string {
-	if len(input) == 0{
+	if len(input) == 0 {
 		return input
 	}
-	if string(input[0]) == `"` && string(input[len(input)-1]) == `"`{
+	if string(input[0]) == `"` && string(input[len(input)-1]) == `"` {
 		return input
 	}
 	if config.GetConfig().Influx.NastyString != "" {
