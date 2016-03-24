@@ -83,3 +83,31 @@ func TestIsStringANumber(t *testing.T) {
 		}
 	}
 }
+
+var VersionOrdinalData = []struct {
+	input    string
+	input2   string
+	expected bool
+}{
+	{"1", "2", true},
+	{"2", "1", false},
+	{"1", "1", false},
+	{"a", "b", true},
+	{"b", "a", false},
+	{"0", "0", false},
+	{".", ",", false},
+	{"1.10", "1.09", false},
+	{"1.1.10", "1.1.09", false},
+	{"1.09", "1.10", true},
+	{"1.1.09", "1.1.10", true},
+}
+
+func TestVersionOrdinal(t *testing.T) {
+	t.Parallel()
+	for _, data := range VersionOrdinalData {
+		actual := VersionOrdinal(data.input) < VersionOrdinal(data.input2)
+		if actual != data.expected {
+			t.Errorf("VersionOrdinal(%s) < VersionOrdinal(%s): expected:%t, actual:%t", data.input, data.input2, data.expected, actual)
+		}
+	}
+}
