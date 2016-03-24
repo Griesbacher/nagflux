@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"github.com/griesbacher/nagflux/config"
 	"reflect"
 	"testing"
 )
@@ -15,6 +16,8 @@ var SanitizeInfluxData = []struct {
 	{"aa", "aa"},
 	{`c:\ `, `c:\\ `},
 	{"", ""},
+	{`"a a"`, `"a a"`},
+	{`§`, `SS`},
 }
 
 var SanitizeInfluxDataMap = []struct {
@@ -29,7 +32,18 @@ var SanitizeInfluxDataMap = []struct {
 }
 
 func TestSanitizeInfluxInput(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
+	config.InitConfigFromString(`[Influx]
+    Enabled = true
+    Version = 0.9
+    Address = "http://127.0.0.1:8086"
+    Arguments = "precision=ms&u=root&p=root&db=nagflux"
+    CreateDatabaseIfNotExists = true
+    # leave empty to disable
+    NastyString = "§"
+    NastyStringToReplace = "SS"
+    HostcheckAlias = "hostcheck"
+`)
 	for _, data := range SanitizeInfluxData {
 		actual := SanitizeInfluxInput(data.input)
 		if actual != data.output {
