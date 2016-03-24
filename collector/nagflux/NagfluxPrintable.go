@@ -16,15 +16,13 @@ type Printable struct {
 //PrintForInfluxDB prints the data in influxdb lineformat
 func (p Printable) PrintForInfluxDB(version string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
-		line := helper.SanitizeInfluxInput(p.Table)
-		p.tags = helper.SanitizeMap(p.tags)
+		line := p.Table
 		if len(p.tags) > 0 {
-			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
+			line += fmt.Sprintf(`,%s`, helper.PrintMapAsString(p.tags, ",", "="))
 		}
 		line += " "
-		p.fields = helper.SanitizeMap(p.fields)
 		if len(p.fields) > 0 {
-			line += fmt.Sprintf(`%s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
+			line += fmt.Sprintf(`%s`, helper.PrintMapAsString(p.fields, ",", "="))
 		}
 		return fmt.Sprintf("%s %s", line, p.Timestamp)
 	}
