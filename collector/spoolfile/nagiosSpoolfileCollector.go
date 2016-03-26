@@ -12,7 +12,7 @@ import (
 
 const (
 	//MinFileAge is the duration to wait, before the files are parsed
-	MinFileAge = time.Duration(60) * time.Second
+	MinFileAge = time.Duration(10) * time.Second
 	//IntervalToCheckDirectory the interval to check if there are new files
 	IntervalToCheckDirectory = time.Duration(5) * time.Second
 )
