@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	filename = "config.gcfg"
-	envInflux = "NAGFLUX_TEST_INFLUX"
+	filename      = "config.gcfg"
+	envInflux     = "NAGFLUX_TEST_INFLUX"
 	envLivestatus = "NAGFLUX_TEST_LIVESTATUS"
-	envSave = "NAGFLUX_TEST_SAVE"
-	databaseName = "NAGFLUX_CI_TEST"
-	timeout = time.Duration(20) * time.Second
+	envSave       = "NAGFLUX_TEST_SAVE"
+	databaseName  = "NAGFLUX_CI_TEST"
+	timeout       = time.Duration(20) * time.Second
 )
 
 type testData struct {
@@ -67,8 +67,8 @@ metrics&10&nagflux&service1&command1&perf&20
 		[]interface{}{10.0, "command1", nil, nil, "nagflux", nil, nil, nil, "perf", "service1", 20.0, nil, nil}},
 	{`metrics&20&nagflux&service 1&command1&perf 1&30
 `,
-		//[10 command1 <nil> <nil> nagflux <nil> <nil> perf service1 20 <nil> <nil>]
-		[]interface{}{20.0, "command1", nil, nil, "nagflux", nil,nil, nil, "perf 1", "service 1", 20.0, nil, nil}},
+		//[20 command1 <nil> <nil> nagflux <nil> <nil> <nil> perf\ 1 service\ 1 30 <nil> <nil>]
+		[]interface{}{20.0, "command1", nil, nil, "nagflux", nil, nil, nil, "perf\\ 1", "service\\ 1", 30.0, nil, nil}},
 }
 var NagfluxTestData2 = []testData{
 	{`table&time&t_host&t_service&f_message
@@ -79,7 +79,7 @@ messages&100&nagflux&service1&"""Hallo World"""
 }
 
 var TestDataName = `metrics`
-var TestDataColumns = []string{"time", "command", "crit", "crit-fill", "host", "max","message", "min", "performanceLabel", "service", "value", "warn", "warn-fill"}
+var TestDataColumns = []string{"time", "command", "crit", "crit-fill", "host", "max", "message", "min", "performanceLabel", "service", "value", "warn", "warn-fill"}
 
 var OldConfig string
 var influxParam string
@@ -137,7 +137,7 @@ func createTestData(folder, file string, data []testData) {
 	for _, data := range data {
 		fileData = append(fileData, []byte(data.input)...)
 	}
-	if err := ioutil.WriteFile(folder + file, fileData, 0644); err != nil {
+	if err := ioutil.WriteFile(folder+file, fileData, 0644); err != nil {
 		panic(err)
 	}
 	fmt.Println(string(fileData))
