@@ -48,11 +48,11 @@ var NagiosTestData = []testData{
 		// [time command crit crit-fill host max min performanceLabel service value warn warn-fill]
 		// [1000 usage 3 none h1 5 <nil> 4 C:\ use s1 1 2 none]
 		[]interface{}{1000.0, "usage", 3.0, "none", "h1", 5.0, nil, 4.0, `C: use`, "s1", 1.0, 2.0, "none"}},
-	{`DATATYPE::SERVICEPERFDATA	TIMET::1	HOSTNAME::h1	SERVICEDESC::s1	SERVICEPERFDATA::D:\ use=1;2;3;4;5	SERVICECHECKCOMMAND::usage
+	{`DATATYPE::SERVICEPERFDATA	TIMET::3	HOSTNAME::h1	SERVICEDESC::s1	SERVICEPERFDATA::D:\ use=1;2;3;4;5	SERVICECHECKCOMMAND::usage
 `,
 		// [time command crit crit-fill host max min performanceLabel service value warn warn-fill]
-		// [1000 usage 3 none h1 5 <nil> 4 C:\ use s1 1 2 none]
-		[]interface{}{1000.0, "usage", 3.0, "none", "h1", 5.0, nil, 4.0, `D:\ use`, "s1", 1.0, 2.0, "none"}},
+		// [3000 usage 3 none h1 5 <nil> 4 D:\ use s1 1 2 none]
+		[]interface{}{3000.0, "usage", 3.0, "none", "h1", 5.0, nil, 4.0, `D:\ use`, "s1", 1.0, 2.0, "none"}},
 	//Normal
 	{`DATATYPE::SERVICEPERFDATA	TIMET::2	HOSTNAME::h2	SERVICEDESC::s2	SERVICEPERFDATA::rta=2;3;4;5;6	SERVICECHECKCOMMAND::ping
 `, //[2000 ping 4 none h2 6 <nil> 5 rta s2 2 3 none]
@@ -76,6 +76,10 @@ messages&100&nagflux&service1&"""Hallo World"""
 `,
 		//[100 <nil> <nil> <nil> nagflux <nil> Hallo World <nil> <nil> service1 <nil> <nil> <nil>]
 		[]interface{}{100.0, nil, nil, nil, "nagflux", nil, "Hallo World", nil, nil, "service1", nil, nil, nil}},
+	{`messages&300&nagflux&service1&"""Hallo \\"""
+`,
+		//[300 <nil> <nil> <nil> nagflux <nil> Hallo \ <nil> <nil> service1 <nil> <nil> <nil>]
+		[]interface{}{300.0, nil, nil, nil, "nagflux", nil, `Hallo \`, nil, nil, "service1", nil, nil, nil}},
 }
 
 var TestDataName = `metrics`
