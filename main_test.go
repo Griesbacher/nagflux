@@ -65,10 +65,10 @@ metrics&10&nagflux&service1&command1&perf&20
 `,
 		//[10 command1 <nil> <nil> nagflux <nil> <nil> <nil> perf service1 20 <nil> <nil>]
 		[]interface{}{10.0, "command1", nil, nil, "nagflux", nil, nil, nil, "perf", "service1", 20.0, nil, nil}},
-	{`metrics&20&nagflux&service 1&command1&perf 1&30
+	{`metrics&20&nagflux&service\ 1&command1&perf\ 1&30
 `,
 		//[20 command1 <nil> <nil> nagflux <nil> <nil> <nil> perf\ 1 service\ 1 30 <nil> <nil>]
-		[]interface{}{20.0, "command1", nil, nil, "nagflux", nil, nil, nil, "perf\\ 1", "service\\ 1", 30.0, nil, nil}},
+		[]interface{}{20.0, "command1", nil, nil, "nagflux", nil, nil, nil, "perf 1", "service 1", 30.0, nil, nil}},
 }
 var NagfluxTestData2 = []testData{
 	{`table&time&t_host&t_service&f_message
