@@ -140,9 +140,6 @@ loop:
 				} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
 					influx.AddWorker()
 				}*/
-			for n, c := range resultQueues {
-				log.Info(n, len(c))
-			}
 		case <-quit:
 			break loop
 		}
