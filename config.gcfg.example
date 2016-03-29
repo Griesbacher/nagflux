@@ -29,6 +29,7 @@
     Secret = ""
     # Path to a file which holds the secret to encrypt the gearman jobs
     SecretFile = ""
+    Worker = 1
 
 [Influx]
     Enabled = true

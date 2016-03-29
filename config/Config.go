@@ -10,7 +10,7 @@ type Config struct {
 		DumpFile               string
 		NagfluxSpoolfileFolder string
 		FieldSeparator         string
-		BufferSize int
+		BufferSize             int
 	}
 	ModGearman struct {
 		Enabled    bool
@@ -18,6 +18,7 @@ type Config struct {
 		Queue      string
 		Secret     string
 		SecretFile string
+		Worker     int
 	}
 	Log struct {
 		LogFile     string
