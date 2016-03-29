@@ -151,6 +151,8 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 			return &NotificationData{Data{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 		} else if len(line) == 9 {
 			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+		} else {
+			live.log.Warn("HOST NOTIFICATION, undefinded linelenght:", len(line), "Line:", line)
 		}
 	case "SERVICE NOTIFICATION":
 		if len(line) == 11 {
@@ -158,6 +160,8 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 			return &NotificationData{Data{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
 		} else if len(line) == 10 {
 			return &NotificationData{Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+		} else {
+			live.log.Warn("SERVICE NOTIFICATION, undefinded linelenght:", len(line), "Line:", line)
 		}
 
 	}

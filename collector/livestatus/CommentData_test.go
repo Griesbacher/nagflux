@@ -1,38 +1,38 @@
 package livestatus
 
 import (
-	"testing"
-	"github.com/griesbacher/nagflux/config"
 	"fmt"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/logging"
+	"testing"
 )
 
 var PrintCommentData = []struct {
-	input        CommentData
-	outputInflux string
+	input         CommentData
+	outputInflux  string
 	outputElastic string
 }{
-	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "1"},
+	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "1"},
 		`messages,host=host\ 1,service=service\ 1,type=comment,author=philip message="hallo world" 1458988932000000`,
 		`{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"hallo world","author":"philip","host":"host 1","service":"service 1","type":"comment"}
 `},
-	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "2"},
+	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "2"},
 		`messages,host=host\ 1,service=service\ 1,type=downtime,author=philip message="hallo world" 1458988932000000`,
 		`{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"hallo world","author":"philip","host":"host 1","service":"service 1","type":"downtime"}
 `},
-	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "3"},
+	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "3"},
 		`messages,host=host\ 1,service=service\ 1,type=flapping,author=philip message="hallo world" 1458988932000000`,
 		`{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"hallo world","author":"philip","host":"host 1","service":"service 1","type":"flapping"}
 `},
-	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "4"},
+	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "4"},
 		`messages,host=host\ 1,service=service\ 1,type=acknowledgement,author=philip message="hallo world" 1458988932000000`,
 		`{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"hallo world","author":"philip","host":"host 1","service":"service 1","type":"acknowledgement"}
 `},
-	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "5"},
+	{CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "5"},
 		`messages,host=host\ 1,service=service\ 1,author=philip message="hallo world" 1458988932000000`,
 		`{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"hallo world","author":"philip","host":"host 1","service":"service 1","type":""}
@@ -66,7 +66,7 @@ func TestPrintInfluxdbComment(t *testing.T) {
 func TestPrintElasticsearchComment(t *testing.T) {
 	logging.InitTestLogger()
 	config.InitConfigFromString(fmt.Sprintf(Config, "monthly"))
-	comment := CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime:"1458988932000"}, entryType: "1"}
+	comment := CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "1"}
 	if !didThatPanic(comment.PrintForElasticsearch, "1.0", "index") {
 		t.Errorf("This should panic, due to unsuported elasticsearch version")
 	}

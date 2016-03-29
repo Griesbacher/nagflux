@@ -1,10 +1,10 @@
 package livestatus
 
 import (
+	"fmt"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/logging"
 	"testing"
-	"github.com/griesbacher/nagflux/config"
-	"fmt"
 )
 
 func TestSanitizeValuesNotification(t *testing.T) {
@@ -93,7 +93,7 @@ const Config = `[main]
 func TestPrintForElasticsearchNotification(t *testing.T) {
 	logging.InitTestLogger()
 	config.InitConfigFromString(fmt.Sprintf(Config, "monthly"))
-	notification := NotificationData{Data: Data{hostName: "host 1", author: "philip", entryTime:"1458988932000"}, notificationType: "HOST NOTIFICATION", notificationLevel: "WARN"}
+	notification := NotificationData{Data: Data{hostName: "host 1", author: "philip", entryTime: "1458988932000"}, notificationType: "HOST NOTIFICATION", notificationLevel: "WARN"}
 	if !didThatPanic(notification.PrintForElasticsearch, "1.0", "index") {
 		t.Error("Printed for unsuported elasticsearch version but got a response")
 	}
@@ -106,7 +106,7 @@ func TestPrintForElasticsearchNotification(t *testing.T) {
 		t.Errorf("Result does not match the expected.\n%s%s", result, expected)
 	}
 
-	notification2 := NotificationData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", entryTime:"1458988932000"}, notificationType: "SERVICE NOTIFICATION", notificationLevel: "WARN"}
+	notification2 := NotificationData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", entryTime: "1458988932000"}, notificationType: "SERVICE NOTIFICATION", notificationLevel: "WARN"}
 	result2 := notification2.PrintForElasticsearch("2.0", "index")
 	expected2 := `{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"WARN:<br> ","author":"philip","host":"host 1","service":"service 1","type":"service_notification"}
@@ -115,7 +115,7 @@ func TestPrintForElasticsearchNotification(t *testing.T) {
 		t.Errorf("Result does not match the expected.\n%s%s", result2, expected2)
 	}
 
-	notification3 := NotificationData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", entryTime:"1458988932000"}, notificationType: "NULL NOTIFICATION", notificationLevel: "WARN"}
+	notification3 := NotificationData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", entryTime: "1458988932000"}, notificationType: "NULL NOTIFICATION", notificationLevel: "WARN"}
 	result3 := notification3.PrintForElasticsearch("2.0", "index")
 	expected3 := `{"index":{"_index":"index-2016.03","_type":"messages"}}
 {"timestamp":1458988932000000,"message":"WARN:<br> ","author":"philip","host":"host 1","service":"service 1","type":""}
