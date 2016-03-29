@@ -24,10 +24,10 @@ func TestPrintInfluxdbDowntime(t *testing.T) {
 	}
 
 	result := down.PrintForInfluxDB("0.9")
-	expected := `messages,host=host\ 1,service=service\ 1,type=downtime,author=philip value="Downtime start: <br>" 000
-messages,host=host\ 1,service=service\ 1,type=downtime,author=philip value="Downtime end: <br>" 123000`
+	expected := `messages,host=host\ 1,service=service\ 1,type=downtime,author=philip message="Downtime start: <br>" 000
+messages,host=host\ 1,service=service\ 1,type=downtime,author=philip message="Downtime end: <br>" 123000`
 	if result != expected {
-		t.Errorf("The result did not match the expected. Result: %s Expected %s", result, expected)
+		t.Errorf("The result did not match the expected. Result:\n%s \nExpected:\n%s", result, expected)
 	}
 }
 
