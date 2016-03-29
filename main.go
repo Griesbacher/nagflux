@@ -28,7 +28,7 @@ type Stoppable interface {
 }
 
 //Interval of the main loop, in which the amount of workers are calculated.
-const updateRate = 120
+const updateRate = 1
 
 //Buffer size.
 const resultQueueLength = 1000.0
@@ -85,15 +85,17 @@ Commandline Parameter:
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	if cfg.ModGearman.Enabled {
-		log.Infof("Starting Mod_Gearman: %s [%s]", cfg.ModGearman.Address, cfg.ModGearman.Queue)
+		log.Infof("Mod_Gearman: %s [%s]", cfg.ModGearman.Address, cfg.ModGearman.Queue)
 		secret := modGearman.GetSecret(cfg.ModGearman.Secret, cfg.ModGearman.SecretFile)
-		gearmanWorker := modGearman.NewGearmanWorker(cfg.ModGearman.Address,
-			cfg.ModGearman.Queue,
-			secret,
-			resultQueues,
-			livestatusCache,
-		)
-		stoppables = append(stoppables, gearmanWorker)
+		for i := 0; i < cfg.ModGearman.Worker; i++ {
+			gearmanWorker := modGearman.NewGearmanWorker(cfg.ModGearman.Address,
+				cfg.ModGearman.Queue,
+				secret,
+				resultQueues,
+				livestatusCache,
+			)
+			stoppables = append(stoppables, gearmanWorker)
+		}
 	}
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
@@ -125,19 +127,22 @@ loop:
 	for {
 		select {
 		case <-time.After(time.Duration(updateRate) * time.Second):
-		/*queriesSend, measureTime, err := statisticUser.GetData("send")
-			if err != nil {
-				continue
-			}
-			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
-			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime * 100)
+			/*queriesSend, measureTime, err := statisticUser.GetData("send")
+				if err != nil {
+					continue
+				}
+				idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
+				log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime * 100)
 
-		//TODO: fix worker spawn by type
-			if idleTime > 0.25 {
-				influx.RemoveWorker()
-			} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
-				influx.AddWorker()
-			}*/
+			//TODO: fix worker spawn by type
+				if idleTime > 0.25 {
+					influx.RemoveWorker()
+				} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
+					influx.AddWorker()
+				}*/
+			for n, c := range resultQueues {
+				log.Info(n, len(c))
+			}
 		case <-quit:
 			break loop
 		}
