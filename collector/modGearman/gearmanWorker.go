@@ -4,6 +4,7 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/helper/crypto"
@@ -14,7 +15,6 @@ import (
 	"net"
 	"os"
 	"time"
-	"github.com/griesbacher/nagflux/config"
 )
 
 //GearmanWorker queries the gearmanserver and adds the extraced perfdata to the queue.
@@ -111,10 +111,13 @@ func (g GearmanWorker) handelJob(job worker.Job) ([]byte, error) {
 		var err error
 		secret, err = g.aesECBDecrypter.Decypt(secret)
 		if err != nil {
-			g.log.Warn(err)
+			g.log.Warn(err, ". Data: ", string(job.Data()))
+			return job.Data(), nil
 		}
 	}
 	splittedPerformanceData := helper.StringToMap(string(secret), "\t", "::")
+	g.log.Debug("[ModGearman] ", string(job.Data()))
+	g.log.Debug("[ModGearman] ", splittedPerformanceData)
 	for singlePerfdata := range g.nagiosSpoolfileWorker.PerformanceDataIterator(splittedPerformanceData) {
 		for _, r := range g.results {
 			select {
