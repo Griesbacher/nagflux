@@ -1,3 +1,10 @@
+## upcomming
+### Features
+- mod_gearman support (experimental)
+
+### Breaks
+- New Nagflux import format
+
 ## v0.2.0 - 10.3.2016
 
 ### Features
