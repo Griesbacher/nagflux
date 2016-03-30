@@ -152,8 +152,8 @@ func cleanUp(itemsToStop []Stoppable, resultQueues map[data.Datatype]chan collec
 	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
 		monitoringServer.Stop()
 	}
-	for _, item := range itemsToStop {
-		item.Stop()
+	for i := len(itemsToStop)-1; i >= 0; i-- {
+		itemsToStop[i].Stop()
 		time.Sleep(500 * time.Millisecond)
 	}
 	for _, q := range resultQueues {
