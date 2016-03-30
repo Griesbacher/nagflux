@@ -20,7 +20,7 @@
     WebserverPort = ""
 
 [ModGearman]
-    Enabled = true
+    Enabled = false
     Address = "127.0.0.1:4730"
     Queue = "perfdata"
     # Leave Secret and SecretFile empty to disable encryption
@@ -28,7 +28,7 @@
     # Secret to encrypt the gearman jobs
     Secret = ""
     # Path to a file which holds the secret to encrypt the gearman jobs
-    SecretFile = ""
+    SecretFile = "/etc/mod-gearman/secret.key"
     Worker = 1
 
 [Influx]
