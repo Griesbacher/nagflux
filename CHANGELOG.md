@@ -1,11 +1,11 @@
-## upcomming
+## v0.2.1 - 30.03.2016
 ### Features
 - mod_gearman support (experimental)
 
 ### Breaks
 - New Nagflux import format
 
-## v0.2.0 - 10.3.2016
+## v0.2.0 - 10.03.2016
 
 ### Features
 - Elasticsearch support
