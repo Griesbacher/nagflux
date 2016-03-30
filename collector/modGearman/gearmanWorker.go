@@ -11,9 +11,6 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"github.com/mikespook/gearman-go/worker"
-	"log"
-	"net"
-	"os"
 	"time"
 )
 
@@ -25,6 +22,7 @@ type GearmanWorker struct {
 	aesECBDecrypter       *crypto.AESECBDecrypter
 	worker                *worker.Worker
 	log                   *factorlog.FactorLog
+	jobQueue              string
 }
 
 //NewGearmanWorker generates a new GearmanWorker.
@@ -44,52 +42,62 @@ func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan
 		results:               results,
 		nagiosSpoolfileWorker: spoolfile.NewNagiosSpoolfileWorker(-1, make(chan string), make(map[data.Datatype]chan collector.Printable), livestatusCacheBuilder),
 		aesECBDecrypter:       decrypter,
-		worker:                worker.New(worker.Unlimited),
+		worker:                createGearmanWorker(address),
 		log:                   logging.GetLogger(),
+		jobQueue: queue,
 	}
-	worker.run(address, queue)
+	go worker.run()
+	go worker.handleLoad()
 	return worker
+}
+
+func createGearmanWorker(address string) *worker.Worker {
+	w := worker.New(worker.Unlimited)
+	w.AddServer("tcp4", address)
+	return w
+}
+
+func (g GearmanWorker) startGearmanWorker() error {
+	g.worker.ErrorHandler = func(err error) {
+		if err.Error() == "EOF" {
+			g.log.Warn("Gearmand did not response. Connection closed")
+		}else {
+			g.log.Warn(err)
+		}
+		g.run()
+	}
+	g.worker.AddFunc(g.jobQueue, g.handelJob, worker.Unlimited)
+	if err := g.worker.Ready(); err != nil {
+		return err
+	}
+	go g.worker.Work()
+	return nil
 }
 
 //Stop stops the worker
 func (g GearmanWorker) Stop() {
-	//g.quit <- true
 	g.worker.Close()
-	//<-g.quit
+	g.quit <- true
+	<-g.quit
 	logging.GetLogger().Debug("GearmanWorker stopped")
 }
 
-func (g GearmanWorker) run(address, queue string) {
-	g.worker.ErrorHandler = func(e error) {
-		log.Println(e)
-		if opErr, ok := e.(*net.OpError); ok {
-			if !opErr.Temporary() {
-				proc, err := os.FindProcess(os.Getpid())
-				if err != nil {
-					log.Println(err)
-				}
-				if err := proc.Signal(os.Interrupt); err != nil {
-					log.Println(err)
-				}
-			}
+func (g GearmanWorker) run() {
+	for {
+		if err := g.startGearmanWorker(); err != nil {
+			g.log.Warn(err)
+			time.Sleep(time.Duration(30) * time.Second)
+		} else {
+			return
 		}
 	}
-	g.worker.AddServer("tcp4", address)
-	g.worker.AddFunc(queue, g.handelJob, worker.Unlimited)
-	if err := g.worker.Ready(); err != nil {
-		log.Fatal(err)
-		return
-	}
-	go g.worker.Work()
-	go g.handleLoad()
-
 }
 
 func (g GearmanWorker) handleLoad() {
 	bufferLimit := int(float32(config.GetConfig().Main.BufferSize) * 0.90)
 	for {
 		for _, r := range g.results {
-			if len(r) > bufferLimit {
+			if len(r) > bufferLimit && g.worker != nil {
 				g.worker.Lock()
 				for len(r) > bufferLimit {
 					time.Sleep(time.Duration(100) * time.Millisecond)
@@ -100,6 +108,7 @@ func (g GearmanWorker) handleLoad() {
 		select {
 		case <-g.quit:
 			g.quit <- true
+			return
 		case <-time.After(time.Duration(1) * time.Second):
 		}
 	}
