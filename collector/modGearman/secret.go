@@ -20,10 +20,10 @@ func GetSecret(secret, secretFile string) string {
 	return ""
 }
 
-//FillKey expands the key to length.
-func FillKey(key string, length int) []byte {
+//ShapeKey expands the key to length, or cuts it.
+func ShapeKey(key string, length int) []byte {
 	for i := 0; i <= length-len(key); i++ {
 		key = key + string([]rune{'\x00'})
 	}
-	return []byte(key)
+	return []byte(key)[:length]
 }

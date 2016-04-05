@@ -30,7 +30,7 @@ type GearmanWorker struct {
 func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *GearmanWorker {
 	var decrypter *crypto.AESECBDecrypter
 	if key != "" {
-		byteKey := FillKey(key, 32)
+		byteKey := ShapeKey(key, 32)
 		var err error
 		decrypter, err = crypto.NewAESECBDecrypter(byteKey)
 		if err != nil {
@@ -44,7 +44,7 @@ func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan
 		aesECBDecrypter:       decrypter,
 		worker:                createGearmanWorker(address),
 		log:                   logging.GetLogger(),
-		jobQueue: queue,
+		jobQueue:              queue,
 	}
 	go worker.run()
 	go worker.handleLoad()
@@ -61,7 +61,7 @@ func (g GearmanWorker) startGearmanWorker() error {
 	g.worker.ErrorHandler = func(err error) {
 		if err.Error() == "EOF" {
 			g.log.Warn("Gearmand did not response. Connection closed")
-		}else {
+		} else {
 			g.log.Warn(err)
 		}
 		g.run()
