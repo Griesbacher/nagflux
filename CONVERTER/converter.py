@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import sys
 
 try:
     import urllib2
@@ -125,8 +126,7 @@ def query_data_for_table(url, table):
         json_object = json.loads(response.read().decode('utf8'))
     return json_object
 
-
-def escape_for_influxdb(string):
+def castString(string):
     if not isinstance(string, str):
         if v == 2:
             if isinstance(string, unicode):
@@ -135,6 +135,10 @@ def escape_for_influxdb(string):
                 string = str(string)
         elif v == 3:
             string = str(string)
+    return string
+
+def escape_for_influxdb(string):
+    string = castString(string)
     return string.replace(' ', '\ ').replace(',', '\,')
 
 
@@ -169,9 +173,9 @@ def parse_message(json_object, tags, time_index, value_index, host, service):
     data.write('table')
     data.write('\n')
     for value in json_object['values']:
-        data.write(host)
+        data.write(escape_for_influxdb(host))
         data.write(args.separator)
-        data.write(service)
+        data.write(escape_for_influxdb(service))
         data.write(args.separator)
         for tag in tags:
             data.write(escape_for_influxdb(value[tag[0]]))
@@ -186,10 +190,7 @@ def parse_message(json_object, tags, time_index, value_index, host, service):
 
 
 def escape_InfluxDB_string(string):
-    if isinstance(string, str):
-        return '"""' + string.replace('"', '\\"') + '"""'
-    else:
-        return escape_for_influxdb(string)
+    return '"""' + castString(string).replace('"', '\\"') + '"""'
 
 
 def dump_messages(messages):
@@ -253,11 +254,11 @@ def gen_metrics_string(m_data, host, service, command, perfLabel):
     out.write('\n')
     for t in m_data:
         for v in fix_values:
-            out.write(v)
+            out.write(escape_for_influxdb(v))
             out.write(args.separator)
         for s in ava_tags:
             if s in m_data[t]:
-                out.write(str(m_data[t][s]))
+                out.write(escape_for_influxdb(str(m_data[t][s])))
             out.write(args.separator)
         out.write(str(t))
         out.write('\n')
@@ -266,8 +267,16 @@ def gen_metrics_string(m_data, host, service, command, perfLabel):
 
 def dump_metrics(metrics):
     i = files_written
+    lenHosts = len(metrics)
+    h = 0
     for host in metrics:
+        h += 1
+        lenServices = len(metrics[host])
+        s = 0
         for service in metrics[host]:
+            s += 1
+            print("Host: "+str(h)+" / "+str(lenHosts)+" Service: "+str(s)+" / "+str(lenServices))
+            sys.stdout.flush()
             command = metrics[host][service][command_const]
             for perfLabel in metrics[host][service]:
                 data = {}
