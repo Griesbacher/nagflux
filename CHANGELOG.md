@@ -1,3 +1,7 @@
+## v0.2.2
+### Fix
+- livestatus ServiceNotifications with just 9 entries
+
 ## v0.2.1.1 - 08.04.2016
 ### Features
 - mod_gearman key will be cut if it's too long
