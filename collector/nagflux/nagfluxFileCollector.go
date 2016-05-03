@@ -96,9 +96,9 @@ func (nfc FileCollector) parseFile(filename string) []Printable {
 	fieldIndices := map[int]string{}
 
 	for i, v := range records[0] {
-		if v[:2] == "t_" {
+		if len(v) > 1 && v[:2] == "t_" {
 			tagIndices[i] = v[2:]
-		} else if v[:2] == "f_" {
+		} else if len(v) > 1 && v[:2] == "f_" {
 			fieldIndices[i] = v[2:]
 		} else if helper.Contains(requiredFields, []string{v}) {
 			continue
