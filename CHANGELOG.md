@@ -1,6 +1,7 @@
 ## v0.2.2
 ### Fix
 - livestatus ServiceNotifications with just 9 entries
+- nagflux fileimport exception when column name is too short
 
 ## v0.2.1.1 - 08.04.2016
 ### Features
