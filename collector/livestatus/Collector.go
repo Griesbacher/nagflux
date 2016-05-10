@@ -6,6 +6,7 @@ import (
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
+	"regexp"
 	"time"
 )
 
@@ -15,17 +16,31 @@ type Collector struct {
 	jobs                map[data.Datatype]chan collector.Printable
 	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
+	logQuery            string
 }
 
 const (
-	//Updateinterval on livestatus data.
+	//Updateinterval on livestatus data for Icinga2.
 	intervalToCheckLivestatus = time.Duration(2) * time.Minute
-	//QueryForNotifications livestatusquery for notifications.
-	QueryForNotifications = `GET log
+	QueryLivestatusVersion    = `GET status
+Columns: livestatus_version
+OutputFormat: csv
+
+`
+	//QueryIcinga2ForNotifications livestatusquery for notifications with Icinga2 Livestatus.
+	QueryIcinga2ForNotifications = `GET log
 Columns: type time contact_name message
 Filter: type ~ .*NOTIFICATION
 Filter: time < %d
 Negate:
+OutputFormat: csv
+
+`
+	//QueryNagiosForNotifications livestatusquery for notifications with nagioslike Livestatus.
+	QueryNagiosForNotifications = `GET log
+Columns: type time contact_name message
+Filter: type ~ .*NOTIFICATION
+Filter: time > %d
 OutputFormat: csv
 
 `
@@ -43,11 +58,28 @@ Filter: entry_time > %d
 OutputFormat: csv
 
 `
+	//Nagios nagioslike Livestatus
+	Nagios  = iota
+	//Icinga2 icinga2like Livestatus
+	Icinga2 = iota
+	//Naemon naemonlike Livestatus
+	Naemon  = iota
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
 func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, livestatusConnector *Connector) *Collector {
-	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger()}
+	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), QueryNagiosForNotifications}
+	switch getLivestatusVersion(live) {
+	case Nagios:
+		live.log.Debug("Livestatus type Nagios")
+		live.logQuery = QueryNagiosForNotifications
+	case Icinga2:
+		live.log.Debug("Livestatus type Icinga2")
+		live.logQuery = QueryIcinga2ForNotifications
+	case Naemon:
+		live.log.Debug("Livestatus type Naemon")
+		live.logQuery = QueryNagiosForNotifications
+	}
 	go live.run()
 	return live
 }
@@ -77,7 +109,7 @@ func (live Collector) run() {
 func (live Collector) queryData() {
 	printables := make(chan collector.Printable)
 	finished := make(chan bool)
-	go live.requestPrintablesFromLivestatus(QueryForNotifications, true, printables, finished)
+	go live.requestPrintablesFromLivestatus(live.logQuery, true, printables, finished)
 	go live.requestPrintablesFromLivestatus(QueryForComments, true, printables, finished)
 	go live.requestPrintablesFromLivestatus(QueryForDowntimes, true, printables, finished)
 	jobsFinished := 0
@@ -109,7 +141,13 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 		select {
 		case line := <-csv:
 			switch query {
-			case QueryForNotifications:
+			case QueryNagiosForNotifications:
+				if printable := live.handleQueryForNotifications(line); printable != nil {
+					printables <- printable
+				} else {
+					live.log.Warn("The notification type is unkown:" + line[0])
+				}
+			case QueryIcinga2ForNotifications:
 				if printable := live.handleQueryForNotifications(line); printable != nil {
 					printables <- printable
 				} else {
@@ -126,6 +164,12 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 					printables <- DowntimeData{Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForDowntimes out of range", line)
+				}
+			case QueryLivestatusVersion:
+				if len(line) == 1 {
+					printables <- collector.SimplePrintable{Text: line[0], Datatype: data.InfluxDB}
+				} else {
+					live.log.Warn("QueryLivestatusVersion out of range", line)
 				}
 			default:
 				live.log.Fatal("Found unkown query type" + query)
@@ -158,7 +202,7 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 		if len(line) == 11 {
 			//Custom
 			return &NotificationData{Data{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
-		} else if len(line) == 10 || len(line) == 9{
+		} else if len(line) == 10 || len(line) == 9 {
 			return &NotificationData{Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 		} else {
 			live.log.Warn("SERVICE NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
@@ -166,4 +210,21 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 
 	}
 	return nil
+}
+
+func getLivestatusVersion(live *Collector) int {
+	printables := make(chan collector.Printable, 1)
+	live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, make(chan bool, 1))
+	versionPrintable := <-printables
+	version := versionPrintable.PrintForInfluxDB("0")
+	live.log.Debug("Livestatus version: ", version)
+	if icinga2, _ := regexp.MatchString(`^r[\d\.-]+$`, version); icinga2 {
+		return Icinga2
+	} else if nagios, _ := regexp.MatchString(`^[\d\.]+p[[\d\.]]+$`, version); nagios {
+		return Nagios
+	} else if neamon, _ := regexp.MatchString(`^[\d\.]+-naemon$`, version); neamon {
+		return Naemon
+	}
+	live.log.Warn("Could not detect livestatus type, with version: ", version, " asuming Nagios")
+	return -1
 }
