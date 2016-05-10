@@ -81,7 +81,7 @@ Commandline Parameter:
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
-	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector)
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, true)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	if cfg.ModGearman.Enabled {

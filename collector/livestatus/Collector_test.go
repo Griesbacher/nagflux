@@ -13,7 +13,7 @@ func TestNewLivestatusCollector(t *testing.T) {
 	livestatus := &MockLivestatus{"localhost:6559", "tcp", map[string]string{}, true}
 	go livestatus.StartMockLivestatus()
 	connector := &Connector{logging.GetLogger(), "localhost:6559", "tcp"}
-	collector := NewLivestatusCollector(make(map[data.Datatype]chan collector.Printable), connector)
+	collector := NewLivestatusCollector(make(map[data.Datatype]chan collector.Printable), connector, false)
 	if collector == nil {
 		t.Error("Constructor returned null pointer")
 	}

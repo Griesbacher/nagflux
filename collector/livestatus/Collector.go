@@ -67,18 +67,20 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, livestatusConnector *Connector) *Collector {
+func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, livestatusConnector *Connector, detectVersion bool) *Collector {
 	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), QueryNagiosForNotifications}
-	switch getLivestatusVersion(live) {
-	case Nagios:
-		live.log.Debug("Livestatus type Nagios")
-		live.logQuery = QueryNagiosForNotifications
-	case Icinga2:
-		live.log.Debug("Livestatus type Icinga2")
-		live.logQuery = QueryIcinga2ForNotifications
-	case Naemon:
-		live.log.Debug("Livestatus type Naemon")
-		live.logQuery = QueryNagiosForNotifications
+	if detectVersion {
+		switch getLivestatusVersion(live) {
+		case Nagios:
+			live.log.Debug("Livestatus type Nagios")
+			live.logQuery = QueryNagiosForNotifications
+		case Icinga2:
+			live.log.Debug("Livestatus type Icinga2")
+			live.logQuery = QueryIcinga2ForNotifications
+		case Naemon:
+			live.log.Debug("Livestatus type Naemon")
+			live.logQuery = QueryNagiosForNotifications
+		}
 	}
 	go live.run()
 	return live
