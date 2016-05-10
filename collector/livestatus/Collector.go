@@ -59,11 +59,11 @@ OutputFormat: csv
 
 `
 	//Nagios nagioslike Livestatus
-	Nagios  = iota
+	Nagios = iota
 	//Icinga2 icinga2like Livestatus
 	Icinga2 = iota
 	//Naemon naemonlike Livestatus
-	Naemon  = iota
+	Naemon = iota
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
@@ -217,8 +217,13 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 func getLivestatusVersion(live *Collector) int {
 	printables := make(chan collector.Printable, 1)
 	live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, make(chan bool, 1))
-	versionPrintable := <-printables
-	version := versionPrintable.PrintForInfluxDB("0")
+	var version string
+	select {
+	case versionPrintable := <-printables:
+		version = versionPrintable.PrintForInfluxDB("0")
+	case <-time.After(time.Duration(5) * time.Second):
+	}
+
 	live.log.Debug("Livestatus version: ", version)
 	if icinga2, _ := regexp.MatchString(`^r[\d\.-]+$`, version); icinga2 {
 		return Icinga2
