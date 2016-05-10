@@ -21,7 +21,7 @@ func TestNewLivestatusCollector(t *testing.T) {
 }
 
 func TestAddTimestampToLivestatusQuery(t *testing.T) {
-	if addTimestampToLivestatusQuery(QueryForNotifications) != fmt.Sprintf(QueryForNotifications, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix()) {
+	if addTimestampToLivestatusQuery(QueryIcinga2ForNotifications) != fmt.Sprintf(QueryIcinga2ForNotifications, time.Now().Add(intervalToCheckLivestatus/100*-150).Unix()) {
 		t.Error("addTimestampToLivestatusQuery has changed")
 	}
 }
