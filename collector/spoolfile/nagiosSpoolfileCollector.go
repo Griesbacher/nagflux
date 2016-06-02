@@ -57,6 +57,7 @@ func (s *NagiosSpoolfileCollector) run() {
 			s.quit <- true
 			return
 		case <-time.After(IntervalToCheckDirectory):
+			logging.GetLogger().Debug("Reading Directory: ", s.spoolDirectory)
 			files, _ := ioutil.ReadDir(s.spoolDirectory)
 			for _, currentFile := range files {
 				select {
