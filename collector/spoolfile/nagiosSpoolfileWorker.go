@@ -75,6 +75,7 @@ func (w *NagiosSpoolfileWorker) run() {
 			return
 		case file = <-w.jobs:
 			startTime := time.Now()
+			logging.GetLogger().Debug("Reading file: ", file)
 			data, err := ioutil.ReadFile(file)
 			if err != nil {
 				break
