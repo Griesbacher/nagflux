@@ -1,0 +1,82 @@
+#!/bin/bash
+#
+# nagflux      Startup script for nagflux
+#
+# chkconfig: - 90 20
+# description: A connector which copies performancedata from Nagios/Icinga to InfluxDB
+# processname: nagflux
+
+### BEGIN INIT INFO
+# Provides: nagflux
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Should-Start: $syslog $named
+# Should-Stop: $syslog $named
+# Short-Description: start and stop nagflux
+# Description: A connector which copies performancedata from Nagios/Icinga to InfluxDB
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+prog=nagflux
+progpath=/opt/nagflux
+OPTIONS="-configPath /opt/nagflux/config.gcfg"
+logfile=/var/log/$prog.log
+lockfile=/var/lock/subsys/$prog
+
+start() {
+        [ "$EUID" != "0" ] && exit 4
+        [ "$NETWORKING" = "no" ] && exit 1
+        [ -x $progpath/nagflux ] || exit 5
+
+        # Start daemons.
+        echo -n $"Starting $prog: "
+        nohup $progpath/$prog $OPTIONS > $logfile 2>&1&
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch $lockfile
+        return $RETVAL
+}
+
+stop() {
+        [ "$EUID" != "0" ] && exit 4
+        echo -n $"Shutting down $prog: "
+        killproc $prog
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f $lockfile
+        return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status $prog
+        ;;
+  restart|force-reload)
+        stop
+        start
+        ;;
+  try-restart|condrestart)
+        if status $prog > /dev/null; then
+            stop
+            start
+        fi
+        ;;
+  reload)
+        exit 3
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|status|restart|try-restart|force-reload}"
+        exit 2
+esac
