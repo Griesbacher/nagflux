@@ -72,13 +72,13 @@ func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, liv
 	if detectVersion {
 		switch getLivestatusVersion(live) {
 		case Nagios:
-			live.log.Debug("Livestatus type Nagios")
+			live.log.Debug("Livestatus type: Nagios")
 			live.logQuery = QueryNagiosForNotifications
 		case Icinga2:
-			live.log.Debug("Livestatus type Icinga2")
+			live.log.Debug("Livestatus type: Icinga2")
 			live.logQuery = QueryIcinga2ForNotifications
 		case Naemon:
-			live.log.Debug("Livestatus type Naemon")
+			live.log.Debug("Livestatus type: Naemon")
 			live.logQuery = QueryNagiosForNotifications
 		}
 	}
@@ -229,7 +229,7 @@ func getLivestatusVersion(live *Collector) int {
 	live.log.Debug("Livestatus version: ", version)
 	if icinga2, _ := regexp.MatchString(`^r[\d\.-]+$`, version); icinga2 {
 		return Icinga2
-	} else if nagios, _ := regexp.MatchString(`^[\d\.]+p[[\d\.]]+$`, version); nagios {
+	} else if nagios, _ := regexp.MatchString(`^[\d\.]+p[\d\.]+$`, version); nagios {
 		return Nagios
 	} else if neamon, _ := regexp.MatchString(`^[\d\.]+-naemon$`, version); neamon {
 		return Naemon
