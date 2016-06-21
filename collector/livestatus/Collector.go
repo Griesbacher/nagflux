@@ -193,9 +193,11 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 	switch line[0] {
 	case "HOST NOTIFICATION":
 		if len(line) == 10 {
-			//Custom
+			//Custom: host_name, "", message, timestamp, author, notification_type, state
 			return &NotificationData{Data{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 		} else if len(line) == 9 {
+			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+		} else if len(line) == 8 {
 			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		} else {
 			live.log.Warn("HOST NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
