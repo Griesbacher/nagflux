@@ -1,3 +1,8 @@
+## v0.2.3 - ...
+### Fix
+- ignore selfsigned ssl certs
+- livestatus detection improved
+
 ## v0.2.2 - 17.05.2016
 ### Fix
 - livestatus ServiceNotifications with just 9 entries

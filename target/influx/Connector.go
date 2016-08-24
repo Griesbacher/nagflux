@@ -62,11 +62,11 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 	}
 	for i := 0; i < 12 && !s.isAlive; i++ {
 		s.TestIfIsAlive()
-		time.Sleep(5)
+		time.Sleep(time.Duration(5) * time.Second)
 		s.log.Info(".")
 	}
 	if !s.isAlive {
-		s.log.Panic("Influxdb not running")
+		s.log.Panic("Influxdb is not running")
 	}
 	s.TestDatabaseExists()
 	for i := 0; i < 5 && !s.databaseExists; i++ {
@@ -77,7 +77,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 		s.TestDatabaseExists()
 	}
 	if !s.databaseExists {
-		s.log.Panic("Database does not exists and was not able to created")
+		s.log.Panic("Database does not exists and Nagflux was not able to created")
 	}
 
 	for w := 0; w < workerAmount; w++ {
