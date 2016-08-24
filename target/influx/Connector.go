@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"crypto/tls"
 )
 
 //Connector makes the basic connection to an influxdb.
@@ -43,13 +44,18 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 		}
 	}
 	timeout := time.Duration(5 * time.Second)
-	client := http.Client{Timeout: timeout}
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	client := http.Client{Timeout: timeout, Transport: transport}
 	s := &Connector{
 		connectionHost, connectionArgs, dumpFile, make([]*Worker, workerAmount), maxWorkers,
 		jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName, client,
 	}
 
-	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s, data.InfluxDB)
+	gen := WorkerGenerator(jobs, connectionHost + "/write?" + connectionArgs, dumpFile, version, s, data.InfluxDB)
 	s.TestIfIsAlive()
 	if !s.isAlive {
 		s.log.Info("Waiting for InfluxDB server")
@@ -86,10 +92,10 @@ func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
 		gen := WorkerGenerator(
-			connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs,
+			connector.jobs, connector.connectionHost + "/write?" + connector.connectionArgs,
 			connector.dumpFile, connector.version, connector, data.InfluxDB,
 		)
-		connector.workers = append(connector.workers, gen(oldLength+2))
+		connector.workers = append(connector.workers, gen(oldLength + 2))
 		connector.log.Infof("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}
 }
@@ -153,14 +159,14 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive() bool {
-	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+"/ping", "GET")
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost + "/ping", "GET")
 	connector.isAlive = result
 	return result
 }
 
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestDatabaseExists() bool {
-	resp, err := http.Get(connector.connectionHost + "/query?q=show%20databases")
+	resp, err := connector.httpClient.Get(connector.connectionHost + "/query?q=show%20databases")
 	if err != nil {
 		return false
 	}
@@ -183,7 +189,7 @@ func (connector *Connector) TestDatabaseExists() bool {
 
 //CreateDatabase creates the database.
 func (connector *Connector) CreateDatabase() bool {
-	resp, err := http.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
+	resp, err := connector.httpClient.Get(connector.connectionHost + "/query?q=create%20database%20" + connector.databaseName)
 	if err != nil {
 		return false
 	}

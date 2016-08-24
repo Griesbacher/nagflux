@@ -15,6 +15,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"crypto/tls"
 )
 
 //Worker reads data from the queue and sends them to the influxdb.
@@ -45,13 +46,20 @@ var error500 = errors.New("Error 500")
 //WorkerGenerator generates a new Worker and starts it.
 func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile, version string, connector *Connector, datatype data.Datatype) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
+		timeout := time.Duration(5 * time.Second)
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+		client := http.Client{Timeout: timeout, Transport: transport}
 		worker := &Worker{
 			workerId, make(chan bool),
 			make(chan bool, 1), jobs,
 			connection, nagflux.GenDumpfileName(dumpFile, datatype),
 			statistics.NewCmdStatisticReceiver(),
 			logging.GetLogger(), version,
-			connector, http.Client{}, true, datatype}
+			connector, client, true, datatype}
 		go worker.run()
 		return worker
 	}
@@ -171,7 +179,7 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 		}
 		if sendErr != nil {
 			//if there is still an error dump the queries and go on
-			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
+			worker.dumpErrorQueries("\n\n" + sendErr.Error() + "\n", lineQueries)
 		}
 
 	}
@@ -287,7 +295,7 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 			worker.log.Critical(err)
 		}
 	}
-	if f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600); err != nil {
+	if f, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, 0600); err != nil {
 		worker.log.Critical(err)
 	} else {
 		defer f.Close()
@@ -311,7 +319,7 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 		err = errors.New("This influxversion given in the config is not supported")
 	}
 
-	if len(result) > 1 && result[len(result)-1:] != "\n" {
+	if len(result) > 1 && result[len(result) - 1:] != "\n" {
 		result += "\n"
 	}
 	return result, err
