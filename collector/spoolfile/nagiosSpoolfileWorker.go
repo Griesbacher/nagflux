@@ -121,7 +121,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		return ch
 	}
 
-	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
+	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -129,7 +129,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
+		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         input[hostname],
 				service:          currentService,
@@ -179,7 +179,9 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 						}
 
 					} else {
-						perf.fields[performanceType] = helper.StringIntToStringFloat(data)
+						if helper.IsStringANumber(data) {
+							perf.fields[performanceType] = helper.StringIntToStringFloat(data)
+						}
 
 					}
 				}
