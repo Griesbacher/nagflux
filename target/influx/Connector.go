@@ -30,12 +30,13 @@ type Connector struct {
 	databaseExists bool
 	databaseName   string
 	httpClient     http.Client
+	pause 	       chan bool
 }
 
 var regexDatabaseName = regexp.MustCompile(`.*db=(.*)`)
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
-func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionArgs, dumpFile, version string, workerAmount, maxWorkers int, createDatabaseIfNotExists bool) *Connector {
+func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionArgs, dumpFile, version string, workerAmount, maxWorkers int, createDatabaseIfNotExists bool, pause chan bool) *Connector {
 	var databaseName string
 	for _, argument := range strings.Split(connectionArgs, "&") {
 		hits := regexDatabaseName.FindStringSubmatch(argument)
@@ -52,7 +53,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 	client := http.Client{Timeout: timeout, Transport: transport}
 	s := &Connector{
 		connectionHost, connectionArgs, dumpFile, make([]*Worker, workerAmount), maxWorkers,
-		jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName, client,
+		jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName, client, pause,
 	}
 
 	gen := WorkerGenerator(jobs, connectionHost + "/write?" + connectionArgs, dumpFile, version, s, data.InfluxDB)
@@ -160,6 +161,7 @@ func (connector *Connector) run() {
 func (connector *Connector) TestIfIsAlive() bool {
 	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost + "/ping", "GET")
 	connector.isAlive = result
+	connector.pause  <- !result
 	return result
 }
 
