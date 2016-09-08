@@ -1,8 +1,9 @@
-## v0.2.3 - ...
+## v0.2.3 - 08.09.2016
 ### Fix
 - ignore selfsigned ssl certs
 - livestatus detection improved
 - wait for influxdb on start
+- pause fileparsing when influxdb is not reachable
 - skip non digit perfdata(U are ignored)
 
 
