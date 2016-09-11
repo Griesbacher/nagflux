@@ -167,7 +167,7 @@ func (connector *Connector) TestIfIsAlive() bool {
 
 //TestDatabaseExists test active if the database exists.
 func (connector *Connector) TestDatabaseExists() bool {
-	resp, err := connector.httpClient.Get(connector.connectionHost + "/query?q=show%20databases")
+	resp, err := connector.httpClient.Get(connector.connectionHost + "/query?q=show%20databases&" + connector.connectionArgs)
 	if err != nil {
 		return false
 	}
