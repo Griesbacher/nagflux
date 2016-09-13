@@ -21,7 +21,7 @@ func InitLogger(logFile, minSeverity string) {
 		targetWriter = os.Stdout
 	} else {
 		logFormatter = factorlog.NewStdFormatter(logFormat)
-		targetWriter, err = os.OpenFile(conf.LogFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		targetWriter, err = os.OpenFile(logFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	}
 	if err != nil {
 		panic(err)
