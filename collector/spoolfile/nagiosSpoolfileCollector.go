@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"path"
 	"time"
+	"github.com/griesbacher/nagflux/statistics"
 )
 
 const (
@@ -52,6 +53,7 @@ func (s *NagiosSpoolfileCollector) Stop() {
 
 //Delegates the files to its workers.
 func (s *NagiosSpoolfileCollector) run() {
+	promServer := statistics.GetPrometheusServer()
 	pause := false
 	for {
 		select {
@@ -63,6 +65,7 @@ func (s *NagiosSpoolfileCollector) run() {
 			if !pause {
 				logging.GetLogger().Debug("Reading Directory: ", s.spoolDirectory)
 				files, _ := ioutil.ReadDir(s.spoolDirectory)
+				promServer.SpoolFilesOnDisk.Set(float64(len(files)))
 				for _, currentFile := range files {
 					select {
 					case <-s.quit:

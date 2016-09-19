@@ -25,7 +25,7 @@ type Config struct {
 		MinSeverity string
 	}
 	Monitoring struct {
-		WebserverPort string
+		PrometheusAddress string
 	}
 	Influx struct {
 		Enabled                   bool

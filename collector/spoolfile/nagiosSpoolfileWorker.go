@@ -10,7 +10,7 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"io/ioutil"
-	"os"
+	//"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,7 +23,6 @@ type NagiosSpoolfileWorker struct {
 	quit                   chan bool
 	jobs                   chan string
 	results                map[data.Datatype]chan collector.Printable
-	statistics             statistics.DataReceiver
 	livestatusCacheBuilder *livestatus.CacheBuilder
 }
 
@@ -44,7 +43,7 @@ var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
 func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileWorker {
-	return &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, statistics.NewCmdStatisticReceiver(), livestatusCacheBuilder}
+	return &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, livestatusCacheBuilder}
 }
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
@@ -67,6 +66,7 @@ func (w *NagiosSpoolfileWorker) Stop() {
 
 //Waits for files to parse and sends the data to the main queue.
 func (w *NagiosSpoolfileWorker) run() {
+	promServer := statistics.GetPrometheusServer()
 	var file string
 	for {
 		select {
@@ -74,6 +74,7 @@ func (w *NagiosSpoolfileWorker) run() {
 			w.quit <- true
 			return
 		case file = <-w.jobs:
+			promServer.SpoolFilesInQueue.Set(float64(len(w.jobs)))
 			startTime := time.Now()
 			logging.GetLogger().Debug("Reading file: ", file)
 			data, err := ioutil.ReadFile(file)
@@ -98,11 +99,12 @@ func (w *NagiosSpoolfileWorker) run() {
 					}
 				}
 			}
-			err = os.Remove(file)
+		//err = os.Remove(file)
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			w.statistics.ReceiveQueries("read/parsed", statistics.QueriesPerTime{Queries: queries / len(w.results), Time: time.Since(startTime)})
+			promServer.SpoolFilesParsedDuration.Add(float64(time.Since(startTime).Nanoseconds() / 1000000))
+			promServer.SpoolFilesLines.Add(float64(queries))
 		case <-time.After(time.Duration(5) * time.Minute):
 			logging.GetLogger().Debug("NagiosSpoolfileWorker: Got nothing to do")
 		}

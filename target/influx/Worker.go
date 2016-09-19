@@ -8,7 +8,6 @@ import (
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
-	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"sync"
 	"time"
 	"crypto/tls"
+	"github.com/griesbacher/nagflux/statistics"
 )
 
 //Worker reads data from the queue and sends them to the influxdb.
@@ -26,13 +26,13 @@ type Worker struct {
 	jobs         chan collector.Printable
 	connection   string
 	dumpFile     string
-	statistics   statistics.DataReceiver
 	log          *factorlog.FactorLog
 	version      string
 	connector    *Connector
 	httpClient   http.Client
 	IsRunning    bool
 	datatype     data.Datatype
+	promServer   statistics.PrometheusServer
 }
 
 const dataTimeout = time.Duration(5) * time.Second
@@ -57,9 +57,8 @@ func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile, versio
 			workerId, make(chan bool),
 			make(chan bool, 1), jobs,
 			connection, nagflux.GenDumpfileName(dumpFile, datatype),
-			statistics.NewCmdStatisticReceiver(),
 			logging.GetLogger(), version,
-			connector, client, true, datatype}
+			connector, client, true, datatype, statistics.GetPrometheusServer()}
 		go worker.run()
 		return worker
 	}
@@ -183,7 +182,9 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 		}
 
 	}
-	worker.statistics.ReceiveQueries("send", statistics.QueriesPerTime{Queries: len(lineQueries), Time: time.Since(startTime)})
+	worker.promServer.BytesSend.WithLabelValues("InfluxDB").Add(float64(len(lineQueries)))
+	worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(float64(time.Since(startTime).Seconds()*1000))
+
 }
 
 //Writes the bad queries to a dumpfile.

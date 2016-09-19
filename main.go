@@ -11,7 +11,6 @@ import (
 	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
-	"github.com/griesbacher/nagflux/monitoring"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/griesbacher/nagflux/target/elasticsearch"
 	"github.com/griesbacher/nagflux/target/influx"
@@ -60,6 +59,8 @@ Commandline Parameter:
 	if len(cfg.Main.FieldSeparator) < 1 {
 		panic("FieldSeparator is too short!")
 	}
+	pro := statistics.NewPrometheusServer(cfg.Monitoring.PrometheusAddress)
+	pro.WatchResultQueueLength(resultQueues)
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 	pauseChannel := make(chan bool, 1)
 	if cfg.Influx.Enabled {
@@ -105,12 +106,6 @@ Commandline Parameter:
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder, fieldSeparator)
 
-	statisticUser := statistics.NewSimpleStatisticsUser()
-	statisticUser.SetDataReceiver(statistics.NewCmdStatisticReceiver())
-
-	if cfg.Monitoring.WebserverPort != "" {
-		monitoring.StartMonitoringServer(cfg.Monitoring.WebserverPort)
-	}
 
 	//Listen for Interrupts
 	interruptChannel := make(chan os.Signal, 1)
@@ -150,9 +145,6 @@ loop:
 //Wait till the Performance Data is sent.
 func cleanUp(itemsToStop []Stoppable, resultQueues map[data.Datatype]chan collector.Printable) {
 	log.Info("Cleaning up...")
-	if monitoringServer := monitoring.StartMonitoringServer(""); monitoringServer != nil {
-		monitoringServer.Stop()
-	}
 	for i := len(itemsToStop) - 1; i >= 0; i-- {
 		itemsToStop[i].Stop()
 		time.Sleep(500 * time.Millisecond)

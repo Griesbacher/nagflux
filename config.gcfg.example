@@ -16,8 +16,8 @@
 
 [Monitoring]
     # leave empty to disable
-    # WebserverPort = ":7000"
-    WebserverPort = ""
+    # PrometheusAddress = ":8080"
+    PrometheusAddress = ":8080"
 
 [ModGearman]
     Enabled = false

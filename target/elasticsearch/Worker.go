@@ -8,7 +8,6 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
-	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"github.com/griesbacher/nagflux/statistics"
 )
 
 //Worker reads data from the queue and sends them to the influxdb.
@@ -26,13 +26,13 @@ type Worker struct {
 	jobs         chan collector.Printable
 	connection   string
 	dumpFile     string
-	statistics   statistics.DataReceiver
 	log          *factorlog.FactorLog
 	version      string
 	connector    *Connector
 	httpClient   http.Client
 	IsRunning    bool
 	index        string
+	promServer   statistics.PrometheusServer
 }
 
 const dataTimeout = time.Duration(20) * time.Second
@@ -50,9 +50,9 @@ func WorkerGenerator(jobs chan collector.Printable, connection, index, dumpFile,
 			workerId, make(chan bool),
 			make(chan bool, 1), jobs,
 			connection, dumpFile,
-			statistics.NewCmdStatisticReceiver(),
 			logging.GetLogger(), version,
-			connector, http.Client{}, true, index}
+			connector, http.Client{}, true, index,
+			statistics.GetPrometheusServer()}
 		go worker.run()
 		return worker
 	}
@@ -171,11 +171,12 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 		}
 		if sendErr != nil {
 			//if there is still an error dump the queries and go on
-			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
+			worker.dumpErrorQueries("\n\n" + sendErr.Error() + "\n", lineQueries)
 		}
 
 	}
-	worker.statistics.ReceiveQueries("send", statistics.QueriesPerTime{Queries: len(lineQueries), Time: time.Since(startTime)})
+	worker.promServer.BytesSend.WithLabelValues("Elasticsearch").Add(float64(len(lineQueries)))
+	worker.promServer.SendDuration.WithLabelValues("Elasticsearch").Add(float64(time.Since(startTime).Seconds()*1000))
 }
 
 //Writes the bad queries to a dumpfile.
@@ -259,8 +260,8 @@ func (worker Worker) printErrors(result JSONResult, rawData []byte) {
 		}
 	}
 
-	ioutil.WriteFile(worker.dumpFile+".currupt.json", rawData, 0644)
-	ioutil.WriteFile(worker.dumpFile+".error.json", []byte(fmt.Sprintf("%v", errors)), 0644)
+	ioutil.WriteFile(worker.dumpFile + ".currupt.json", rawData, 0644)
+	ioutil.WriteFile(worker.dumpFile + ".error.json", []byte(fmt.Sprintf("%v", errors)), 0644)
 	panic("")
 }
 
@@ -291,7 +292,7 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 			worker.log.Critical(err)
 		}
 	}
-	if f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600); err != nil {
+	if f, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, 0600); err != nil {
 		worker.log.Critical(err)
 	} else {
 		defer f.Close()
@@ -315,7 +316,7 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 		err = errors.New("This elasticsearch version given in the config is not supported")
 	}
 
-	if len(result) > 1 && result[len(result)-1:] != "\n" {
+	if len(result) > 1 && result[len(result) - 1:] != "\n" {
 		result += "\n"
 	}
 	return result, err
