@@ -57,16 +57,17 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 	}
 
 	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s, data.InfluxDB)
-	s.TestIfIsAlive()
+	s.TestIfIsAlive(true)
 	if !s.isAlive {
 		s.log.Info("Waiting for InfluxDB server")
 	}
 	for !s.isAlive {
-		s.TestIfIsAlive()
+		s.TestIfIsAlive(true)
 		time.Sleep(time.Duration(5) * time.Second)
+		s.log.Debugln("Waiting for InfluxDB server")
 	}
-	if !s.isAlive {
-		s.log.Panic("Influxdb is not running")
+	if s.isAlive {
+		s.log.Debug("Influxdb is running")
 	}
 	s.TestDatabaseExists()
 	for i := 0; i < 5 && !s.databaseExists; i++ {
@@ -158,10 +159,12 @@ func (connector *Connector) run() {
 }
 
 //TestIfIsAlive test active if the database system is alive.
-func (connector *Connector) TestIfIsAlive() bool {
+func (connector *Connector) TestIfIsAlive(initRun bool) bool {
 	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+"/ping", "GET")
 	connector.isAlive = result
-	connector.pause <- !result
+	if !initRun{
+		connector.pause <- !result
+	}
 	return result
 }
 
