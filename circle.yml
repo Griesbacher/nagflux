@@ -27,7 +27,7 @@ database:
 test:
     override:
         - influx -execute 'show databases'
-        - influx -database 'NAGFLUX_CI_TEST' -execute 'select * from /.*/ limit 5'
         - bash coverage.sh
         - goveralls -coverprofile=cover.out -service=circle-ci -repotoken=$COVERALLS_TOKEN && rm cover.out
         - curl --data "repo=griesbacher/nagflux" http://goreportcard.com/checks
+        - influx -database 'NAGFLUX_CI_TEST' -execute 'select * from /.*/ limit 5'
