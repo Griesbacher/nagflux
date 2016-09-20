@@ -61,6 +61,7 @@ func (s *NagiosSpoolfileCollector) run() {
 			s.quit <- true
 			return
 		case pause = <-s.pause:
+			logging.GetLogger().Info("Recived paussignal: ", pause)
 		case <-time.After(IntervalToCheckDirectory):
 			if !pause {
 				logging.GetLogger().Debug("Reading Directory: ", s.spoolDirectory)
