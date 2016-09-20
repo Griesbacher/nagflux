@@ -95,6 +95,7 @@ Commandline Parameter:
 				secret,
 				resultQueues,
 				livestatusCache,
+				pauseChannel,
 			)
 			stoppables = append(stoppables, gearmanWorker)
 		}
