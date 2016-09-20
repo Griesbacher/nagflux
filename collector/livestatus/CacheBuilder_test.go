@@ -16,7 +16,7 @@ func TestNewCacheBuilder(t *testing.T) {
 	}
 }
 
-func TestServiceInDowntime(t *testing.T) {
+func DisabledTestServiceInDowntime(t *testing.T) {
 	logging.InitTestLogger()
 	queries := map[string]string{}
 	queries[QueryForServicesInDowntime] = "1,2;host1;service1\n"
