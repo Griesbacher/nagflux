@@ -2,20 +2,20 @@ package influx
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/nagflux"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
+	"github.com/griesbacher/nagflux/statistics"
 	"github.com/kdar/factorlog"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
 	"time"
-	"crypto/tls"
-	"github.com/griesbacher/nagflux/statistics"
 )
 
 //Worker reads data from the queue and sends them to the influxdb.
@@ -178,12 +178,12 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 		}
 		if sendErr != nil {
 			//if there is still an error dump the queries and go on
-			worker.dumpErrorQueries("\n\n" + sendErr.Error() + "\n", lineQueries)
+			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
 		}
 
 	}
 	worker.promServer.BytesSend.WithLabelValues("InfluxDB").Add(float64(len(lineQueries)))
-	worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(float64(time.Since(startTime).Seconds()*1000))
+	worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(float64(time.Since(startTime).Seconds() * 1000))
 
 }
 
@@ -296,7 +296,7 @@ func (worker Worker) dumpQueries(filename string, queries []string) {
 			worker.log.Critical(err)
 		}
 	}
-	if f, err := os.OpenFile(filename, os.O_APPEND | os.O_WRONLY, 0600); err != nil {
+	if f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600); err != nil {
 		worker.log.Critical(err)
 	} else {
 		defer f.Close()
@@ -320,7 +320,7 @@ func (worker Worker) castJobToString(job collector.Printable) (string, error) {
 		err = errors.New("This influxversion given in the config is not supported")
 	}
 
-	if len(result) > 1 && result[len(result) - 1:] != "\n" {
+	if len(result) > 1 && result[len(result)-1:] != "\n" {
 		result += "\n"
 	}
 	return result, err

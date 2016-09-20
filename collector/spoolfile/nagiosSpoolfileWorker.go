@@ -10,7 +10,7 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"io/ioutil"
-	//"os"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -99,7 +99,7 @@ func (w *NagiosSpoolfileWorker) run() {
 					}
 				}
 			}
-		//err = os.Remove(file)
+			err = os.Remove(file)
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
@@ -123,7 +123,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		return ch
 	}
 
-	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
+	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -131,7 +131,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1) {
+		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         input[hostname],
 				service:          currentService,

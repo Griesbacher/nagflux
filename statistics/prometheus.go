@@ -1,14 +1,14 @@
 package statistics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"sync"
-	"net"
-	"net/http"
-	"github.com/griesbacher/nagflux/logging"
-	"time"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/data"
+	"github.com/griesbacher/nagflux/logging"
+	"github.com/prometheus/client_golang/prometheus"
+	"net"
+	"net/http"
+	"sync"
+	"time"
 )
 
 type PrometheusServer struct {
@@ -19,14 +19,14 @@ type PrometheusServer struct {
 	SpoolFilesParsed         prometheus.Counter
 	SpoolFilesLines          prometheus.Counter
 	BytesSend                *prometheus.CounterVec
-	SendDuration                *prometheus.CounterVec
+	SendDuration             *prometheus.CounterVec
 }
 
 var server PrometheusServer
 var p_mutex = &sync.Mutex{}
 var prometheusListener net.Listener
 
-func initServerConfig() (PrometheusServer) {
+func initServerConfig() PrometheusServer {
 	bufferLength := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "nagflux",
@@ -92,13 +92,13 @@ func initServerConfig() (PrometheusServer) {
 		}, []string{"type"})
 	prometheus.MustRegister(SendDuration)
 
-	return PrometheusServer{bufferLength: bufferLength, SpoolFilesOnDisk:spoolFilesOnDisk,
-		SpoolFilesInQueue:SpoolFilesInQueue, SpoolFilesParsedDuration:SpoolFilesParsedDuration,
-		SpoolFilesLines:SpoolFilesParsedSize, SpoolFilesParsed:SpoolFilesParsed,
-		BytesSend:BytesSend, SendDuration:SendDuration}
+	return PrometheusServer{bufferLength: bufferLength, SpoolFilesOnDisk: spoolFilesOnDisk,
+		SpoolFilesInQueue: SpoolFilesInQueue, SpoolFilesParsedDuration: SpoolFilesParsedDuration,
+		SpoolFilesLines: SpoolFilesParsedSize, SpoolFilesParsed: SpoolFilesParsed,
+		BytesSend: BytesSend, SendDuration: SendDuration}
 }
 
-func NewPrometheusServer(address string) (PrometheusServer) {
+func NewPrometheusServer(address string) PrometheusServer {
 	p_mutex.Lock()
 	server = initServerConfig()
 	p_mutex.Unlock()
