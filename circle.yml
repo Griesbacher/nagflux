@@ -13,8 +13,7 @@ dependencies:
         - rm -rf /home/ubuntu/.go_workspace/src/github.com/griesbacher/nagflux
         - rm -rf /home/ubuntu/.go_project/src/github.com/griesbacher/nagflux
         - go get -u -t github.com/griesbacher/nagflux; echo 1
-        - cd /home/ubuntu/.go_workspace/src/github.com/griesbacher/nagflux
-        - go build -v
+        - go build -v github.com/griesbacher/nagflux
 
 database:
     override:
