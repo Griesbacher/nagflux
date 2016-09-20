@@ -218,7 +218,7 @@ func createConfig() {
 	MinSeverity = "WARN"
 
 [Monitoring]
-	WebserverPort = ""
+	PrometheusAddress = ""
 
 [Influx]
     	Enabled = true
