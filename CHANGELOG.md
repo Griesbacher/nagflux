@@ -1,3 +1,16 @@
+## v0.2.4 - 20.09.2016
+### Fix
+- Deadlock when InfluxDB is not running
+- Pass connection args when checking for database
+- Missing logfile fix
+
+### Feature
+- use of vendor-folder
+- Prometheus api
+
+### Breaks
+- When using go1.5 the envvar GO15VENDOREXPERIMENT should be set to 1 
+
 ## v0.2.3 - 08.09.2016
 ### Fix
 - ignore selfsigned ssl certs
