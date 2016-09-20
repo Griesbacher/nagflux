@@ -26,9 +26,6 @@ database:
 
 test:
     override:
-        - cd /home/ubuntu/.go_workspace/src/github.com/griesbacher/nagflux
-        - go test -v ./...
-    post:
         - influx -execute 'show databases'
         - influx -database 'NAGFLUX_CI_TEST' -execute 'select * from /.*/ limit 5'
         - bash coverage.sh
