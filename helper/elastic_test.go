@@ -64,8 +64,8 @@ const Config = `[main]
 
 [Monitoring]
     # leave empty to disable
-    # WebserverPort = ":7000"
-    WebserverPort = ""
+    # PrometheusAddress = ":7000"
+    PrometheusAddress = ""
 
 [Influx]
     Enabled = true
