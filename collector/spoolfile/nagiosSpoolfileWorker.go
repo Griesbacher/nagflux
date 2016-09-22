@@ -131,6 +131,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
+		item:
 		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
 			perf := PerformanceData{
 				hostname:         input[hostname],
@@ -181,9 +182,10 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 						}
 
 					} else {
-						if helper.IsStringANumber(data) {
-							perf.fields[performanceType] = helper.StringIntToStringFloat(data)
+						if !helper.IsStringANumber(data) {
+							continue item
 						}
+						perf.fields[performanceType] = helper.StringIntToStringFloat(data)
 
 					}
 				}
