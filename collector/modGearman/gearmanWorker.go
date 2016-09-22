@@ -23,12 +23,11 @@ type GearmanWorker struct {
 	worker                *worker.Worker
 	log                   *factorlog.FactorLog
 	jobQueue              string
-	pauseChannel          chan bool
 }
 
 //NewGearmanWorker generates a new GearmanWorker.
 //leave the key empty to disable encryption, otherwise the gearmanpacketes are expected to be encrpyten with AES-ECB 128Bit and a 32 Byte Key.
-func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder, pauseChannel chan bool) *GearmanWorker {
+func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *GearmanWorker {
 	var decrypter *crypto.AESECBDecrypter
 	if key != "" {
 		byteKey := ShapeKey(key, 32)
@@ -46,7 +45,6 @@ func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan
 		worker:                createGearmanWorker(address),
 		log:                   logging.GetLogger(),
 		jobQueue:              queue,
-		pauseChannel:          pauseChannel,
 	}
 	go worker.run()
 	go worker.handleLoad()
@@ -119,20 +117,25 @@ func (g GearmanWorker) handleLoad() {
 }
 
 func (g GearmanWorker) handlePause() {
-	var pause bool
+	pause := false
 	for {
 		select {
 		case <-g.quit:
 			g.quit <- true
 			return
-		case pause = <- g.pauseChannel:
-			logging.GetLogger().Info("Gearman-Worker recived paussignal: ", pause)
-			if pause {
-				g.worker.Lock()
-			} else {
-				g.worker.Unlock()
-			}
 		case <-time.After(time.Duration(1) * time.Second):
+			globalPause := config.PauseNagflux.Load().(bool)
+			/*if err != nil {
+				logging.GetLogger().Warn("Could not cast pause at GearmanWorker: ", err)
+			}*/
+			if pause != globalPause {
+				if pause {
+					g.worker.Lock()
+				} else {
+					g.worker.Unlock()
+				}
+				pause = globalPause
+			}
 		}
 	}
 }

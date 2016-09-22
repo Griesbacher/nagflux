@@ -10,6 +10,7 @@ import (
 	"github.com/kdar/factorlog"
 	"os"
 	"time"
+	"github.com/griesbacher/nagflux/config"
 )
 
 //FileCollector provides a interface to nagflux, in which you could insert influxdb queries.
@@ -50,6 +51,11 @@ func (nfc FileCollector) run() {
 			nfc.quit <- true
 			return
 		case <-time.After(spoolfile.IntervalToCheckDirectory):
+			pause := config.PauseNagflux.Load().(bool)
+			if pause{
+				logging.GetLogger().Debugln("NagfluxFileCollector in pause")
+				continue
+			}
 			for _, currentFile := range spoolfile.FilesInDirectoryOlderThanX(nfc.folder, spoolfile.MinFileAge) {
 				for _, p := range nfc.parseFile(currentFile) {
 					for _, r := range nfc.results {

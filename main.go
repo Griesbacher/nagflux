@@ -62,10 +62,12 @@ Commandline Parameter:
 	pro := statistics.NewPrometheusServer(cfg.Monitoring.PrometheusAddress)
 	pro.WatchResultQueueLength(resultQueues)
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
-	pauseChannel := make(chan bool, 1)
+
+	config.PauseNagflux.Store(false)
+
 	if cfg.Influx.Enabled {
 		resultQueues[data.InfluxDB] = make(chan collector.Printable, cfg.Main.BufferSize)
-		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Influx.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.CreateDatabaseIfNotExists, pauseChannel)
+		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Influx.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.CreateDatabaseIfNotExists)
 		stoppables = append(stoppables, influx)
 		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.InfluxDB], cfg.Main.DumpFile, data.InfluxDB)
 		stoppables = append(stoppables, influxDumpFileCollector)
@@ -95,14 +97,13 @@ Commandline Parameter:
 				secret,
 				resultQueues,
 				livestatusCache,
-				pauseChannel,
 			)
 			stoppables = append(stoppables, gearmanWorker)
 		}
 	}
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
-	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache, pauseChannel)
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder, fieldSeparator)

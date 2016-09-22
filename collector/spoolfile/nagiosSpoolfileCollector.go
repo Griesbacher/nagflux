@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"path"
 	"time"
+	"github.com/griesbacher/nagflux/config"
 )
 
 const (
@@ -24,12 +25,11 @@ type NagiosSpoolfileCollector struct {
 	jobs           chan string
 	spoolDirectory string
 	workers        []*NagiosSpoolfileWorker
-	pause          chan bool
 }
 
 //NagiosSpoolfileCollectorFactory creates the give amount of Woker and starts them.
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder, pause chan bool) *NagiosSpoolfileCollector {
-	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount), pause}
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileCollector {
+	s := &NagiosSpoolfileCollector{make(chan bool), make(chan string, 100), spoolDirectory, make([]*NagiosSpoolfileWorker, workerAmount)}
 
 	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, livestatusCacheBuilder)
 
@@ -54,31 +54,34 @@ func (s *NagiosSpoolfileCollector) Stop() {
 //Delegates the files to its workers.
 func (s *NagiosSpoolfileCollector) run() {
 	promServer := statistics.GetPrometheusServer()
-	pause := false
 	for {
 		select {
 		case <-s.quit:
 			s.quit <- true
 			return
-		case pause = <-s.pause:
-			logging.GetLogger().Info("Recived paussignal: ", pause)
 		case <-time.After(IntervalToCheckDirectory):
-			if !pause {
-				logging.GetLogger().Debug("Reading Directory: ", s.spoolDirectory)
-				files, _ := ioutil.ReadDir(s.spoolDirectory)
-				promServer.SpoolFilesOnDisk.Set(float64(len(files)))
-				for _, currentFile := range files {
-					select {
-					case <-s.quit:
-						s.quit <- true
-						return
-					case s.jobs <- path.Join(s.spoolDirectory, currentFile.Name()):
-					case <-time.After(time.Duration(1) * time.Minute):
-						logging.GetLogger().Warn("NagiosSpoolfileCollector: Could not write to buffer")
-					}
-				}
+			pause := config.PauseNagflux.Load().(bool)
+			/*if err != nil {
+				logging.GetLogger().Warn("Could not cast pause at spoolfilecollector: ", err)
+			}*/
+			if pause {
+				logging.GetLogger().Debugln("NagiosSpoolfileCollector in pause")
+				continue
 			}
 
+			logging.GetLogger().Debug("Reading Directory: ", s.spoolDirectory)
+			files, _ := ioutil.ReadDir(s.spoolDirectory)
+			promServer.SpoolFilesOnDisk.Set(float64(len(files)))
+			for _, currentFile := range files {
+				select {
+				case <-s.quit:
+					s.quit <- true
+					return
+				case s.jobs <- path.Join(s.spoolDirectory, currentFile.Name()):
+				case <-time.After(time.Duration(1) * time.Minute):
+					logging.GetLogger().Warn("NagiosSpoolfileCollector: Could not write to buffer")
+				}
+			}
 		}
 	}
 }
