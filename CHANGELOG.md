@@ -1,3 +1,7 @@
+## v0.2.5 - 22.09.2016
+### Fix
+- Deadlock when InfluxDB is not running, again !?
+
 ## v0.2.4 - 20.09.2016
 ### Fix
 - Deadlock when InfluxDB is not running
