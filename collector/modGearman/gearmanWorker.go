@@ -125,9 +125,6 @@ func (g GearmanWorker) handlePause() {
 			return
 		case <-time.After(time.Duration(1) * time.Second):
 			globalPause := config.PauseNagflux.Load().(bool)
-			/*if err != nil {
-				logging.GetLogger().Warn("Could not cast pause at GearmanWorker: ", err)
-			}*/
 			if pause != globalPause {
 				if pause {
 					g.worker.Lock()

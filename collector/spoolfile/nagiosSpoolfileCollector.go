@@ -61,9 +61,6 @@ func (s *NagiosSpoolfileCollector) run() {
 			return
 		case <-time.After(IntervalToCheckDirectory):
 			pause := config.PauseNagflux.Load().(bool)
-			/*if err != nil {
-				logging.GetLogger().Warn("Could not cast pause at spoolfilecollector: ", err)
-			}*/
 			if pause {
 				logging.GetLogger().Debugln("NagiosSpoolfileCollector in pause")
 				continue
