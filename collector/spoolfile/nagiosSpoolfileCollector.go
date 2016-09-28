@@ -3,13 +3,13 @@ package spoolfile
 import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"io/ioutil"
 	"path"
 	"time"
-	"github.com/griesbacher/nagflux/config"
 )
 
 const (

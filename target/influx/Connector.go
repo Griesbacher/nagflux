@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
@@ -13,7 +14,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"github.com/griesbacher/nagflux/config"
 )
 
 //Connector makes the basic connection to an influxdb.
@@ -56,7 +56,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 		jobs, make(chan bool), logging.GetLogger(), version, false, false, databaseName, client,
 	}
 
-	gen := WorkerGenerator(jobs, connectionHost + "/write?" + connectionArgs, dumpFile, version, s, data.InfluxDB)
+	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s, data.InfluxDB)
 	s.TestIfIsAlive()
 	if !s.isAlive {
 		s.log.Info("Waiting for InfluxDB server")
@@ -93,10 +93,10 @@ func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
 		gen := WorkerGenerator(
-			connector.jobs, connector.connectionHost + "/write?" + connector.connectionArgs,
+			connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs,
 			connector.dumpFile, connector.version, connector, data.InfluxDB,
 		)
-		connector.workers = append(connector.workers, gen(oldLength + 2))
+		connector.workers = append(connector.workers, gen(oldLength+2))
 		connector.log.Infof("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}
 }
@@ -160,7 +160,7 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive() bool {
-	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost + "/ping", "GET")
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+"/ping", "GET")
 	connector.isAlive = result
 	connector.log.Infof("Is InfluxDB running: %t", result)
 	config.PauseNagflux.Store(!result)

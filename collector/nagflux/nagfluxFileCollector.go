@@ -4,13 +4,13 @@ import (
 	"encoding/csv"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"os"
 	"time"
-	"github.com/griesbacher/nagflux/config"
 )
 
 //FileCollector provides a interface to nagflux, in which you could insert influxdb queries.
@@ -52,7 +52,7 @@ func (nfc FileCollector) run() {
 			return
 		case <-time.After(spoolfile.IntervalToCheckDirectory):
 			pause := config.PauseNagflux.Load().(bool)
-			if pause{
+			if pause {
 				logging.GetLogger().Debugln("NagfluxFileCollector in pause")
 				continue
 			}
