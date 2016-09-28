@@ -114,6 +114,6 @@ func TestConnectToLivestatus(t *testing.T) {
 	finished2 := make(chan bool)
 	go connector2.connectToLivestatus("test\n\n", csv2, finished2)
 	if result := <-finished2; result {
-		t.Error("Expected an error with unkown connection type")
+		t.Error("Expected an error with unknown connection type")
 	}
 }

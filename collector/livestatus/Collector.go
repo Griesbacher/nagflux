@@ -147,13 +147,13 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 				if printable := live.handleQueryForNotifications(line); printable != nil {
 					printables <- printable
 				} else {
-					live.log.Warn("The notification type is unkown:" + line[0])
+					live.log.Warn("The notification type is unknown:" + line[0])
 				}
 			case QueryIcinga2ForNotifications:
 				if printable := live.handleQueryForNotifications(line); printable != nil {
 					printables <- printable
 				} else {
-					live.log.Warn("The notification type is unkown:" + line[0])
+					live.log.Warn("The notification type is unknown:" + line[0])
 				}
 			case QueryForComments:
 				if len(line) == 6 {
@@ -174,7 +174,7 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 					live.log.Warn("QueryLivestatusVersion out of range", line)
 				}
 			default:
-				live.log.Fatal("Found unkown query type" + query)
+				live.log.Fatal("Found unknown query type" + query)
 			}
 		case <-finished:
 			outerFinish <- true

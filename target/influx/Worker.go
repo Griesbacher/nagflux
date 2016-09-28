@@ -280,7 +280,7 @@ func (worker Worker) waitForQuitOrGoOn() error {
 	select {
 	//Got stop signal
 	case <-worker.quitInternal:
-		worker.log.Debug("Recived quit")
+		worker.log.Debug("Received quit")
 		worker.quitInternal <- true
 		return errorInterrupted
 	//Timeout and retry

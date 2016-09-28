@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//PrometheusServer stores all prometheus metrics
 type PrometheusServer struct {
 	bufferLength             *prometheus.GaugeVec
 	SpoolFilesOnDisk         prometheus.Gauge
@@ -23,7 +24,7 @@ type PrometheusServer struct {
 }
 
 var server PrometheusServer
-var p_mutex = &sync.Mutex{}
+var pMutex = &sync.Mutex{}
 var prometheusListener net.Listener
 
 func initServerConfig() PrometheusServer {
@@ -98,10 +99,11 @@ func initServerConfig() PrometheusServer {
 		BytesSend: BytesSend, SendDuration: SendDuration}
 }
 
+//NewPrometheusServer creates a new PrometheusServer
 func NewPrometheusServer(address string) PrometheusServer {
-	p_mutex.Lock()
+	pMutex.Lock()
 	server = initServerConfig()
-	p_mutex.Unlock()
+	pMutex.Unlock()
 	if address != "" {
 		go func() {
 			http.Handle("/metrics", prometheus.Handler())
@@ -114,10 +116,12 @@ func NewPrometheusServer(address string) PrometheusServer {
 	return server
 }
 
+//GetPrometheusServer returns the single Prometheusserver
 func GetPrometheusServer() PrometheusServer {
 	return server
 }
 
+//WatchResultQueueLength continually monitors the global queue
 func (s PrometheusServer) WatchResultQueueLength(channels map[data.Datatype]chan collector.Printable) {
 	go func() {
 		for {
@@ -130,10 +134,7 @@ func (s PrometheusServer) WatchResultQueueLength(channels map[data.Datatype]chan
 	}()
 }
 
-func (s PrometheusServer) SetBufferLength(length float64) {
-	server.bufferLength.WithLabelValues("commen").Set(length)
-}
-
+//Stop stops the Server
 func (s PrometheusServer) Stop() {
 	prometheusListener.Close()
 }
