@@ -17,7 +17,7 @@ func RequestedReturnCodeIsOK(client http.Client, url, function string) bool {
 	case "GET":
 		resp, err = client.Get(url)
 	default:
-		err = errors.New("Unkown Function")
+		err = errors.New("Unknown Function")
 	}
 	if err == nil && isReturnCodeOK(resp) {
 		return true
