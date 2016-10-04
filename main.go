@@ -36,16 +36,26 @@ var log *factorlog.FactorLog
 var quit = make(chan bool)
 
 func main() {
+	const nagfluxver string = "v0.2.5"
 	//Parse Args
 	var configPath string
+	var printver bool
 	flag.Usage = func() {
-		fmt.Println(`Nagflux by Philip Griesbacher @ 2015
+		fmt.Println(`Nagflux by Philip Griesbacher`, nagfluxver, `
 Commandline Parameter:
 -configPath Path to the config file. If no file path is given the default is ./config.gcfg.
+-V Print version and exit
 		`)
 	}
 	flag.StringVar(&configPath, "configPath", "config.gcfg", "path to the config file")
+	flag.BoolVar(&printver, "V", false, "print version and exit")
 	flag.Parse()
+
+	//Print version and exit
+	if printver {
+		fmt.Println(nagfluxver)
+		os.Exit(0)
+	}
 
 	//Load config
 	config.InitConfig(configPath)
