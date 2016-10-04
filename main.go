@@ -32,20 +32,21 @@ const updateRate = 1
 //Buffer size.
 const resultQueueLength = 1000.0
 
+//nagfluxVersion contains the current Github-Release
+const nagfluxVersion string = "v0.2.5"
+
 var log *factorlog.FactorLog
 var quit = make(chan bool)
 
 func main() {
-	const nagfluxver string = "v0.2.5"
 	//Parse Args
 	var configPath string
 	var printver bool
 	flag.Usage = func() {
-		fmt.Println(`Nagflux by Philip Griesbacher`, nagfluxver, `
+		fmt.Println(`Nagflux by Philip Griesbacher`, nagfluxVersion, `
 Commandline Parameter:
 -configPath Path to the config file. If no file path is given the default is ./config.gcfg.
--V Print version and exit
-		`)
+-V Print version and exit`)
 	}
 	flag.StringVar(&configPath, "configPath", "config.gcfg", "path to the config file")
 	flag.BoolVar(&printver, "V", false, "print version and exit")
@@ -53,7 +54,7 @@ Commandline Parameter:
 
 	//Print version and exit
 	if printver {
-		fmt.Println(nagfluxver)
+		fmt.Println(nagfluxVersion)
 		os.Exit(0)
 	}
 
