@@ -26,20 +26,26 @@ type NagiosSpoolfileWorker struct {
 	livestatusCacheBuilder *livestatus.CacheBuilder
 }
 
-const hostPerfdata string = "HOSTPERFDATA"
-const servicePerfdata string = "SERVICEPERFDATA"
+const (
+	hostPerfdata string = "HOSTPERFDATA"
 
-const hostType string = "HOST"
-const serviceType string = "SERVICE"
+	servicePerfdata string = "SERVICEPERFDATA"
 
-const hostname string = "HOSTNAME"
-const timet string = "TIMET"
-const checkcommand string = "CHECKCOMMAND"
-const servicedesc string = "SERVICEDESC"
+	hostType    string = "HOST"
+	serviceType string = "SERVICE"
 
-var rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
-var regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
-var regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
+	hostname     string = "HOSTNAME"
+	timet        string = "TIMET"
+	checkcommand string = "CHECKCOMMAND"
+	servicedesc  string = "SERVICEDESC"
+)
+
+var (
+	checkMulitRegex       = regexp.MustCompile(`^(.*::)(.*)`)
+	rangeRegex            = regexp.MustCompile(`[\d\.\-]+`)
+	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
+	regexAltCommand       = regexp.MustCompile(`.*\[(.*)\]\s?$`)
+)
 
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
 func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileWorker {
@@ -131,8 +137,15 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
+		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1)
+		currentCheckMultiLabel := ""
+		//try to find a check_multi prefix
+		if len(perfSlice) > 0 && len(perfSlice[0]) > 1 {
+			currentCheckMultiLabel = getCheckMultiRegexMatch(perfSlice[0][1])
+		}
+
 	item:
-		for _, value := range regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1) {
+		for _, value := range perfSlice {
 			perf := PerformanceData{
 				hostname:         input[hostname],
 				service:          currentService,
@@ -142,6 +155,18 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 				unit:             value[3],
 				tags:             map[string]string{},
 				fields:           map[string]string{},
+			}
+
+			if currentCheckMultiLabel != "" {
+				//if an check_multi prefix was found last time
+				//test if the current one has also one
+				if potentialNextOne := getCheckMultiRegexMatch(perf.performanceLabel); potentialNextOne == "" {
+					// if not put the last one in front the current
+					perf.performanceLabel = currentCheckMultiLabel + perf.performanceLabel
+				} else {
+					// else remember the current prefix for the next one
+					currentCheckMultiLabel = potentialNextOne
+				}
 			}
 
 			for i, data := range value {
@@ -195,6 +220,14 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		close(ch)
 	}()
 	return ch
+}
+
+func getCheckMultiRegexMatch(perfData string) string {
+	regexResult := checkMulitRegex.FindAllStringSubmatch(perfData, -1)
+	if len(regexResult) == 1 && len(regexResult[0]) == 3 {
+		return regexResult[0][1]
+	}
+	return ""
 }
 
 func findType(input map[string]string) string {
