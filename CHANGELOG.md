@@ -1,3 +1,8 @@
+## v0.2.6 - 26.10.2016
+### Feature
+- Version is shown within the help message
+- check_multi prefixes will be expanded if not done by the core
+
 ## v0.2.5 - 22.09.2016
 ### Fix
 - Deadlock when InfluxDB is not running, again !?
