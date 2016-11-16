@@ -31,7 +31,6 @@ func (connector Connector) connectToLivestatus(query string, result chan []strin
 		return
 	}
 	if conn == nil {
-		connector.Log.Critical("Unable to connect to livestatus: ", connector.LivestatusAddress)
 		outerFinish <- false
 		return
 	}

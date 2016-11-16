@@ -65,6 +65,7 @@ Commandline Parameter:
 	//Create Logger
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
+	log.Info(`Started Nagflux `, nagfluxVersion)
 	resultQueues := map[data.Datatype]chan collector.Printable{}
 	stoppables := []Stoppable{}
 	if len(cfg.Main.FieldSeparator) < 1 {
@@ -135,19 +136,19 @@ loop:
 	for {
 		select {
 		case <-time.After(time.Duration(updateRate) * time.Second):
-			/*queriesSend, measureTime, err := statisticUser.GetData("send")
-				if err != nil {
-					continue
-				}
-				idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
-				log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime * 100)
+		/*queriesSend, measureTime, err := statisticUser.GetData("send")
+			if err != nil {
+				continue
+			}
+			idleTime := (measureTime.Seconds() - queriesSend.Time.Seconds() / float64(influx.AmountWorkers())) / updateRate
+			log.Debugf("Buffer len: %d - Idletime in percent: %0.2f ", len(resultQueues[0]), idleTime * 100)
 
-			//TODO: fix worker spawn by type
-				if idleTime > 0.25 {
-					influx.RemoveWorker()
-				} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
-					influx.AddWorker()
-				}*/
+		//TODO: fix worker spawn by type
+			if idleTime > 0.25 {
+				influx.RemoveWorker()
+			} else if idleTime < 0.1 && float64(len(resultQueues[0])) > resultQueueLength * 0.8 {
+				influx.AddWorker()
+			}*/
 		case <-quit:
 			break loop
 		}

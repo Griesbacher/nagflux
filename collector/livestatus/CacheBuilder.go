@@ -80,7 +80,7 @@ func (builder *CacheBuilder) run(checkInterval time.Duration) {
 
 //Builds host/service map which are in downtime
 func (builder CacheBuilder) createLivestatusCache() Cache {
-	result := Cache{make(map[string]map[string]string)}
+	result := Cache{downtime: make(map[string]map[string]string)}
 	downtimeCsv := make(chan []string)
 	finishedDowntime := make(chan bool)
 	hostServiceCsv := make(chan []string)
@@ -95,6 +95,10 @@ func (builder CacheBuilder) createLivestatusCache() Cache {
 	for jobsFinished < 2 {
 		select {
 		case downtimesLine := <-downtimeCsv:
+			if len(downtimesLine) < 3 {
+				builder.log.Debug("downtimesLine", downtimesLine)
+				break
+			}
 			startTime, _ := strconv.Atoi(downtimesLine[1])
 			entryTime, _ := strconv.Atoi(downtimesLine[2])
 			latestTime := startTime
@@ -118,12 +122,12 @@ func (builder CacheBuilder) createLivestatusCache() Cache {
 				case <-finished:
 					jobsFinished++
 				case <-time.After(intervalToCheckLivestatusCache / 3):
-					builder.log.Debug("Livestatus(host/service) timed out")
+					builder.log.Info("Livestatus timed out...(host/service)")
 					return result
 				}
 			}
 		case <-time.After(intervalToCheckLivestatusCache / 3):
-			builder.log.Debug("Livestatus(downtimes) timed out")
+			builder.log.Info("Livestatus timed out...(downtimes)")
 			return result
 		}
 	}

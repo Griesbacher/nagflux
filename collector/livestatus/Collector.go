@@ -72,13 +72,13 @@ func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, liv
 	if detectVersion {
 		switch getLivestatusVersion(live) {
 		case Nagios:
-			live.log.Debug("Livestatus type: Nagios")
+			live.log.Info("Livestatus type: Nagios")
 			live.logQuery = QueryNagiosForNotifications
 		case Icinga2:
-			live.log.Debug("Livestatus type: Icinga2")
+			live.log.Info("Livestatus type: Icinga2")
 			live.logQuery = QueryIcinga2ForNotifications
 		case Naemon:
-			live.log.Debug("Livestatus type: Naemon")
+			live.log.Info("Livestatus type: Naemon")
 			live.logQuery = QueryNagiosForNotifications
 		}
 	}
@@ -123,8 +123,8 @@ func (live Collector) queryData() {
 			}
 		case <-finished:
 			jobsFinished++
-		case <-time.After(intervalToCheckLivestatus / 3):
-			live.log.Infof("requestPrintablesFromLivestatus timed out. ")
+		case <-time.After(intervalToCheckLivestatus):
+			live.log.Warn("Livestatus timed out... (Collector.queryData())")
 		}
 	}
 }
@@ -176,8 +176,8 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 			default:
 				live.log.Fatal("Found unknown query type" + query)
 			}
-		case <-finished:
-			outerFinish <- true
+		case result := <-finished:
+			outerFinish <- result
 			return
 		case <-time.After(intervalToCheckLivestatus / 3):
 			live.log.Warn("connectToLivestatus timed out")
@@ -218,15 +218,32 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 
 func getLivestatusVersion(live *Collector) int {
 	printables := make(chan collector.Printable, 1)
-	live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, make(chan bool, 1))
+	finished := make(chan bool, 1)
 	var version string
-	select {
-	case versionPrintable := <-printables:
-		version = versionPrintable.PrintForInfluxDB("0")
-	case <-time.After(time.Duration(5) * time.Second):
+	live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, finished)
+	//Wait 3 minutes for livestatus
+	i := 0
+Loop:
+	for {
+		select {
+		case versionPrintable := <-printables:
+			version = versionPrintable.PrintForInfluxDB("0")
+			break Loop
+		case <-time.After(intervalToCheckLivestatus / 2):
+			if i < 3 {
+				go live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, finished)
+			} else {
+				break Loop
+			}
+			i++
+		case fin := <-finished:
+			if !fin {
+				live.log.Info("Could not detect livestatus version, waiting for ", intervalToCheckLivestatus/2, ", three times(", i, ")...")
+			}
+		}
 	}
 
-	live.log.Debug("Livestatus version: ", version)
+	live.log.Info("Livestatus version: ", version)
 	if icinga2, _ := regexp.MatchString(`^r[\d\.-]+$`, version); icinga2 {
 		return Icinga2
 	} else if nagios, _ := regexp.MatchString(`^[\d\.]+p[\d\.]+$`, version); nagios {
