@@ -1,3 +1,8 @@
+## v0.2.7 - 16.11.2016
+### Fix
+- Livestatus index out of bound error
+- Less Livestatus log entries on an error(downtime)
+
 ## v0.2.6 - 26.10.2016
 ### Feature
 - Version is shown within the help message
