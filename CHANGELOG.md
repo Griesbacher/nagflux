@@ -1,3 +1,11 @@
+## v0.2.8 - 23.11.2016
+### Fix
+- out of memory error on big files
+
+### Feature
+- Livestatustimout is configurable
+- Multiple ModGearman server are supported
+
 ## v0.2.7 - 16.11.2016
 ### Fix
 - Livestatus index out of bound error
