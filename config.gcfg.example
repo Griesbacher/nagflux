@@ -19,7 +19,7 @@
     # PrometheusAddress = ":8080"
     PrometheusAddress = ":8080"
 
-[ModGearman]
+[ModGearman "example"] #copy this block and rename it to add a second ModGearman queue
     Enabled = false
     Address = "127.0.0.1:4730"
     Queue = "perfdata"

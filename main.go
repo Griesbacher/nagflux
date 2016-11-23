@@ -100,12 +100,15 @@ Commandline Parameter:
 	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, true)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
-	if cfg.ModGearman.Enabled {
-		log.Infof("Mod_Gearman: %s [%s]", cfg.ModGearman.Address, cfg.ModGearman.Queue)
-		secret := modGearman.GetSecret(cfg.ModGearman.Secret, cfg.ModGearman.SecretFile)
-		for i := 0; i < cfg.ModGearman.Worker; i++ {
-			gearmanWorker := modGearman.NewGearmanWorker(cfg.ModGearman.Address,
-				cfg.ModGearman.Queue,
+	for name, data := range cfg.ModGearman {
+		if data == nil || !(*data).Enabled {
+			continue
+		}
+		log.Infof("Mod_Gearman: %s - %s [%s]", name, (*data).Address, (*data).Queue)
+		secret := modGearman.GetSecret((*data).Secret, (*data).SecretFile)
+		for i := 0; i < (*data).Worker; i++ {
+			gearmanWorker := modGearman.NewGearmanWorker((*data).Address,
+				(*data).Queue,
 				secret,
 				resultQueues,
 				livestatusCache,

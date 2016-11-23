@@ -12,7 +12,7 @@ type Config struct {
 		FieldSeparator         string
 		BufferSize             int
 	}
-	ModGearman struct {
+	ModGearman map[string]*struct {
 		Enabled    bool
 		Address    string
 		Queue      string
