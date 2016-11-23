@@ -1,6 +1,7 @@
 package spoolfile
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/griesbacher/nagflux/collector"
@@ -9,7 +10,7 @@ import (
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
-	"io/ioutil"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -83,14 +84,16 @@ func (w *NagiosSpoolfileWorker) run() {
 			promServer.SpoolFilesInQueue.Set(float64(len(w.jobs)))
 			startTime := time.Now()
 			logging.GetLogger().Debug("Reading file: ", file)
-			data, err := ioutil.ReadFile(file)
+			filehandle, err := os.OpenFile(file, os.O_RDONLY, os.ModePerm)
 			if err != nil {
+				logging.GetLogger().Warn("NagiosSpoolfileWorker: Opening file error: ", err)
 				break
 			}
-			lines := strings.SplitAfter(string(data), "\n")
+			reader := bufio.NewReaderSize(filehandle, 4096*10)
 			queries := 0
-			for _, line := range lines {
-				splittedPerformanceData := helper.StringToMap(line, "\t", "::")
+			line, isPrefix, err := reader.ReadLine()
+			for err == nil && !isPrefix {
+				splittedPerformanceData := helper.StringToMap(string(line), "\t", "::")
 				for singlePerfdata := range w.PerformanceDataIterator(splittedPerformanceData) {
 					for _, r := range w.results {
 						select {
@@ -104,7 +107,15 @@ func (w *NagiosSpoolfileWorker) run() {
 						}
 					}
 				}
+				line, isPrefix, err = reader.ReadLine()
 			}
+			if err != nil && err != io.EOF {
+				logging.GetLogger().Warn(err)
+			}
+			if isPrefix {
+				logging.GetLogger().Warn("NagiosSpoolfileWorker: filebuffer is too small")
+			}
+			filehandle.Close()
 			err = os.Remove(file)
 			if err != nil {
 				logging.GetLogger().Warn(err)
