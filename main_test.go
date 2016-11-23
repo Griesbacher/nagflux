@@ -232,6 +232,7 @@ func createConfig() {
 [Livestatus]
 	Type = "tcp"
 	Address = "%s"
+	MinutesToWait = 0
 
 [Elasticsearch]
 	    Enabled = false
