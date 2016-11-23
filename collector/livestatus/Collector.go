@@ -3,6 +3,7 @@ package livestatus
 import (
 	"fmt"
 	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
@@ -221,16 +222,17 @@ func getLivestatusVersion(live *Collector) int {
 	finished := make(chan bool, 1)
 	var version string
 	live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, finished)
-	//Wait 3 minutes for livestatus
 	i := 0
+	oneMinute := time.Duration(1) * time.Minute
+	roundsToWait := config.GetConfig().Livestatus.MinutesToWait
 Loop:
-	for {
+	for roundsToWait != 0 {
 		select {
 		case versionPrintable := <-printables:
 			version = versionPrintable.PrintForInfluxDB("0")
 			break Loop
-		case <-time.After(intervalToCheckLivestatus / 2):
-			if i < 3 {
+		case <-time.After(oneMinute):
+			if i < roundsToWait {
 				go live.requestPrintablesFromLivestatus(QueryLivestatusVersion, false, printables, finished)
 			} else {
 				break Loop
@@ -238,7 +240,10 @@ Loop:
 			i++
 		case fin := <-finished:
 			if !fin {
-				live.log.Info("Could not detect livestatus version, waiting for ", intervalToCheckLivestatus/2, ", three times(", i, ")...")
+				live.log.Infof(
+					"Could not detect livestatus version, waiting for %s %d times( %d/%d )...",
+					oneMinute, roundsToWait, i, roundsToWait,
+				)
 			}
 		}
 	}
@@ -251,6 +256,6 @@ Loop:
 	} else if neamon, _ := regexp.MatchString(`^[\d\.]+-naemon$`, version); neamon {
 		return Naemon
 	}
-	live.log.Warn("Could not detect livestatus type, with version: ", version, " asuming Nagios")
+	live.log.Warn("Could not detect livestatus type, with version: ", version, ". Asuming Nagios")
 	return -1
 }

@@ -38,8 +38,9 @@ type Config struct {
 		HostcheckAlias            string
 	}
 	Livestatus struct {
-		Type    string
-		Address string
+		Type          string
+		Address       string
+		MinutesToWait int
 	}
 	Elasticsearch struct {
 		Enabled          bool
