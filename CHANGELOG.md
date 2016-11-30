@@ -1,3 +1,7 @@
+## v0.2.9 - 30.11.2016
+### Feature
+- If an Spoolfileline contains e.g. NAGFLUX:TAG::serv=server1 ID=1	NAGFLUX:FIELD::counter_a=123 counter_b=456 the serv and ID will be stored as tag and both counters as fields. This makes it possible to add addition information to your Nagiospoolfiles.
+
 ## v0.2.8 - 23.11.2016
 ### Fix
 - out of memory error on big files

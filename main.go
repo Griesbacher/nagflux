@@ -33,7 +33,7 @@ const updateRate = 1
 const resultQueueLength = 1000.0
 
 //nagfluxVersion contains the current Github-Release
-const nagfluxVersion string = "v0.2.8"
+const nagfluxVersion string = "v0.2.9"
 
 var log *factorlog.FactorLog
 var quit = make(chan bool)
