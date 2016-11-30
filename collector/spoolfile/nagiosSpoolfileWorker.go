@@ -28,6 +28,9 @@ type NagiosSpoolfileWorker struct {
 }
 
 const (
+	nagfluxTags  string = "NAGFLUX:TAG"
+	nagfluxField string = "NAGFLUX:FIELD"
+
 	hostPerfdata string = "HOSTPERFDATA"
 
 	servicePerfdata string = "SERVICEPERFDATA"
@@ -147,6 +150,16 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		currentService = input[servicedesc]
 	}
 
+	// Allows to add tags and fields to spoolfileentries
+	tag := map[string]string{}
+	if tagString, ok := input[nagfluxTags]; ok {
+		tag = helper.StringToMap(tagString, " ", "=")
+	}
+	field := map[string]string{}
+	if tagString, ok := input[nagfluxField]; ok {
+		field = helper.StringToMap(tagString, " ", "=")
+	}
+
 	go func() {
 		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1)
 		currentCheckMultiLabel := ""
@@ -164,8 +177,8 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 				time:             currentTime,
 				performanceLabel: value[1],
 				unit:             value[3],
-				tags:             map[string]string{},
-				fields:           map[string]string{},
+				tags:             tag,
+				fields:           field,
 			}
 
 			if currentCheckMultiLabel != "" {
