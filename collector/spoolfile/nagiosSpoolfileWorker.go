@@ -150,16 +150,6 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		currentService = input[servicedesc]
 	}
 
-	// Allows to add tags and fields to spoolfileentries
-	tag := map[string]string{}
-	if tagString, ok := input[nagfluxTags]; ok {
-		tag = helper.StringToMap(tagString, " ", "=")
-	}
-	field := map[string]string{}
-	if tagString, ok := input[nagfluxField]; ok {
-		field = helper.StringToMap(tagString, " ", "=")
-	}
-
 	go func() {
 		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1)
 		currentCheckMultiLabel := ""
@@ -170,6 +160,16 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 
 	item:
 		for _, value := range perfSlice {
+			// Allows to add tags and fields to spoolfileentries
+			tag := map[string]string{}
+			if tagString, ok := input[nagfluxTags]; ok {
+				tag = helper.StringToMap(tagString, " ", "=")
+			}
+			field := map[string]string{}
+			if tagString, ok := input[nagfluxField]; ok {
+				field = helper.StringToMap(tagString, " ", "=")
+			}
+
 			perf := PerformanceData{
 				hostname:         input[hostname],
 				service:          currentService,
