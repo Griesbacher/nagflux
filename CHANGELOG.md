@@ -1,6 +1,6 @@
 ## v0.3.0 - 07.12.2016
 ### Fix
-- Duplicate values over perflables on one service should be fixed
+- Duplicate values over perflabels on one service should be fixed
 
 ## v0.2.9 - 30.11.2016
 ### Feature
