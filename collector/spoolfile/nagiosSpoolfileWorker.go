@@ -227,7 +227,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
 						} else {
-							logging.GetLogger().Warn("Regexmatching went wrong", rangeHits, data, value)
+							logging.GetLogger().Warn("Could not parse warn/crit value: ", rangeHits, data, value)
 						}
 
 					} else {
