@@ -28,27 +28,27 @@ type NagiosSpoolfileWorker struct {
 }
 
 const (
-	nagfluxTags  string = "NAGFLUX:TAG"
+	nagfluxTags string = "NAGFLUX:TAG"
 	nagfluxField string = "NAGFLUX:FIELD"
 
 	hostPerfdata string = "HOSTPERFDATA"
 
 	servicePerfdata string = "SERVICEPERFDATA"
 
-	hostType    string = "HOST"
+	hostType string = "HOST"
 	serviceType string = "SERVICE"
 
-	hostname     string = "HOSTNAME"
-	timet        string = "TIMET"
+	hostname string = "HOSTNAME"
+	timet string = "TIMET"
 	checkcommand string = "CHECKCOMMAND"
-	servicedesc  string = "SERVICEDESC"
+	servicedesc string = "SERVICEDESC"
 )
 
 var (
-	checkMulitRegex       = regexp.MustCompile(`^(.*::)(.*)`)
-	rangeRegex            = regexp.MustCompile(`[\d\.\-]+`)
+	checkMulitRegex = regexp.MustCompile(`^(.*::)(.*)`)
+	rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
 	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
-	regexAltCommand       = regexp.MustCompile(`.*\[(.*)\]\s?$`)
+	regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 )
 
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
@@ -92,7 +92,7 @@ func (w *NagiosSpoolfileWorker) run() {
 				logging.GetLogger().Warn("NagiosSpoolfileWorker: Opening file error: ", err)
 				break
 			}
-			reader := bufio.NewReaderSize(filehandle, 4096*10)
+			reader := bufio.NewReaderSize(filehandle, 4096 * 100)
 			queries := 0
 			line, isPrefix, err := reader.ReadLine()
 			for err == nil && !isPrefix {
@@ -143,7 +143,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		return ch
 	}
 
-	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
+	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -151,14 +151,14 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1)
+		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1)
 		currentCheckMultiLabel := ""
 		//try to find a check_multi prefix
 		if len(perfSlice) > 0 && len(perfSlice[0]) > 1 {
 			currentCheckMultiLabel = getCheckMultiRegexMatch(perfSlice[0][1])
 		}
 
-	item:
+		item:
 		for _, value := range perfSlice {
 			// Allows to add tags and fields to spoolfileentries
 			tag := map[string]string{}
@@ -202,7 +202,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 					}
 
 					//Add downtime tag if needed
-					if performanceType == "value" && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service, input[timet]) {
+					if performanceType == "value" && w.livestatusCacheBuilder != nil && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service, input[timet]) {
 						perf.tags["downtime"] = "true"
 					}
 
