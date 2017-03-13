@@ -253,7 +253,7 @@ Loop:
 		return Icinga2
 	} else if nagios, _ := regexp.MatchString(`^[\d\.]+p[\d\.]+$`, version); nagios {
 		return Nagios
-	} else if neamon, _ := regexp.MatchString(`^[\d\.]+-naemon$`, version); neamon {
+	} else if neamon, _ := regexp.MatchString(`^[\d\.]+(-naemon)?$`, version); neamon {
 		return Naemon
 	}
 	live.log.Warn("Could not detect livestatus type, with version: ", version, ". Asuming Nagios")
