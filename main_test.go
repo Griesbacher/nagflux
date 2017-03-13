@@ -154,6 +154,9 @@ func checkDatabase() {
 	for {
 		time.Sleep(time.Duration(500) * time.Millisecond)
 		query, _ := getEverything()
+		if query == nil{
+			continue
+		}
 		if len((*query).Results) == 0 {
 			continue
 		}
@@ -212,6 +215,7 @@ func createConfig() {
 	DumpFile = "nagflux.dump"
 	NagfluxSpoolfileFolder = "test/nagflux"
 	FieldSeparator = "&"
+	FileBufferSize = 65536
 
 [Log]
 	LogFile = ""
