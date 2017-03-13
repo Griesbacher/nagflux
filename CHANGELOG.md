@@ -1,4 +1,4 @@
-## v0.3.1 - 2017
+## v0.3.1 - 13.03.2017
 ### Fix
 - Allow comma separated Performancedata
 - Spoolfilebuffer is now configurable
