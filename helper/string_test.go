@@ -12,9 +12,10 @@ var StringToMapData = []struct {
 	expected         map[string]string
 }{
 	{"k1=v1;k2=v2", ";", "=", map[string]string{"k1": "v1", "k2": "v2"}},
-	{"k1=v1;k2=v2", ";", "", nil},
-	{"k1=v1;k2=v2", "", "=", nil},
-	{"", ";", "=", nil},
+	{"k1=v1;k2=", ";", "=", map[string]string{"k1": "v1"}},
+	{"k1=v1;k2=v2", ";", "", map[string]string{}},
+	{"k1=v1;k2=v2", "", "=", map[string]string{}},
+	{"", ";", "=", map[string]string{}},
 }
 
 func TestStringToMap(t *testing.T) {

@@ -161,6 +161,45 @@ var TestPerformanceData = []struct {
 			tags:             map[string]string{},
 			fields:           map[string]string{"value":"4.5"},
 		}},
+	},{
+		//test tag
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::foo=bar	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "tag",
+			unit:             "",
+			tags:             map[string]string{"foo":"bar"},
+			fields:           map[string]string{"value":"4.5"},
+		}},
+	},{
+		//test empty tag
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "tag",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value":"4.5"},
+		}},
+	},{
+		//test malformed tag
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::$_SERVICENAGFLUX_TAG$	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "tag",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value":"4.5"},
+		}},
 	},
 }
 

@@ -1,3 +1,9 @@
+## v0.3.1 - 2017
+### Fix
+- Allow comma separated Performancedata
+- Spoolfilebuffer is now configurable
+- Nagflux Tags and Fields are ignoring empty or malformed data. Valid but ignored Performancedate would be: NAGFLUX:TAG::$_SERVICENAGFLUX_TAG$ or NAGFLUX:TAG::  
+
 ## v0.3.0 - 07.12.2016
 ### Fix
 - Duplicate values over perflabels on one service should be fixed

@@ -19,15 +19,18 @@ func IsStringANumber(input string) bool {
 
 //StringToMap splits a string by two splitter an returns a map.
 func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]string {
+	result := make(map[string]string)
 	if entrySplitter == "" || keyValueSplitter == "" || input == "" {
-		return nil
+		return result
 	}
 
-	result := make(map[string]string)
 	entry := strings.Split(input, entrySplitter)
 	for _, pair := range entry {
 		keyValue := strings.Split(strings.TrimSpace(pair), keyValueSplitter)
-		result[keyValue[0]] = strings.Join(keyValue[1:], keyValueSplitter)
+		value := strings.Join(keyValue[1:], keyValueSplitter)
+		if value != ""{
+			result[keyValue[0]] = strings.Join(keyValue[1:], keyValueSplitter)
+		}
 	}
 	return result
 }
