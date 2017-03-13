@@ -148,7 +148,7 @@ var TestPerformanceData = []struct {
 			tags:             map[string]string{},
 			fields:           map[string]string{"value":"4.5"},
 		}},
-	},{
+	}, {
 		//test comma separated data
 		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::comma=4,5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
 		[]PerformanceData{{
@@ -205,7 +205,7 @@ func comparePerformanceData(p1, p2 PerformanceData) (bool, string) {
 }
 
 func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
-	w := NewNagiosSpoolfileWorker(0, nil, nil, nil)
+	w := NewNagiosSpoolfileWorker(0, nil, nil, nil, 4096)
 	for _, data := range (TestPerformanceData) {
 		splittedPerformanceData := helper.StringToMap(data.input, "\t", "::")
 		for singlePerfdata := range w.PerformanceDataIterator(splittedPerformanceData) {
@@ -218,7 +218,7 @@ func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Error("The expected perfdata was not found:", singlePerfdata, "\nRaw data:",data)
+				t.Error("The expected perfdata was not found:", singlePerfdata, "\nRaw data:", data)
 			}
 		}
 	}

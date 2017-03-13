@@ -33,7 +33,7 @@ const updateRate = 1
 const resultQueueLength = 1000.0
 
 //nagfluxVersion contains the current Github-Release
-const nagfluxVersion string = "v0.3.0"
+const nagfluxVersion string = "v0.3.1"
 
 var log *factorlog.FactorLog
 var quit = make(chan bool)
@@ -118,7 +118,13 @@ Commandline Parameter:
 	}
 
 	log.Info("Nagios Spoolfile Folder: ", cfg.Main.NagiosSpoolfileFolder)
-	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(cfg.Main.NagiosSpoolfileFolder, cfg.Main.NagiosSpoolfileWorker, resultQueues, livestatusCache)
+	nagiosCollector := spoolfile.NagiosSpoolfileCollectorFactory(
+		cfg.Main.NagiosSpoolfileFolder,
+		cfg.Main.NagiosSpoolfileWorker,
+		resultQueues,
+		livestatusCache,
+		cfg.Main.FileBufferSize,
+	)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
 	nagfluxCollector := nagflux.NewNagfluxFileCollector(resultQueues, cfg.Main.NagfluxSpoolfileFolder, fieldSeparator)
@@ -134,7 +140,7 @@ Commandline Parameter:
 		cleanUp(stoppables, resultQueues)
 		quit <- true
 	}()
-loop:
+	loop:
 	//Main loop
 	for {
 		select {

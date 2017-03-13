@@ -11,6 +11,7 @@ type Config struct {
 		NagfluxSpoolfileFolder string
 		FieldSeparator         string
 		BufferSize             int
+		FileBufferSize         int
 	}
 	ModGearman map[string]*struct {
 		Enabled    bool

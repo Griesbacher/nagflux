@@ -40,7 +40,7 @@ func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan
 	worker := &GearmanWorker{
 		quit:                  make(chan bool),
 		results:               results,
-		nagiosSpoolfileWorker: spoolfile.NewNagiosSpoolfileWorker(-1, make(chan string), make(map[data.Datatype]chan collector.Printable), livestatusCacheBuilder),
+		nagiosSpoolfileWorker: spoolfile.NewNagiosSpoolfileWorker(-1, make(chan string), make(map[data.Datatype]chan collector.Printable), livestatusCacheBuilder, 4096),
 		aesECBDecrypter:       decrypter,
 		worker:                createGearmanWorker(address),
 		log:                   logging.GetLogger(),

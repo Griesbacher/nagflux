@@ -18,15 +18,6 @@ import (
 	"time"
 )
 
-//NagiosSpoolfileWorker parses the given spoolfiles and adds the extraced perfdata to the queue.
-type NagiosSpoolfileWorker struct {
-	workerID               int
-	quit                   chan bool
-	jobs                   chan string
-	results                map[data.Datatype]chan collector.Printable
-	livestatusCacheBuilder *livestatus.CacheBuilder
-}
-
 const (
 	nagfluxTags string = "NAGFLUX:TAG"
 	nagfluxField string = "NAGFLUX:FIELD"
@@ -51,16 +42,34 @@ var (
 	regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 )
 
+//NagiosSpoolfileWorker parses the given spoolfiles and adds the extraced perfdata to the queue.
+type NagiosSpoolfileWorker struct {
+	workerID               int
+	quit                   chan bool
+	jobs                   chan string
+	results                map[data.Datatype]chan collector.Printable
+	livestatusCacheBuilder *livestatus.CacheBuilder
+	fileBufferSize         int
+}
+
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
-func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *NagiosSpoolfileWorker {
-	return &NagiosSpoolfileWorker{workerID, make(chan bool), jobs, results, livestatusCacheBuilder}
+func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int) *NagiosSpoolfileWorker {
+	return &NagiosSpoolfileWorker{
+		workerID:workerID,
+		quit:make(chan bool),
+		jobs:jobs,
+		results: results,
+		livestatusCacheBuilder: livestatusCacheBuilder,
+		fileBufferSize:fileBufferSize,
+	}
 }
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[data.Datatype]chan collector.Printable,
+livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
-		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder)
+		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder, fileBufferSize)
 		workerID++
 		go s.run()
 		return s
@@ -92,7 +101,7 @@ func (w *NagiosSpoolfileWorker) run() {
 				logging.GetLogger().Warn("NagiosSpoolfileWorker: Opening file error: ", err)
 				break
 			}
-			reader := bufio.NewReaderSize(filehandle, 4096 * 100)
+			reader := bufio.NewReaderSize(filehandle, w.fileBufferSize)
 			queries := 0
 			line, isPrefix, err := reader.ReadLine()
 			for err == nil && !isPrefix {
