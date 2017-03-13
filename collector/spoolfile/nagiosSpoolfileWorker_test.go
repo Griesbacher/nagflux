@@ -135,7 +135,33 @@ var TestPerformanceData = []struct {
 			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0", "min":"1.0", "max":"4.0"},
 		}},
 	},
-
+	{
+		//test dot separated data
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::a used=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "a used",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value":"4.5"},
+		}},
+	},{
+		//test comma separated data
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::comma=4,5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "comma",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value":"4.5"},
+		}},
+	},
 }
 
 func compareStringMap(m1, m2 map[string]string) bool {
@@ -192,7 +218,7 @@ func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Error("The expected perfdata was not found:", singlePerfdata)
+				t.Error("The expected perfdata was not found:", singlePerfdata, "\nRaw data:",data)
 			}
 		}
 	}

@@ -47,7 +47,7 @@ const (
 var (
 	checkMulitRegex = regexp.MustCompile(`^(.*::)(.*)`)
 	rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
-	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.\-]+)([\w\/%]*);?([\d\.\-:~@]+)?;?([\d\.\-:~@]+)?;?([\d\.\-]+)?;?([\d\.\-]+)?;?\s*`)
+	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.,\-]+)([\w\/%]*);?([\d\.,\-:~@]+)?;?([\d\.,\-:~@]+)?;?([\d\.,\-]+)?;?([\d\.,\-]+)?;?\s*`)
 	regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 )
 
