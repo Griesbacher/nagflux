@@ -33,7 +33,7 @@ func SanitizeElasicInput(input string) string {
 
 //GenIndex generates an index depending on the config, ending with year and month
 func GenIndex(index, timeString string) string {
-	rotation := config.GetConfig().Elasticsearch.IndexRotation
+	rotation := config.GetConfig().ElasticsearchGlobal.IndexRotation
 	year, month := GetYearMonthFromStringTimeMs(timeString)
 	switch rotation {
 	case "monthly":

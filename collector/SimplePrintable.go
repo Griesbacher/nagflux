@@ -4,6 +4,7 @@ import "github.com/griesbacher/nagflux/data"
 
 //SimplePrintable can be used to send strings as printable
 type SimplePrintable struct {
+	Filterable
 	Text     string
 	Datatype data.Datatype
 }

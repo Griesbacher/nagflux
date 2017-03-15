@@ -2,6 +2,7 @@ package livestatus
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 //NotificationData adds notification types to the livestatus data
 type NotificationData struct {
+	collector.Filterable
 	Data
 	notificationType  string
 	notificationLevel string

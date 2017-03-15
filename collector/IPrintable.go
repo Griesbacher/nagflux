@@ -4,4 +4,5 @@ package collector
 type Printable interface {
 	PrintForInfluxDB(version string) string
 	PrintForElasticsearch(version, index string) string
+	TestTargetFilter(string) bool
 }

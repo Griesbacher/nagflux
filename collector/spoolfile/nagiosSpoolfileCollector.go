@@ -4,7 +4,6 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/config"
-	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"io/ioutil"
@@ -28,16 +27,16 @@ type NagiosSpoolfileCollector struct {
 }
 
 //NagiosSpoolfileCollectorFactory creates the give amount of Woker and starts them.
-func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int,
-results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int) *NagiosSpoolfileCollector {
+func NagiosSpoolfileCollectorFactory(spoolDirectory string, workerAmount int, results collector.ResultQueues,
+	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) *NagiosSpoolfileCollector {
 	s := &NagiosSpoolfileCollector{
-		quit:make(chan bool),
-		jobs:make(chan string, 100),
-		spoolDirectory:spoolDirectory,
-		workers:make([]*NagiosSpoolfileWorker, workerAmount),
+		quit:           make(chan bool),
+		jobs:           make(chan string, 100),
+		spoolDirectory: spoolDirectory,
+		workers:        make([]*NagiosSpoolfileWorker, workerAmount),
 	}
 
-	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, livestatusCacheBuilder, fileBufferSize)
+	gen := NagiosSpoolfileWorkerGenerator(s.jobs, results, livestatusCacheBuilder, fileBufferSize, defaultTarget)
 
 	for w := 0; w < workerAmount; w++ {
 		s.workers[w] = gen()
@@ -66,7 +65,7 @@ func (s *NagiosSpoolfileCollector) run() {
 			s.quit <- true
 			return
 		case <-time.After(IntervalToCheckDirectory):
-			pause := config.PauseNagflux.Load().(bool)
+			pause := config.IsAnyTargetOnPause()
 			if pause {
 				logging.GetLogger().Debugln("NagiosSpoolfileCollector in pause")
 				continue

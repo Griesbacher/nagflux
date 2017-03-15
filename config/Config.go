@@ -12,6 +12,7 @@ type Config struct {
 		FieldSeparator         string
 		BufferSize             int
 		FileBufferSize         int
+		DefaultTarget          string
 	}
 	ModGearman map[string]*struct {
 		Enabled    bool
@@ -28,29 +29,34 @@ type Config struct {
 	Monitoring struct {
 		PrometheusAddress string
 	}
-	Influx struct {
-		Enabled                   bool
-		Address                   string
-		Arguments                 string
-		Version                   string
+	InfluxDBGlobal struct {
 		CreateDatabaseIfNotExists bool
 		NastyString               string
 		NastyStringToReplace      string
 		HostcheckAlias            string
+	}
+	InfluxDB map[string]*struct {
+		Enabled               bool
+		Address               string
+		Arguments             string
+		Version               string
+		StopPullingDataIfDown bool
 	}
 	Livestatus struct {
 		Type          string
 		Address       string
 		MinutesToWait int
 	}
-	Elasticsearch struct {
-		Enabled          bool
-		Address          string
-		Index            string
-		Version          string
+	ElasticsearchGlobal struct {
 		HostcheckAlias   string
 		NumberOfShards   int
 		NumberOfReplicas int
 		IndexRotation    string
+	}
+	Elasticsearch map[string]*struct {
+		Enabled bool
+		Address string
+		Index   string
+		Version string
 	}
 }

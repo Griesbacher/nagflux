@@ -1,12 +1,14 @@
 package livestatus
 
 import (
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 )
 
 //CommentData adds Comments types to the livestatus data
 type CommentData struct {
+	collector.Filterable
 	Data
 	entryType string
 }

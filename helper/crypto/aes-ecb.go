@@ -31,11 +31,6 @@ func NewAESECBDecrypter(key []byte) (*AESECBDecrypter, error) {
 	return (*AESECBDecrypter)(newECB(block)), nil
 }
 
-//BlockSize returns the key blocksize
-func (d *AESECBDecrypter) BlockSize() int {
-	return d.blockSize
-}
-
 //CryptBlocks encrypts the given array and saves it into dst
 func (d *AESECBDecrypter) CryptBlocks(dst, src []byte) {
 	if len(src)%d.blockSize != 0 {

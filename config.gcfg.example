@@ -20,6 +20,14 @@
     # PrometheusAddress = ":8080"
     PrometheusAddress = ":8080"
 
+[Livestatus]
+    # tcp or file
+    Type = "tcp"
+    # tcp: 127.0.0.1:6557 or file /var/run/live
+    Address = "127.0.0.1:6557"
+    # The amount to minutes to wait for livestatus to come up, if set to 0 the detection is disabled
+    MinutesToWait = 2
+
 [ModGearman "example"] #copy this block and rename it to add a second ModGearman queue
     Enabled = false
     Address = "127.0.0.1:4730"
@@ -32,32 +40,35 @@
     SecretFile = "/etc/mod-gearman/secret.key"
     Worker = 1
 
-[Influx]
+[InfluxDBGlobal]
+	CreateDatabaseIfNotExists = true
+	NastyString = ""
+	NastyStringToReplace = ""
+	HostcheckAlias = "hostcheck"
+
+[InfluxDB "nagflux"]
     Enabled = true
-    Version = 0.9
-    Address = "http://127.0.0.1:8086"
-    Arguments = "precision=ms&u=root&p=root&db=nagflux"
-    CreateDatabaseIfNotExists = true
-    # leave empty to disable
-    NastyString = ""
-    NastyStringToReplace = ""
-    HostcheckAlias = "hostcheck"
+	Version = 1.0
+	Address = "http://127.0.0.1:8086"
+	Arguments = "precision=ms&u=root&p=root&db=nagflux"
+	StopPullingDataIfDown = true
 
-[Livestatus]
-    # tcp or file
-    Type = "tcp"
-    # tcp: 127.0.0.1:6557 or file /var/run/live
-    Address = "127.0.0.1:6557"
-    # The amount to minutes to wait for livestatus to come up, if set to 0 the detection is disabled
-    MinutesToWait = 2
+[InfluxDB "fast"]
+    Enabled = true
+	Version = 1.0
+	Address = "http://127.0.0.1:8086"
+	Arguments = "precision=ms&u=root&p=root&db=fast"
+	StopPullingDataIfDown = false
 
-[Elasticsearch]
-    Enabled = false
-    Address = "http://localhost:9200"
-    Index = "nagflux"
-    Version = 2.1
+[ElasticsearchGlobal]
     HostcheckAlias = "hostcheck"
     NumberOfShards = 1
     NumberOfReplicas = 1
     # Sorts the indices "monthly" or "yearly"
     IndexRotation = "monthly"
+
+[Elasticsearch "example"]
+    Enabled = false
+    Address = "http://localhost:9200"
+    Index = "nagflux"
+    Version = 2.1
