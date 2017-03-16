@@ -1,5 +1,7 @@
 package collector
 
+import "strings"
+
 //Filterable allows to sort the data
 type Filterable struct {
 	Filter string
@@ -16,10 +18,23 @@ const All = "all"
 
 //TestTargetFilter tests if the given filter matches with the containing filter
 func (f Filterable) TestTargetFilter(toTest string) bool {
-	if f.Filter == All {
+	if f.Filter == toTest {
 		return true
 	}
-	return f.Filter == toTest
+	if f.Filter == All || toTest == All {
+		return true
+	}
+	//Test Lists
+	splitSource := strings.Split(f.Filter, ",")
+	splitTarget := strings.Split(toTest, ",")
+	for _, s := range splitSource {
+		for _, t := range splitTarget {
+			if s == t {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 //TestTargetFilterObj like TestTargetFilter just with two objects
