@@ -10,9 +10,13 @@ var testTargetFilterData = []struct {
 	expected     bool
 }{
 	{Filterable{Filter: All}, All, true},
+	{Filterable{Filter: All}, "ALL", true},
+	{Filterable{Filter: "ALL"}, All, true},
 	{Filterable{Filter: All}, "foo", true},
 	{Filterable{Filter: "foo"}, All, true},
 	{Filterable{Filter: "foo"}, "foo", true},
+	{Filterable{Filter: "foo"}, "Foo", true},
+	{Filterable{Filter: "Foo"}, "foo", true},
 	{Filterable{Filter: "bar"}, "foo", false},
 	{Filterable{Filter: "foo"}, "bar", false},
 	{Filterable{Filter: ""}, "", true},
@@ -20,12 +24,24 @@ var testTargetFilterData = []struct {
 	{Filterable{Filter: "foo"}, "", false},
 	{Filterable{Filter: "foo,bar"}, "", false},
 	{Filterable{Filter: "foo,bar"}, "foo", true},
+	{Filterable{Filter: "foo,bar"}, "Foo", true},
 	{Filterable{Filter: "foo,bar"}, "bar", true},
+	{Filterable{Filter: "foo,bar"}, "Bar", true},
 	{Filterable{Filter: "foo,bar"}, "bar,foo", true},
+	{Filterable{Filter: "foo,bar"}, "Bar,foo", true},
+	{Filterable{Filter: "foo,bar"}, "bar,Foo", true},
+	{Filterable{Filter: "foo,bar"}, "Bar,Foo", true},
 	{Filterable{Filter: ""}, "foo,bar", false},
 	{Filterable{Filter: "foo"}, "foo,bar", true},
+	{Filterable{Filter: "foo"}, "foo,Bar", true},
+	{Filterable{Filter: "foo"}, "Foo,bar", true},
+	{Filterable{Filter: "foo"}, "Foo,Bar", true},
 	{Filterable{Filter: "bar"}, "foo,bar", true},
+	{Filterable{Filter: "bar"}, "Foo,bar", true},
+	{Filterable{Filter: "bar"}, "foo,Bar", true},
+	{Filterable{Filter: "bar"}, "Foo,Bar", true},
 	{Filterable{Filter: "bar,foo"}, "foo,bar", true},
+	{Filterable{Filter: "bar,foo"}, "Foo,Bar", true},
 }
 
 func TestFilterable_TestTargetFilter(t *testing.T) {

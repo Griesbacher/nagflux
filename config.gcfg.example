@@ -8,6 +8,10 @@
     FieldSeparator = "&"
     BufferSize = 10000
     FileBufferSize = 65536
+    # If the performancedata does not have a certain target set with NAGFLUX:TARGET. The following field will define the target for this data.
+    # "all" sends the data to all Targets(every Influxdb, Elasticsearch...)
+    # a certain name will direct the data to this certain target
+    DefaultTarget = "all"
 
 [Log]
     # leave empty for stdout
@@ -54,7 +58,7 @@
 	StopPullingDataIfDown = true
 
 [InfluxDB "fast"]
-    Enabled = true
+    Enabled = false
 	Version = 1.0
 	Address = "http://127.0.0.1:8086"
 	Arguments = "precision=ms&u=root&p=root&db=fast"

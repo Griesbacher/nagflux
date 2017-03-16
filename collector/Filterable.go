@@ -18,6 +18,9 @@ const All = "all"
 
 //TestTargetFilter tests if the given filter matches with the containing filter
 func (f Filterable) TestTargetFilter(toTest string) bool {
+	//temporary change the value to lower
+	toTest = strings.ToLower(toTest)
+	f.Filter = strings.ToLower(f.Filter)
 	if f.Filter == toTest {
 		return true
 	}
