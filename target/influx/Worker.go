@@ -60,7 +60,7 @@ func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile, versio
 		worker := &Worker{
 			workerID: workerId, quit: make(chan bool),
 			quitInternal: make(chan bool, 1), jobs: jobs,
-			connection: connection, dumpFile: nagflux.GenDumpfileName(dumpFile, target.Datatype),
+			connection: connection, dumpFile: nagflux.GenDumpfileName(dumpFile, target),
 			log: logging.GetLogger(), version: version,
 			connector: connector, httpClient: client, IsRunning: true, promServer: statistics.GetPrometheusServer(),
 			target: target, stopReadingDataIfDown: stopReadingDataIfDown,
@@ -84,7 +84,6 @@ func (worker Worker) run() {
 	var queries []collector.Printable
 	var query collector.Printable
 	for {
-		//fmt.Println(worker.target.Name, !worker.stopReadingDataIfDown, worker.connector.IsAlive(), worker.connector.DatabaseExists())
 		if !worker.stopReadingDataIfDown || worker.connector.IsAlive() {
 			if !worker.stopReadingDataIfDown || worker.connector.DatabaseExists() {
 				select {
@@ -142,7 +141,7 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 	if sendErr != nil {
 		worker.connector.TestIfIsAlive(worker.stopReadingDataIfDown)
 		worker.connector.TestDatabaseExists()
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 2; i++ {
 			switch sendErr {
 			case errorBadRequest:
 				//Maybe just a few queries are wrong, so send them one by one and find the bad one
@@ -165,42 +164,22 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 					sendErr = nil
 				}
 				//Resend Data
-				sendErr = worker.sendData([]byte(dataToSend), true)
+				sendErr = worker.sendData([]byte(dataToSend), false)
 			}
 		}
 		if sendErr != nil {
 			//if there is still an error dump the queries and go on
-			worker.dumpErrorQueries("\n\n"+sendErr.Error()+"\n", lineQueries)
+			worker.log.Infof("Dumping queries which couldn't be sent to: %s", worker.dumpFile)
+			worker.dumpQueries(worker.dumpFile, lineQueries)
 		}
 
 	}
 	worker.promServer.BytesSend.WithLabelValues("InfluxDB").Add(float64(len(lineQueries)))
 	timeDiff := float64(time.Since(startTime).Seconds() * 1000)
-	if timeDiff >= 0{
+	if timeDiff >= 0 {
 		worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(timeDiff)
 	}
 
-}
-
-//Writes the bad queries to a dumpfile.
-func (worker Worker) dumpErrorQueries(messageForLog string, errorQueries []string) {
-	errorFile := worker.dumpFile + "-errors"
-	worker.log.Warnf("Dumping queries with errors to: %s", errorFile)
-	errorQueries = append([]string{messageForLog}, errorQueries...)
-	worker.dumpQueries(errorFile, errorQueries)
-}
-
-//Dumps the remaining queries if a quit signal arises.
-func (worker Worker) dumpRemainingQueries(remainingQueries []string) {
-	worker.log.Debugf("Global queue %d own queue %d", len(worker.jobs), len(remainingQueries))
-	if len(worker.jobs) != 0 || len(remainingQueries) != 0 {
-		worker.log.Debug("Saving queries to disk")
-
-		remainingQueries = append(remainingQueries, worker.readQueriesFromQueue()...)
-
-		worker.log.Debugf("dumping %d queries", len(remainingQueries))
-		worker.dumpQueries(worker.dumpFile, remainingQueries)
-	}
 }
 
 //Reads the queries from the global queue and returns them as string.
@@ -226,7 +205,9 @@ func (worker Worker) readQueriesFromQueue() []string {
 
 //sends the raw data to influxdb and returns an err if given.
 func (worker Worker) sendData(rawData []byte, log bool) error {
-	worker.log.Debug(string(rawData))
+	if log {
+		worker.log.Debug("\n" + string(rawData))
+	}
 	req, err := http.NewRequest("POST", worker.connection, bytes.NewBuffer(rawData))
 	if err != nil {
 		worker.log.Warn(err)
@@ -279,6 +260,25 @@ func (worker Worker) waitForQuitOrGoOn() error {
 	//Timeout and retry
 	case <-time.After(time.Duration(10) * time.Second):
 		return nil
+	}
+}
+
+//Writes the bad queries to a dumpfile.
+func (worker Worker) dumpErrorQueries(messageForLog string, errorQueries []string) {
+	errorFile := worker.dumpFile + "-errors"
+	worker.log.Warnf("Dumping queries with errors to: %s", errorFile)
+	errorQueries = append([]string{messageForLog}, errorQueries...)
+	worker.dumpQueries(errorFile, errorQueries)
+}
+
+//Dumps the remaining queries if a quit signal arises.
+func (worker Worker) dumpRemainingQueries(remainingQueries []string) {
+	worker.log.Debugf("Global queue %d own queue %d", len(worker.jobs), len(remainingQueries))
+	if len(worker.jobs) != 0 || len(remainingQueries) != 0 {
+		worker.log.Debug("Saving queries to disk")
+		remainingQueries = append(remainingQueries, worker.readQueriesFromQueue()...)
+		worker.log.Debugf("dumping %d queries", len(remainingQueries))
+		worker.dumpQueries(worker.dumpFile, remainingQueries)
 	}
 }
 

@@ -88,7 +88,8 @@ Commandline Parameter:
 			influxConfig.StopPullingDataIfDown, target,
 		)
 		stoppables = append(stoppables, influx)
-		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, data.InfluxDB)
+		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)
+		waitForDumpfileCollector(influxDumpFileCollector)
 		stoppables = append(stoppables, influxDumpFileCollector)
 	}
 
@@ -106,7 +107,8 @@ Commandline Parameter:
 			cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true,
 		)
 		stoppables = append(stoppables, elasticsearch)
-		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, data.Elasticsearch)
+		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)
+		waitForDumpfileCollector(elasticDumpFileCollector)
 		stoppables = append(stoppables, elasticDumpFileCollector)
 	}
 
@@ -178,6 +180,14 @@ loop:
 			}*/
 		case <-quit:
 			break loop
+		}
+	}
+}
+
+func waitForDumpfileCollector(dump *nagflux.DumpfileCollector) {
+	if dump != nil {
+		for i := 0; i < 30 && dump.IsRunning; i++ {
+			time.Sleep(time.Duration(2) * time.Second)
 		}
 	}
 }
