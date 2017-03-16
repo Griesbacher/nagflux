@@ -19,7 +19,7 @@ const (
 	envLivestatus = "NAGFLUX_TEST_LIVESTATUS"
 	envSave       = "NAGFLUX_TEST_SAVE"
 	databaseName  = "NAGFLUX_CI_TEST"
-	timeout       = time.Duration(20) * time.Second
+	timeout       = time.Duration(30) * time.Second
 )
 
 type testData struct {

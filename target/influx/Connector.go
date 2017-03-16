@@ -188,7 +188,7 @@ func (connector *Connector) TestDatabaseExists() bool {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		var jsonResult ShowSeriesResult
 		err := json.Unmarshal(body, &jsonResult)
-		if err == nil && jsonResult != nil && len(jsonResult.Results) > 0 && len(jsonResult.Results[0].Series) > 0 {
+		if err == nil && len(jsonResult.Results) > 0 && len(jsonResult.Results[0].Series) > 0 {
 			for _, tablename := range jsonResult.Results[0].Series[0].Values {
 				if len(tablename) > 0 && connector.databaseName == tablename[0] {
 					connector.databaseExists = true
