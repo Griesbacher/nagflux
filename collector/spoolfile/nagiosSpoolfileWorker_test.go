@@ -254,6 +254,30 @@ var TestPerformanceData = []struct {
 			fields:           map[string]string{"value": "4.5"},
 			Filterable:       collector.Filterable{Filter: "foo"},
 		}},
+	}, {
+		//github https://github.com/Griesbacher/nagflux/issues/19#issuecomment-286799167
+		"DATATYPE::SERVICEPERFDATA	TIMET::1489572014	HOSTNAME::HOST_SERVER	SERVICEDESC::web	SERVICEPERFDATA::time=0,004118s;;;0,000000 size=128766B;;;0	SERVICECHECKCOMMAND::check_http!HOST_SERVER!80!/!20	HOSTSTATE::UP	HOSTSTATETYPE::HARD SERVICESTATE::OK	SERVICESTATETYPE::HARD	SERVICEOUTPUT::HTTP OK: HTTP/1.1 200 OK - 128766 bytes in 0,004 second response time",
+		[]PerformanceData{{
+			hostname:         "HOST_SERVER",
+			service:          "web",
+			command:          "check_http",
+			time:             "1489572014000",
+			performanceLabel: "size",
+			unit:             "B",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "128766.0", "min": "0.0"},
+			Filterable:       collector.AllFilterable,
+		}, {
+			hostname:         "HOST_SERVER",
+			service:          "web",
+			command:          "check_http",
+			time:             "1489572014000",
+			performanceLabel: "time",
+			unit:             "s",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "0.004118", "min": "0.000000"},
+			Filterable:       collector.AllFilterable,
+		}},
 	},
 }
 

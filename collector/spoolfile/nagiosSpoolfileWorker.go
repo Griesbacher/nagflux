@@ -213,6 +213,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 			}
 
 			for i, data := range value {
+				data = strings.Replace(data, ",", ".", -1)
 				if i > 1 && i != 3 && data != "" {
 					performanceType, err := indexToperformanceType(i)
 					if err != nil {
