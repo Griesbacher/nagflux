@@ -1,3 +1,13 @@
+## v0.4.0-b1 - 16.03.2017
+### Feature
+- It is possible to define multiple Influxdbs, each addressed by an name, as well es Elasticsearchs, they are all called "targets". 
+If the data contains an NAGFLUX:TARGET field, this one is used to direct this certain data to a specific target. 
+If this tag is not added to the data, the config defines the default tag, by default "all" which means that the data is 
+will be send to all targets. So "all" is a magic word and should not be uses as target name. See issue #25.
+- If an Influxdb is not reachable the option "StopPullingDataIfDown" decides if reading new data into Nagflux should go on or not.
+### Fix
+- Some minor bugs should be fixed.
+
 ## v0.3.1 - 13.03.2017
 ### Fix
 - Allow comma separated Performancedata
