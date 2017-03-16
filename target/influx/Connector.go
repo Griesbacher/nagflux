@@ -39,7 +39,7 @@ var regexDatabaseName = regexp.MustCompile(`.*db=(.*)`)
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
 func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionArgs, dumpFile, version string,
-	workerAmount, maxWorkers int, createDatabaseIfNotExists, stopReadingDataIfDown bool, target data.Target) *Connector {
+workerAmount, maxWorkers int, createDatabaseIfNotExists, stopReadingDataIfDown bool, target data.Target) *Connector {
 	parsedArgs := helper.StringToMap(connectionArgs, "&", "=")
 	var databaseName string
 	if db, found_db := parsedArgs["db"]; found_db {
@@ -64,7 +64,7 @@ func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionA
 		}
 	}
 
-	gen := WorkerGenerator(jobs, connectionHost+"/write?"+connectionArgs, dumpFile, version, s, target, stopReadingDataIfDown)
+	gen := WorkerGenerator(jobs, connectionHost + "/write?" + connectionArgs, dumpFile, version, s, target, stopReadingDataIfDown)
 	s.TestIfIsAlive(stopReadingDataIfDown)
 	if !s.isAlive && !stopReadingDataIfDown {
 		s.log.Warnf("InfluxDB server(%s) is down but starting anyway due to 'stopReadingDataIfDown' = %t", target.Name, stopReadingDataIfDown)
@@ -105,10 +105,10 @@ func (connector *Connector) AddWorker() {
 	oldLength := connector.AmountWorkers()
 	if oldLength < connector.maxWorkers {
 		gen := WorkerGenerator(
-			connector.jobs, connector.connectionHost+"/write?"+connector.connectionArgs,
+			connector.jobs, connector.connectionHost + "/write?" + connector.connectionArgs,
 			connector.dumpFile, connector.version, connector, connector.target, connector.stopReadingDataIfDown,
 		)
-		connector.workers = append(connector.workers, gen(oldLength+2))
+		connector.workers = append(connector.workers, gen(oldLength + 2))
 		connector.log.Infof("Starting Worker: %d -> %d", oldLength, connector.AmountWorkers())
 	}
 }
@@ -172,7 +172,7 @@ func (connector *Connector) run() {
 
 //TestIfIsAlive test active if the database system is alive.
 func (connector *Connector) TestIfIsAlive(stopReadingDataIfDown bool) bool {
-	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost+"/ping", "GET")
+	result := helper.RequestedReturnCodeIsOK(connector.httpClient, connector.connectionHost + "/ping", "GET")
 	connector.isAlive = result
 	connector.log.Infof("Is InfluxDB(%s) running: %t", connector.target.Name, result)
 	if stopReadingDataIfDown {
@@ -193,9 +193,9 @@ func (connector *Connector) TestDatabaseExists() bool {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		var jsonResult ShowSeriesResult
 		err := json.Unmarshal(body, &jsonResult)
-		if err == nil {
+		if err == nil && jsonResult != nil && len(jsonResult.Results) > 0 && len(jsonResult.Results[0].Series) > 0 {
 			for _, tablename := range jsonResult.Results[0].Series[0].Values {
-				if connector.databaseName == tablename[0] {
+				if len(tablename) > 0 && connector.databaseName == tablename[0] {
 					connector.databaseExists = true
 					return true
 				}
