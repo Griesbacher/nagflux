@@ -175,7 +175,10 @@ func (worker Worker) sendBuffer(queries []collector.Printable) {
 
 	}
 	worker.promServer.BytesSend.WithLabelValues("InfluxDB").Add(float64(len(lineQueries)))
-	worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(float64(time.Since(startTime).Seconds() * 1000))
+	timeDiff := float64(time.Since(startTime).Seconds() * 1000)
+	if timeDiff >= 0{
+		worker.promServer.SendDuration.WithLabelValues("InfluxDB").Add(timeDiff)
+	}
 
 }
 

@@ -18,28 +18,28 @@ import (
 )
 
 const (
-	nagfluxTags   string = "NAGFLUX:TAG"
-	nagfluxField  string = "NAGFLUX:FIELD"
+	nagfluxTags string = "NAGFLUX:TAG"
+	nagfluxField string = "NAGFLUX:FIELD"
 	nagfluxTarget string = "NAGFLUX:TARGET"
 
 	hostPerfdata string = "HOSTPERFDATA"
 
 	servicePerfdata string = "SERVICEPERFDATA"
 
-	hostType    string = "HOST"
+	hostType string = "HOST"
 	serviceType string = "SERVICE"
 
-	hostname     string = "HOSTNAME"
-	timet        string = "TIMET"
+	hostname string = "HOSTNAME"
+	timet string = "TIMET"
 	checkcommand string = "CHECKCOMMAND"
-	servicedesc  string = "SERVICEDESC"
+	servicedesc string = "SERVICEDESC"
 )
 
 var (
-	checkMulitRegex       = regexp.MustCompile(`^(.*::)(.*)`)
-	rangeRegex            = regexp.MustCompile(`[\d\.\-]+`)
+	checkMulitRegex = regexp.MustCompile(`^(.*::)(.*)`)
+	rangeRegex = regexp.MustCompile(`[\d\.\-]+`)
 	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.,\-]+)([\w\/%]*);?([\d\.,\-:~@]+)?;?([\d\.,\-:~@]+)?;?([\d\.,\-]+)?;?([\d\.,\-]+)?;?\s*`)
-	regexAltCommand       = regexp.MustCompile(`.*\[(.*)\]\s?$`)
+	regexAltCommand = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 )
 
 //NagiosSpoolfileWorker parses the given spoolfiles and adds the extraced perfdata to the queue.
@@ -55,7 +55,7 @@ type NagiosSpoolfileWorker struct {
 
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
 func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results collector.ResultQueues,
-	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) *NagiosSpoolfileWorker {
+livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) *NagiosSpoolfileWorker {
 	return &NagiosSpoolfileWorker{
 		workerID:               workerID,
 		quit:                   make(chan bool),
@@ -69,7 +69,7 @@ func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results collector.
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
 func NagiosSpoolfileWorkerGenerator(jobs chan string, results collector.ResultQueues,
-	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) func() *NagiosSpoolfileWorker {
+livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
 		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder, fileBufferSize, defaultTarget)
@@ -135,8 +135,14 @@ func (w *NagiosSpoolfileWorker) run() {
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			promServer.SpoolFilesParsedDuration.Add(float64(time.Since(startTime).Nanoseconds() / 1000000))
-			promServer.SpoolFilesLines.Add(float64(queries))
+			timeDiff := float64(time.Since(startTime).Nanoseconds() / 1000000)
+			if timeDiff >= 0 {
+				promServer.SpoolFilesParsedDuration.Add(timeDiff)
+
+			}
+			if queries >= 0 {
+				promServer.SpoolFilesLines.Add(float64(queries))
+			}
 		case <-time.After(time.Duration(5) * time.Minute):
 			logging.GetLogger().Debug("NagiosSpoolfileWorker: Got nothing to do")
 		}
@@ -155,7 +161,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 		return ch
 	}
 
-	currentCommand := w.searchAltCommand(input[typ+"PERFDATA"], input[typ+checkcommand])
+	currentCommand := w.searchAltCommand(input[typ + "PERFDATA"], input[typ + checkcommand])
 	currentTime := helper.CastStringTimeFromSToMs(input[timet])
 	currentService := ""
 	if typ != hostType {
@@ -163,14 +169,14 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	}
 
 	go func() {
-		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ+"PERFDATA"], -1)
+		perfSlice := regexPerformancelable.FindAllStringSubmatch(input[typ + "PERFDATA"], -1)
 		currentCheckMultiLabel := ""
 		//try to find a check_multi prefix
 		if len(perfSlice) > 0 && len(perfSlice[0]) > 1 {
 			currentCheckMultiLabel = getCheckMultiRegexMatch(perfSlice[0][1])
 		}
 
-	item:
+		item:
 		for _, value := range perfSlice {
 			// Allows to add tags and fields to spoolfileentries
 			tag := map[string]string{}
@@ -247,7 +253,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
 						} else {
-							logging.GetLogger().Warn("Could not parse warn/crit value: ", rangeHits, data, value)
+							logging.GetLogger().Warnf("Could not parse warn/crit value. Host: %v, Service: %v, Element: %v, Wholedata: %v", perf.hostname, perf.service, data, value)
 						}
 
 					} else {
