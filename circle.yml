@@ -30,4 +30,5 @@ test:
         - bash coverage.sh
         - goveralls -coverprofile=cover.out -service=circle-ci -repotoken=$COVERALLS_TOKEN && rm cover.out
         - curl --data "repo=griesbacher/nagflux" http://goreportcard.com/checks
-        - influx -database 'NAGFLUX_CI_TEST' -execute 'select * from /.*/ limit 5'
+        - influx -database 'NAGFLUX_CI_TEST_1' -execute 'select * from /.*/'
+        - influx -database 'NAGFLUX_CI_TEST_2' -execute 'select * from /.*/'
