@@ -1,9 +1,9 @@
 package spoolfile
 
 import (
-	"testing"
 	"fmt"
 	"github.com/griesbacher/nagflux/helper"
+	"testing"
 )
 
 var TestPerformanceData = []struct {
@@ -20,7 +20,7 @@ var TestPerformanceData = []struct {
 			performanceLabel: "a used",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.0"},
+			fields:           map[string]string{"value": "4.0"},
 		}},
 	}, {
 		`DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::a used=4 'C:\ used %'=44%;89;94;0;100	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1`,
@@ -32,7 +32,7 @@ var TestPerformanceData = []struct {
 			performanceLabel: "a used",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.0"},
+			fields:           map[string]string{"value": "4.0"},
 		}, {
 			hostname:         "xxx",
 			service:          "range",
@@ -40,8 +40,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791000000",
 			performanceLabel: `'C:\ used %'`,
 			unit:             "%",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"44.0", "warn":"89.0", "crit":"94.0", "min":"0.0", "max":"100.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "44.0", "warn": "89.0", "crit": "94.0", "min": "0.0", "max": "100.0"},
 		}},
 	},
 	{
@@ -53,8 +53,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791001000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0"},
 		}},
 	},
 	{
@@ -66,8 +66,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791002000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -79,8 +79,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791003000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"outer", "crit-fill":"outer"},
-			fields:           map[string]string{"value":"4.0", "warn-min":"2.0", "warn-max":"4.0", "crit-min":"8.0", "crit-max":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "outer", "crit-fill": "outer"},
+			fields:           map[string]string{"value": "4.0", "warn-min": "2.0", "warn-max": "4.0", "crit-min": "8.0", "crit-max": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -92,8 +92,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791004000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"inner", "crit-fill":"inner"},
-			fields:           map[string]string{"value":"4.0", "warn-min":"2.0", "warn-max":"4.0", "crit-min":"8.0", "crit-max":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "inner", "crit-fill": "inner"},
+			fields:           map[string]string{"value": "4.0", "warn-min": "2.0", "warn-max": "4.0", "crit-min": "8.0", "crit-max": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -105,8 +105,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791005000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -118,8 +118,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791006000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -131,8 +131,8 @@ var TestPerformanceData = []struct {
 			time:             "1441791007000",
 			performanceLabel: "a used",
 			unit:             "",
-			tags:             map[string]string{"warn-fill":"none", "crit-fill":"none"},
-			fields:           map[string]string{"value":"4.0", "warn":"2.0", "crit":"10.0", "min":"1.0", "max":"4.0"},
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
 		}},
 	},
 	{
@@ -146,7 +146,7 @@ var TestPerformanceData = []struct {
 			performanceLabel: "a used",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.5"},
+			fields:           map[string]string{"value": "4.5"},
 		}},
 	}, {
 		//test comma separated data
@@ -159,9 +159,9 @@ var TestPerformanceData = []struct {
 			performanceLabel: "comma",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.5"},
+			fields:           map[string]string{"value": "4.5"},
 		}},
-	},{
+	}, {
 		//test tag
 		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::foo=bar	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
 		[]PerformanceData{{
@@ -171,10 +171,10 @@ var TestPerformanceData = []struct {
 			time:             "1441791000000",
 			performanceLabel: "tag",
 			unit:             "",
-			tags:             map[string]string{"foo":"bar"},
-			fields:           map[string]string{"value":"4.5"},
+			tags:             map[string]string{"foo": "bar"},
+			fields:           map[string]string{"value": "4.5"},
 		}},
-	},{
+	}, {
 		//test empty tag
 		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
 		[]PerformanceData{{
@@ -185,9 +185,9 @@ var TestPerformanceData = []struct {
 			performanceLabel: "tag",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.5"},
+			fields:           map[string]string{"value": "4.5"},
 		}},
-	},{
+	}, {
 		//test malformed tag
 		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TAG::$_SERVICENAGFLUX_TAG$	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
 		[]PerformanceData{{
@@ -198,7 +198,29 @@ var TestPerformanceData = []struct {
 			performanceLabel: "tag",
 			unit:             "",
 			tags:             map[string]string{},
-			fields:           map[string]string{"value":"4.5"},
+			fields:           map[string]string{"value": "4.5"},
+		}},
+	}, {
+		//github https://github.com/Griesbacher/nagflux/issues/19#issuecomment-286799167
+		"DATATYPE::SERVICEPERFDATA	TIMET::1489572014	HOSTNAME::HOST_SERVER	SERVICEDESC::web	SERVICEPERFDATA::time=0,004118s;;;0,000000 size=128766B;;;0	SERVICECHECKCOMMAND::check_http!HOST_SERVER!80!/!20	HOSTSTATE::UP	HOSTSTATETYPE::HARD SERVICESTATE::OK	SERVICESTATETYPE::HARD	SERVICEOUTPUT::HTTP OK: HTTP/1.1 200 OK - 128766 bytes in 0,004 second response time",
+		[]PerformanceData{{
+			hostname:         "HOST_SERVER",
+			service:          "web",
+			command:          "check_http",
+			time:             "1489572014000",
+			performanceLabel: "size",
+			unit:             "B",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "128766.0", "min": "0.0"},
+		}, {
+			hostname:         "HOST_SERVER",
+			service:          "web",
+			command:          "check_http",
+			time:             "1489572014000",
+			performanceLabel: "time",
+			unit:             "s",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "0.004118", "min": "0.000000"},
 		}},
 	},
 }
@@ -245,7 +267,7 @@ func comparePerformanceData(p1, p2 PerformanceData) (bool, string) {
 
 func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
 	w := NewNagiosSpoolfileWorker(0, nil, nil, nil, 4096)
-	for _, data := range (TestPerformanceData) {
+	for _, data := range TestPerformanceData {
 		splittedPerformanceData := helper.StringToMap(data.input, "\t", "::")
 		for singlePerfdata := range w.PerformanceDataIterator(splittedPerformanceData) {
 			found := false
