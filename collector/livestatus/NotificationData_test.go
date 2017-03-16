@@ -43,52 +43,59 @@ func TestPrintNotification(t *testing.T) {
 }
 
 const Config = `[main]
-    NagiosSpoolfileFolder = "/var/spool/nagios"
-    NagiosSpoolfileWorker = 1
-    InfluxWorker = 2
-    MaxInfluxWorker = 5
-    DumpFile = "nagflux.dump"
-    NagfluxSpoolfileFolder = "/var/spool/nagflux"
-    FieldSeparator = "&"
+	NagiosSpoolfileFolder = "/var/spool/nagios"
+	NagiosSpoolfileWorker = 1
+	InfluxWorker = 2
+	MaxInfluxWorker = 5
+	DumpFile = "nagflux.dump"
+	NagfluxSpoolfileFolder = "/var/spool/nagflux"
+	FieldSeparator = "&"
+	BufferSize = 10000
+	FileBufferSize = 65536
 
 [Log]
-    # leave empty for stdout
-    LogFile = ""
-    # List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
-    MinSeverity = "INFO"
+	# leave empty for stdout
+	LogFile = ""
+	# List of Severities https://godoc.org/github.com/kdar/factorlog#Severity
+	MinSeverity = "INFO"
 
 [Monitoring]
-    # leave empty to disable
-    # PrometheusAddress = ":7000"
-    PrometheusAddress = ""
-
-[Influx]
-    Enabled = true
-    Version = 0.9
-    Address = "http://127.0.0.1:8086"
-    Arguments = "precision=ms&u=root&p=root&db=nagflux"
-    CreateDatabaseIfNotExists = true
-    # leave empty to disable
-    NastyString = ""
-    NastyStringToReplace = ""
-    HostcheckAlias = "hostcheck"
+	# leave empty to disable
+	# PrometheusAddress = ":7000"
+	PrometheusAddress = ""
 
 [Livestatus]
-    # tcp or file
-    Type = "tcp"
-    # tcp: 127.0.0.1:6557 or file /var/run/live
-    Address = "127.0.0.1:6557"
+	# tcp or file
+	Type = "tcp"
+	# tcp: 127.0.0.1:6557 or file /var/run/live
+	Address = "127.0.0.1:6557"
+	MinutesToWait = 2
 
-[Elasticsearch]
-    Enabled = false
-    Address = "http://localhost:9200"
-    Index = "nagflux"
-    Version = 2.1
-    HostcheckAlias = "hostcheck"
-    NumberOfShards = 1
-    NumberOfReplicas = 1
-    # Sorts the indices "monthly" or "yearly"
-    IndexRotation = "%s"`
+[InfluxDBGlobal]
+	CreateDatabaseIfNotExists = true
+	NastyString = ""
+	NastyStringToReplace = ""
+	HostcheckAlias = "hostcheck"
+
+[InfluxDB "nagflux"]
+	Enabled = true
+	Version = 1.0
+	Address = "http://127.0.0.1:8086"
+	Arguments = "precision=ms&u=root&p=root&db=nagflux"
+	StopPullingDataIfDown = true
+
+[ElasticsearchGlobal]
+	HostcheckAlias = "hostcheck"
+	NumberOfShards = 1
+	NumberOfReplicas = 1
+	# Sorts the indices "monthly" or "yearly"
+	IndexRotation = "monthly"
+
+[Elasticsearch "example"]
+	Enabled = false
+	Address = "http://localhost:9200"
+	Index = "nagflux"
+	Version = 2.1`
 
 func TestPrintForElasticsearchNotification(t *testing.T) {
 	logging.InitTestLogger()

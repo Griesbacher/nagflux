@@ -2,6 +2,7 @@ package spoolfile
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"testing"
 )
@@ -21,6 +22,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	}, {
 		`DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::a used=4 'C:\ used %'=44%;89;94;0;100	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1`,
@@ -33,6 +35,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}, {
 			hostname:         "xxx",
 			service:          "range",
@@ -42,6 +45,7 @@ var TestPerformanceData = []struct {
 			unit:             "%",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "44.0", "warn": "89.0", "crit": "94.0", "min": "0.0", "max": "100.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -55,6 +59,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -68,6 +73,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -81,6 +87,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "outer", "crit-fill": "outer"},
 			fields:           map[string]string{"value": "4.0", "warn-min": "2.0", "warn-max": "4.0", "crit-min": "8.0", "crit-max": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -94,6 +101,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "inner", "crit-fill": "inner"},
 			fields:           map[string]string{"value": "4.0", "warn-min": "2.0", "warn-max": "4.0", "crit-min": "8.0", "crit-max": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -107,6 +115,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -120,6 +129,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -133,6 +143,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
 			fields:           map[string]string{"value": "4.0", "warn": "2.0", "crit": "10.0", "min": "1.0", "max": "4.0"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 	{
@@ -147,6 +158,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.AllFilterable,
 		}},
 	}, {
 		//test comma separated data
@@ -160,6 +172,31 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.AllFilterable,
+		}},
+	}, {
+		//test comma separated data
+		`DATATYPE::SERVICEPERFDATA	TIMET::1441791000	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::a used=4,6 'C:\ used %'=44,1%;89,2;94,3;0,4;100,5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1`,
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "a used",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "4.6"},
+			Filterable:       collector.AllFilterable,
+		}, {
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: `'C:\ used %'`,
+			unit:             "%",
+			tags:             map[string]string{"warn-fill": "none", "crit-fill": "none"},
+			fields:           map[string]string{"value": "44.1", "warn": "89.2", "crit": "94.3", "min": "0.4", "max": "100.5"},
+			Filterable:       collector.AllFilterable,
 		}},
 	}, {
 		//test tag
@@ -173,6 +210,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{"foo": "bar"},
 			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.AllFilterable,
 		}},
 	}, {
 		//test empty tag
@@ -186,6 +224,7 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.AllFilterable,
 		}},
 	}, {
 		//test malformed tag
@@ -199,6 +238,21 @@ var TestPerformanceData = []struct {
 			unit:             "",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.AllFilterable,
+		}},
+	}, {
+		//test filterable
+		"DATATYPE::SERVICEPERFDATA	TIMET::1441791000	NAGFLUX:TARGET::foo	HOSTNAME::xxx	SERVICEDESC::range	SERVICEPERFDATA::tag=4.5	SERVICECHECKCOMMAND::check_ranges!-w 3: -c 4: -g :46 -l :48 SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			hostname:         "xxx",
+			service:          "range",
+			command:          "check_ranges",
+			time:             "1441791000000",
+			performanceLabel: "tag",
+			unit:             "",
+			tags:             map[string]string{},
+			fields:           map[string]string{"value": "4.5"},
+			Filterable:       collector.Filterable{Filter: "foo"},
 		}},
 	}, {
 		//github https://github.com/Griesbacher/nagflux/issues/19#issuecomment-286799167
@@ -212,6 +266,7 @@ var TestPerformanceData = []struct {
 			unit:             "B",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "128766.0", "min": "0.0"},
+			Filterable:       collector.AllFilterable,
 		}, {
 			hostname:         "HOST_SERVER",
 			service:          "web",
@@ -221,6 +276,7 @@ var TestPerformanceData = []struct {
 			unit:             "s",
 			tags:             map[string]string{},
 			fields:           map[string]string{"value": "0.004118", "min": "0.000000"},
+			Filterable:       collector.AllFilterable,
 		}},
 	},
 }
@@ -262,11 +318,14 @@ func comparePerformanceData(p1, p2 PerformanceData) (bool, string) {
 	if !compareStringMap(p1.fields, p2.fields) {
 		return false, "fields:" + fmt.Sprint(p1.fields) + "!=" + fmt.Sprint(p2.fields)
 	}
+	if !p1.Filterable.TestTargetFilterObj(p2.Filterable) {
+		return false, "filter:" + fmt.Sprint(p1.Filterable) + "!=" + fmt.Sprint(p2.Filterable)
+	}
 	return true, "equal"
 }
 
 func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
-	w := NewNagiosSpoolfileWorker(0, nil, nil, nil, 4096)
+	w := NewNagiosSpoolfileWorker(0, nil, nil, nil, 4096, collector.AllFilterable)
 	for _, data := range TestPerformanceData {
 		splittedPerformanceData := helper.StringToMap(data.input, "\t", "::")
 		for singlePerfdata := range w.PerformanceDataIterator(splittedPerformanceData) {

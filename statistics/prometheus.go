@@ -1,8 +1,8 @@
 package statistics
 
 import (
+	"fmt"
 	"github.com/griesbacher/nagflux/collector"
-	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/prometheus/client_golang/prometheus"
 	"net"
@@ -122,12 +122,11 @@ func GetPrometheusServer() PrometheusServer {
 }
 
 //WatchResultQueueLength continually monitors the global queue
-func (s PrometheusServer) WatchResultQueueLength(channels map[data.Datatype]chan collector.Printable) {
+func (s PrometheusServer) WatchResultQueueLength(channels collector.ResultQueues) {
 	go func() {
 		for {
 			for k, c := range channels {
-				s.bufferLength.WithLabelValues(string(k)).Set(float64(len(c)))
-
+				s.bufferLength.WithLabelValues(fmt.Sprint(k)).Set(float64(len(c)))
 			}
 			time.Sleep(time.Duration(100 * time.Millisecond))
 		}

@@ -5,7 +5,6 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/config"
-	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
@@ -16,22 +15,29 @@ import (
 //FileCollector provides a interface to nagflux, in which you could insert influxdb queries.
 type FileCollector struct {
 	quit           chan bool
-	results        map[data.Datatype]chan collector.Printable
+	results        collector.ResultQueues
 	folder         string
 	log            *factorlog.FactorLog
 	fieldSeparator rune
 }
 
 /*
-table&timestamp&value&t_tag&f_field
-foo&1&2&123&"""asdf"""
+table&target&time&f_value&t_foo
+test&all&1489474756000&1.0&"""bar"""
 */
 
 var requiredFields = []string{"table", "time"}
+var optionalFields = []string{"target"}
 
 //NewNagfluxFileCollector constructor, which also starts the collector.
-func NewNagfluxFileCollector(results map[data.Datatype]chan collector.Printable, folder string, fieldSeparator rune) *FileCollector {
-	s := &FileCollector{make(chan bool, 1), results, folder, logging.GetLogger(), fieldSeparator}
+func NewNagfluxFileCollector(results collector.ResultQueues, folder string, fieldSeparator rune) *FileCollector {
+	s := &FileCollector{
+		quit:           make(chan bool, 1),
+		results:        results,
+		folder:         folder,
+		log:            logging.GetLogger(),
+		fieldSeparator: fieldSeparator,
+	}
 	go s.run()
 	return s
 }
@@ -51,12 +57,13 @@ func (nfc FileCollector) run() {
 			nfc.quit <- true
 			return
 		case <-time.After(spoolfile.IntervalToCheckDirectory):
-			pause := config.PauseNagflux.Load().(bool)
+			pause := config.IsAnyTargetOnPause()
 			if pause {
 				logging.GetLogger().Debugln("NagfluxFileCollector in pause")
 				continue
 			}
 			for _, currentFile := range spoolfile.FilesInDirectoryOlderThanX(nfc.folder, spoolfile.MinFileAge) {
+				logging.GetLogger().Debug("Reading file: ", currentFile)
 				for _, p := range nfc.parseFile(currentFile) {
 					for _, r := range nfc.results {
 						select {
@@ -108,6 +115,8 @@ func (nfc FileCollector) parseFile(filename string) []Printable {
 			fieldIndices[i] = v[2:]
 		} else if helper.Contains(requiredFields, []string{v}) {
 			continue
+		} else if helper.Contains(optionalFields, []string{v}) {
+			continue
 		} else {
 			nfc.log.Warnf("This column does not fit the requirements: %s. Tags should start with t_, fields with f_", v)
 		}
@@ -124,6 +133,8 @@ func (nfc FileCollector) parseFile(filename string) []Printable {
 					currentPrintable.Table = v
 				} else if records[0][i] == requiredFields[1] {
 					currentPrintable.Timestamp = v
+				} else if records[0][i] == optionalFields[0] {
+					currentPrintable.Filterable = collector.Filterable{Filter: v}
 				} else if val, ok := tagIndices[i]; ok {
 					currentPrintable.tags[val] = v
 				} else if val, ok := fieldIndices[i]; ok {
@@ -133,6 +144,11 @@ func (nfc FileCollector) parseFile(filename string) []Printable {
 				}
 			}
 		}
+
+		if currentPrintable.Filterable == collector.EmptyFilterable {
+			currentPrintable.Filterable = collector.AllFilterable
+		}
+
 		result = append(result, currentPrintable)
 	}
 	return result

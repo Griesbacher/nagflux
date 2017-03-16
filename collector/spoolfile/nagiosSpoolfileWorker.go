@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
-	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
@@ -19,8 +18,9 @@ import (
 )
 
 const (
-	nagfluxTags  string = "NAGFLUX:TAG"
-	nagfluxField string = "NAGFLUX:FIELD"
+	nagfluxTags   string = "NAGFLUX:TAG"
+	nagfluxField  string = "NAGFLUX:FIELD"
+	nagfluxTarget string = "NAGFLUX:TARGET"
 
 	hostPerfdata string = "HOSTPERFDATA"
 
@@ -47,13 +47,15 @@ type NagiosSpoolfileWorker struct {
 	workerID               int
 	quit                   chan bool
 	jobs                   chan string
-	results                map[data.Datatype]chan collector.Printable
+	results                collector.ResultQueues
 	livestatusCacheBuilder *livestatus.CacheBuilder
 	fileBufferSize         int
+	defaultTarget          collector.Filterable
 }
 
 //NewNagiosSpoolfileWorker returns a new NagiosSpoolfileWorker.
-func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int) *NagiosSpoolfileWorker {
+func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results collector.ResultQueues,
+	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) *NagiosSpoolfileWorker {
 	return &NagiosSpoolfileWorker{
 		workerID:               workerID,
 		quit:                   make(chan bool),
@@ -61,15 +63,16 @@ func NewNagiosSpoolfileWorker(workerID int, jobs chan string, results map[data.D
 		results:                results,
 		livestatusCacheBuilder: livestatusCacheBuilder,
 		fileBufferSize:         fileBufferSize,
+		defaultTarget:          defaultTarget,
 	}
 }
 
 //NagiosSpoolfileWorkerGenerator generates a worker and starts it.
-func NagiosSpoolfileWorkerGenerator(jobs chan string, results map[data.Datatype]chan collector.Printable,
-	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int) func() *NagiosSpoolfileWorker {
+func NagiosSpoolfileWorkerGenerator(jobs chan string, results collector.ResultQueues,
+	livestatusCacheBuilder *livestatus.CacheBuilder, fileBufferSize int, defaultTarget collector.Filterable) func() *NagiosSpoolfileWorker {
 	workerID := 0
 	return func() *NagiosSpoolfileWorker {
-		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder, fileBufferSize)
+		s := NewNagiosSpoolfileWorker(workerID, jobs, results, livestatusCacheBuilder, fileBufferSize, defaultTarget)
 		workerID++
 		go s.run()
 		return s
@@ -114,7 +117,7 @@ func (w *NagiosSpoolfileWorker) run() {
 							return
 						case r <- singlePerfdata:
 							queries++
-						case <-time.After(time.Duration(1) * time.Minute):
+						case <-time.After(time.Duration(10) * time.Second):
 							logging.GetLogger().Warn("NagiosSpoolfileWorker: Could not write to buffer")
 						}
 					}
@@ -132,8 +135,14 @@ func (w *NagiosSpoolfileWorker) run() {
 			if err != nil {
 				logging.GetLogger().Warn(err)
 			}
-			promServer.SpoolFilesParsedDuration.Add(float64(time.Since(startTime).Nanoseconds() / 1000000))
-			promServer.SpoolFilesLines.Add(float64(queries))
+			timeDiff := float64(time.Since(startTime).Nanoseconds() / 1000000)
+			if timeDiff >= 0 {
+				promServer.SpoolFilesParsedDuration.Add(timeDiff)
+
+			}
+			if queries >= 0 {
+				promServer.SpoolFilesLines.Add(float64(queries))
+			}
 		case <-time.After(time.Duration(5) * time.Minute):
 			logging.GetLogger().Debug("NagiosSpoolfileWorker: Got nothing to do")
 		}
@@ -175,8 +184,14 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 				tag = helper.StringToMap(tagString, " ", "=")
 			}
 			field := map[string]string{}
-			if tagString, ok := input[nagfluxField]; ok {
-				field = helper.StringToMap(tagString, " ", "=")
+			if fieldString, ok := input[nagfluxField]; ok {
+				field = helper.StringToMap(fieldString, " ", "=")
+			}
+			var target collector.Filterable
+			if targetString, ok := input[nagfluxTarget]; ok {
+				target = collector.Filterable{Filter: targetString}
+			} else {
+				target = collector.AllFilterable
 			}
 
 			perf := PerformanceData{
@@ -188,6 +203,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 				unit:             value[3],
 				tags:             tag,
 				fields:           field,
+				Filterable:       target,
 			}
 
 			if currentCheckMultiLabel != "" {
@@ -237,7 +253,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
 						} else {
-							logging.GetLogger().Warn("Could not parse warn/crit value: ", rangeHits, data, value)
+							logging.GetLogger().Warnf("Could not parse warn/crit value. Host: %v, Service: %v, Element: %v, Wholedata: %v", perf.hostname, perf.service, data, value)
 						}
 
 					} else {

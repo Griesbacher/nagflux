@@ -14,7 +14,7 @@ import (
 //Collector fetches data from livestatus.
 type Collector struct {
 	quit                chan bool
-	jobs                map[data.Datatype]chan collector.Printable
+	jobs                collector.ResultQueues
 	livestatusConnector *Connector
 	log                 *factorlog.FactorLog
 	logQuery            string
@@ -68,7 +68,7 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs map[data.Datatype]chan collector.Printable, livestatusConnector *Connector, detectVersion bool) *Collector {
+func NewLivestatusCollector(jobs collector.ResultQueues, livestatusConnector *Connector, detectVersion bool) *Collector {
 	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), QueryNagiosForNotifications}
 	if detectVersion {
 		switch getLivestatusVersion(live) {
@@ -158,19 +158,19 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 				}
 			case QueryForComments:
 				if len(line) == 6 {
-					printables <- CommentData{Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- CommentData{collector.AllFilterable, Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForComments out of range", line)
 				}
 			case QueryForDowntimes:
 				if len(line) == 6 {
-					printables <- DowntimeData{Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
+					printables <- DowntimeData{collector.AllFilterable, Data{line[0], line[1], line[2], line[3], line[4]}, line[5]}
 				} else {
 					live.log.Warn("QueryForDowntimes out of range", line)
 				}
 			case QueryLivestatusVersion:
 				if len(line) == 1 {
-					printables <- collector.SimplePrintable{Text: line[0], Datatype: data.InfluxDB}
+					printables <- collector.SimplePrintable{Filterable: collector.AllFilterable, Text: line[0], Datatype: data.InfluxDB}
 				} else {
 					live.log.Warn("QueryLivestatusVersion out of range", line)
 				}
@@ -195,20 +195,20 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 	case "HOST NOTIFICATION":
 		if len(line) == 10 {
 			//Custom: host_name, "", message, timestamp, author, notification_type, state
-			return &NotificationData{Data{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
+			return &NotificationData{collector.AllFilterable, Data{line[4], "", line[9], line[1], line[8]}, line[0], line[5]}
 		} else if len(line) == 9 {
-			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+			return &NotificationData{collector.AllFilterable, Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		} else if len(line) == 8 {
-			return &NotificationData{Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
+			return &NotificationData{collector.AllFilterable, Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		} else {
 			live.log.Warn("HOST NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
 		}
 	case "SERVICE NOTIFICATION":
 		if len(line) == 11 {
 			//Custom
-			return &NotificationData{Data{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
+			return &NotificationData{collector.AllFilterable, Data{line[4], line[5], line[10], line[1], line[9]}, line[0], line[6]}
 		} else if len(line) == 10 || len(line) == 9 {
-			return &NotificationData{Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
+			return &NotificationData{collector.AllFilterable, Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 		} else {
 			live.log.Warn("SERVICE NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
 		}

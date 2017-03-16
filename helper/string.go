@@ -28,8 +28,8 @@ func StringToMap(input, entrySplitter, keyValueSplitter string) map[string]strin
 	for _, pair := range entry {
 		keyValue := strings.Split(strings.TrimSpace(pair), keyValueSplitter)
 		value := strings.Join(keyValue[1:], keyValueSplitter)
-		if value != ""{
-			result[keyValue[0]] = strings.Join(keyValue[1:], keyValueSplitter)
+		if value != "" && keyValue[0] != "" {
+			result[keyValue[0]] = value
 		}
 	}
 	return result

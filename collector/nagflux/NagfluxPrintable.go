@@ -2,11 +2,13 @@ package nagflux
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 )
 
 //Printable converts from nagfluxfile format to X
 type Printable struct {
+	collector.Filterable
 	Table     string
 	Timestamp string
 	tags      map[string]string

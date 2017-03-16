@@ -154,7 +154,11 @@ func (connector *Connector) TestTemplateExists() bool {
 
 //createTemplate creates the nagflux template.
 func (connector *Connector) createTemplate() bool {
-	mapping := fmt.Sprintf(NagfluxTemplate, connector.index, config.GetConfig().Elasticsearch.NumberOfShards, config.GetConfig().Elasticsearch.NumberOfReplicas)
+	mapping := fmt.Sprintf(NagfluxTemplate,
+		connector.index,
+		config.GetConfig().ElasticsearchGlobal.NumberOfShards,
+		config.GetConfig().ElasticsearchGlobal.NumberOfReplicas,
+	)
 	createIndex, _ := helper.SentReturnCodeIsOK(connector.httpClient, connector.connectionHost+"_template/"+connector.index, "PUT", mapping)
 	if !createIndex {
 		return false

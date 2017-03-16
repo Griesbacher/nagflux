@@ -2,12 +2,14 @@ package spoolfile
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/helper"
 )
 
 //PerformanceData represents the nagios perfdata
 type PerformanceData struct {
+	collector.Filterable
 	hostname         string
 	service          string
 	command          string
@@ -23,7 +25,7 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
 		if p.service == "" {
-			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().Influx.HostcheckAlias))
+			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().InfluxDBGlobal.HostcheckAlias))
 		} else {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
 		}
@@ -49,7 +51,7 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 func (p PerformanceData) PrintForElasticsearch(version, index string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		if p.service == "" {
-			p.service = config.GetConfig().Influx.HostcheckAlias
+			p.service = config.GetConfig().InfluxDBGlobal.HostcheckAlias
 		}
 		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, helper.GenIndex(index, p.time)) + "\n"
 		data := fmt.Sprintf(

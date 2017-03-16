@@ -5,7 +5,6 @@ import (
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
 	"github.com/griesbacher/nagflux/config"
-	"github.com/griesbacher/nagflux/data"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/helper/crypto"
 	"github.com/griesbacher/nagflux/logging"
@@ -17,7 +16,7 @@ import (
 //GearmanWorker queries the gearmanserver and adds the extraced perfdata to the queue.
 type GearmanWorker struct {
 	quit                  chan bool
-	results               map[data.Datatype]chan collector.Printable
+	results               collector.ResultQueues
 	nagiosSpoolfileWorker *spoolfile.NagiosSpoolfileWorker
 	aesECBDecrypter       *crypto.AESECBDecrypter
 	worker                *worker.Worker
@@ -27,10 +26,10 @@ type GearmanWorker struct {
 
 //NewGearmanWorker generates a new GearmanWorker.
 //leave the key empty to disable encryption, otherwise the gearmanpacketes are expected to be encrpyten with AES-ECB 128Bit and a 32 Byte Key.
-func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan collector.Printable, livestatusCacheBuilder *livestatus.CacheBuilder) *GearmanWorker {
+func NewGearmanWorker(address, queue, key string, results collector.ResultQueues, livestatusCacheBuilder *livestatus.CacheBuilder) *GearmanWorker {
 	var decrypter *crypto.AESECBDecrypter
 	if key != "" {
-		byteKey := ShapeKey(key, 32)
+		byteKey := ShapeKey(key, DefaultModGearmanKeyLength)
 		var err error
 		decrypter, err = crypto.NewAESECBDecrypter(byteKey)
 		if err != nil {
@@ -38,13 +37,15 @@ func NewGearmanWorker(address, queue, key string, results map[data.Datatype]chan
 		}
 	}
 	worker := &GearmanWorker{
-		quit:                  make(chan bool),
-		results:               results,
-		nagiosSpoolfileWorker: spoolfile.NewNagiosSpoolfileWorker(-1, make(chan string), make(map[data.Datatype]chan collector.Printable), livestatusCacheBuilder, 4096),
-		aesECBDecrypter:       decrypter,
-		worker:                createGearmanWorker(address),
-		log:                   logging.GetLogger(),
-		jobQueue:              queue,
+		quit:    make(chan bool),
+		results: results,
+		nagiosSpoolfileWorker: spoolfile.NewNagiosSpoolfileWorker(
+			-1, make(chan string), make(collector.ResultQueues), livestatusCacheBuilder, 4096, collector.AllFilterable,
+		),
+		aesECBDecrypter: decrypter,
+		worker:          createGearmanWorker(address),
+		log:             logging.GetLogger(),
+		jobQueue:        queue,
 	}
 	go worker.run()
 	go worker.handleLoad()
@@ -124,7 +125,7 @@ func (g GearmanWorker) handlePause() {
 			g.quit <- true
 			return
 		case <-time.After(time.Duration(1) * time.Second):
-			globalPause := config.PauseNagflux.Load().(bool)
+			globalPause := config.IsAnyTargetOnPause()
 			if pause != globalPause {
 				if pause {
 					g.worker.Lock()

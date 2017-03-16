@@ -53,7 +53,7 @@ func TestPrintInfluxdbComment(t *testing.T) {
 	logging.InitTestLogger()
 	comment := CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world"}, entryType: "1"}
 	if !didThisPanic(comment.PrintForInfluxDB, "0.8") {
-		t.Errorf("This should panic, due to unsuported influxdb version")
+		t.Error("This should panic, due to unsuported influxdb version")
 	}
 	for _, data := range PrintCommentData {
 		actual := data.input.PrintForInfluxDB("0.9")
@@ -68,7 +68,7 @@ func TestPrintElasticsearchComment(t *testing.T) {
 	config.InitConfigFromString(fmt.Sprintf(Config, "monthly"))
 	comment := CommentData{Data: Data{hostName: "host 1", serviceDisplayName: "service 1", author: "philip", comment: "hallo world", entryTime: "1458988932000"}, entryType: "1"}
 	if !didThatPanic(comment.PrintForElasticsearch, "1.0", "index") {
-		t.Errorf("This should panic, due to unsuported elasticsearch version")
+		t.Error("This should panic, due to unsuported elasticsearch version")
 	}
 	for _, data := range PrintCommentData {
 		actual := data.input.PrintForElasticsearch("2.0", "index")

@@ -33,12 +33,7 @@ var SanitizeInfluxDataMap = []struct {
 
 func TestSanitizeInfluxInput(t *testing.T) {
 	//t.Parallel()
-	config.InitConfigFromString(`[Influx]
-    Enabled = true
-    Version = 0.9
-    Address = "http://127.0.0.1:8086"
-    Arguments = "precision=ms&u=root&p=root&db=nagflux"
-    CreateDatabaseIfNotExists = true
+	config.InitConfigFromString(`[InfluxDBGlobal]
     # leave empty to disable
     NastyString = "§"
     NastyStringToReplace = "SS"

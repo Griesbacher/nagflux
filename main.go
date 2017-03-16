@@ -29,9 +29,6 @@ type Stoppable interface {
 //Interval of the main loop, in which the amount of workers are calculated.
 const updateRate = 1
 
-//Buffer size.
-const resultQueueLength = 1000.0
-
 //nagfluxVersion contains the current Github-Release
 const nagfluxVersion string = "v0.3.1"
 
@@ -66,7 +63,8 @@ Commandline Parameter:
 	logging.InitLogger(cfg.Log.LogFile, cfg.Log.MinSeverity)
 	log = logging.GetLogger()
 	log.Info(`Started Nagflux `, nagfluxVersion)
-	resultQueues := map[data.Datatype]chan collector.Printable{}
+	log.Debugf("Using Config: %s", configPath)
+	resultQueues := collector.ResultQueues{}
 	stoppables := []Stoppable{}
 	if len(cfg.Main.FieldSeparator) < 1 {
 		panic("FieldSeparator is too short!")
@@ -75,21 +73,42 @@ Commandline Parameter:
 	pro.WatchResultQueueLength(resultQueues)
 	fieldSeparator := []rune(cfg.Main.FieldSeparator)[0]
 
-	config.PauseNagflux.Store(false)
-
-	if cfg.Influx.Enabled {
-		resultQueues[data.InfluxDB] = make(chan collector.Printable, cfg.Main.BufferSize)
-		influx := influx.ConnectorFactory(resultQueues[data.InfluxDB], cfg.Influx.Address, cfg.Influx.Arguments, cfg.Main.DumpFile, cfg.Influx.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.Influx.CreateDatabaseIfNotExists)
+	for name, value := range cfg.InfluxDB {
+		if value == nil || !(*value).Enabled {
+			continue
+		}
+		influxConfig := (*value)
+		target := data.Target{Name: name, Datatype: data.InfluxDB}
+		config.StoreValue(target, false)
+		resultQueues[target] = make(chan collector.Printable, cfg.Main.BufferSize)
+		influx := influx.ConnectorFactory(
+			resultQueues[target],
+			influxConfig.Address, influxConfig.Arguments, cfg.Main.DumpFile, influxConfig.Version,
+			cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.InfluxDBGlobal.CreateDatabaseIfNotExists,
+			influxConfig.StopPullingDataIfDown, target,
+		)
 		stoppables = append(stoppables, influx)
-		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.InfluxDB], cfg.Main.DumpFile, data.InfluxDB)
+		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)
+		waitForDumpfileCollector(influxDumpFileCollector)
 		stoppables = append(stoppables, influxDumpFileCollector)
 	}
 
-	if cfg.Elasticsearch.Enabled {
-		resultQueues[data.Elasticsearch] = make(chan collector.Printable, cfg.Main.BufferSize)
-		elasticsearch := elasticsearch.ConnectorFactory(resultQueues[data.Elasticsearch], cfg.Elasticsearch.Address, cfg.Elasticsearch.Index, cfg.Main.DumpFile, cfg.Elasticsearch.Version, cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true)
+	for name, value := range cfg.Elasticsearch {
+		if value == nil || !(*value).Enabled {
+			continue
+		}
+		elasticConfig := (*value)
+		target := data.Target{Name: name, Datatype: data.Elasticsearch}
+		resultQueues[target] = make(chan collector.Printable, cfg.Main.BufferSize)
+		config.StoreValue(target, false)
+		elasticsearch := elasticsearch.ConnectorFactory(
+			resultQueues[target],
+			elasticConfig.Address, elasticConfig.Index, cfg.Main.DumpFile, elasticConfig.Version,
+			cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, true,
+		)
 		stoppables = append(stoppables, elasticsearch)
-		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[data.Elasticsearch], cfg.Main.DumpFile, data.Elasticsearch)
+		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)
+		waitForDumpfileCollector(elasticDumpFileCollector)
 		stoppables = append(stoppables, elasticDumpFileCollector)
 	}
 
@@ -124,6 +143,7 @@ Commandline Parameter:
 		resultQueues,
 		livestatusCache,
 		cfg.Main.FileBufferSize,
+		collector.Filterable{Filter: cfg.Main.DefaultTarget},
 	)
 
 	log.Info("Nagflux Spoolfile Folder: ", cfg.Main.NagfluxSpoolfileFolder)
@@ -140,7 +160,7 @@ Commandline Parameter:
 		cleanUp(stoppables, resultQueues)
 		quit <- true
 	}()
-	loop:
+loop:
 	//Main loop
 	for {
 		select {
@@ -164,8 +184,16 @@ Commandline Parameter:
 	}
 }
 
+func waitForDumpfileCollector(dump *nagflux.DumpfileCollector) {
+	if dump != nil {
+		for i := 0; i < 30 && dump.IsRunning; i++ {
+			time.Sleep(time.Duration(2) * time.Second)
+		}
+	}
+}
+
 //Wait till the Performance Data is sent.
-func cleanUp(itemsToStop []Stoppable, resultQueues map[data.Datatype]chan collector.Printable) {
+func cleanUp(itemsToStop []Stoppable, resultQueues collector.ResultQueues) {
 	log.Info("Cleaning up...")
 	for i := len(itemsToStop) - 1; i >= 0; i-- {
 		itemsToStop[i].Stop()

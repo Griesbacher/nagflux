@@ -2,6 +2,7 @@ package livestatus
 
 import (
 	"fmt"
+	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 //DowntimeData adds Comments types to the livestatus data
 type DowntimeData struct {
+	collector.Filterable
 	Data
 	endTime string
 }
