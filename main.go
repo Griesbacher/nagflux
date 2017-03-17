@@ -31,7 +31,7 @@ type Stoppable interface {
 const updateRate = 1
 
 //nagfluxVersion contains the current Github-Release
-const nagfluxVersion string = "v0.4.0-b1"
+const nagfluxVersion string = "v0.4.0"
 
 var log *factorlog.FactorLog
 var quit = make(chan bool)
