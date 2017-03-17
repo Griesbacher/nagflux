@@ -8,7 +8,8 @@
     FieldSeparator = "&"
     BufferSize = 10000
     FileBufferSize = 65536
-    # If the performancedata does not have a certain target set with NAGFLUX:TARGET. The following field will define the target for this data.
+    # If the performancedata does not have a certain target set with NAGFLUX:TARGET.
+    # The following field will define the target for this data.
     # "all" sends the data to all Targets(every Influxdb, Elasticsearch...)
     # a certain name will direct the data to this certain target
     DefaultTarget = "all"
@@ -31,6 +32,9 @@
     Address = "127.0.0.1:6557"
     # The amount to minutes to wait for livestatus to come up, if set to 0 the detection is disabled
     MinutesToWait = 2
+    # Set the Version of Livestatus. Allowed are Nagios, Icinga2, Naemon.
+    # If left empty Nagflux will try to detect it on it's own, which will not always work.
+    Version = ""
 
 [ModGearman "example"] #copy this block and rename it to add a second ModGearman queue
     Enabled = false

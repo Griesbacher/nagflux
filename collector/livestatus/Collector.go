@@ -68,19 +68,35 @@ OutputFormat: csv
 )
 
 //NewLivestatusCollector constructor, which also starts it immediately.
-func NewLivestatusCollector(jobs collector.ResultQueues, livestatusConnector *Connector, detectVersion bool) *Collector {
-	live := &Collector{make(chan bool, 2), jobs, livestatusConnector, logging.GetLogger(), QueryNagiosForNotifications}
-	if detectVersion {
+func NewLivestatusCollector(jobs collector.ResultQueues, livestatusConnector *Connector, detectVersion string) *Collector {
+	live := &Collector{
+		quit:                make(chan bool, 2),
+		jobs:                jobs,
+		livestatusConnector: livestatusConnector,
+		log:                 logging.GetLogger(),
+		logQuery:            QueryNagiosForNotifications,
+	}
+	if detectVersion == "" {
 		switch getLivestatusVersion(live) {
 		case Nagios:
 			live.log.Info("Livestatus type: Nagios")
-			live.logQuery = QueryNagiosForNotifications
 		case Icinga2:
 			live.log.Info("Livestatus type: Icinga2")
 			live.logQuery = QueryIcinga2ForNotifications
 		case Naemon:
 			live.log.Info("Livestatus type: Naemon")
-			live.logQuery = QueryNagiosForNotifications
+		}
+	} else {
+		switch detectVersion {
+		case "Nagios":
+			live.log.Info("Setting Livestatus version to: Nagios")
+		case "Icinga2":
+			live.log.Info("Setting Livestatus version to: Icinga2")
+			live.logQuery = QueryIcinga2ForNotifications
+		case "Naemon":
+			live.log.Info("Setting Livestatus version to: Naemon")
+		default:
+			live.log.Info("Given Livestatusversion is unkown, using Nagios")
 		}
 	}
 	go live.run()

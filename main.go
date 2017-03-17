@@ -116,7 +116,7 @@ Commandline Parameter:
 	time.Sleep(time.Duration(100) * time.Millisecond)
 
 	liveconnector := &livestatus.Connector{log, cfg.Livestatus.Address, cfg.Livestatus.Type}
-	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, true)
+	livestatusCollector := livestatus.NewLivestatusCollector(resultQueues, liveconnector, cfg.Livestatus.Version)
 	livestatusCache := livestatus.NewLivestatusCacheBuilder(liveconnector)
 
 	for name, data := range cfg.ModGearman {

@@ -46,6 +46,7 @@ type Config struct {
 		Type          string
 		Address       string
 		MinutesToWait int
+		Version       string
 	}
 	ElasticsearchGlobal struct {
 		HostcheckAlias   string
