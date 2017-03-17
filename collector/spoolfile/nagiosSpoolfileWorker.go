@@ -195,23 +195,23 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 			}
 
 			perf := PerformanceData{
-				hostname:         input[hostname],
-				service:          currentService,
-				command:          currentCommand,
-				time:             currentTime,
-				performanceLabel: value[1],
-				unit:             value[3],
-				tags:             tag,
-				fields:           field,
+				Hostname:         input[hostname],
+				Service:          currentService,
+				Command:          currentCommand,
+				Time:             currentTime,
+				PerformanceLabel: value[1],
+				Unit:             value[3],
+				Tags:             tag,
+				Fields:           field,
 				Filterable:       target,
 			}
 
 			if currentCheckMultiLabel != "" {
 				//if an check_multi prefix was found last time
 				//test if the current one has also one
-				if potentialNextOne := getCheckMultiRegexMatch(perf.performanceLabel); potentialNextOne == "" {
+				if potentialNextOne := getCheckMultiRegexMatch(perf.PerformanceLabel); potentialNextOne == "" {
 					// if not put the last one in front the current
-					perf.performanceLabel = currentCheckMultiLabel + perf.performanceLabel
+					perf.PerformanceLabel = currentCheckMultiLabel + perf.PerformanceLabel
 				} else {
 					// else remember the current prefix for the next one
 					currentCheckMultiLabel = potentialNextOne
@@ -228,8 +228,8 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 					}
 
 					//Add downtime tag if needed
-					if performanceType == "value" && w.livestatusCacheBuilder != nil && w.livestatusCacheBuilder.IsServiceInDowntime(perf.hostname, perf.service, input[timet]) {
-						perf.tags["downtime"] = "true"
+					if performanceType == "value" && w.livestatusCacheBuilder != nil && w.livestatusCacheBuilder.IsServiceInDowntime(perf.Hostname, perf.Service, input[timet]) {
+						perf.Tags["downtime"] = "true"
 					}
 
 					if performanceType == "warn" || performanceType == "crit" {
@@ -237,30 +237,30 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 						fillLabel := performanceType + "-fill"
 						rangeHits := rangeRegex.FindAllStringSubmatch(data, -1)
 						if len(rangeHits) == 1 {
-							perf.tags[fillLabel] = "none"
-							perf.fields[performanceType] = helper.StringIntToStringFloat(rangeHits[0][0])
+							perf.Tags[fillLabel] = "none"
+							perf.Fields[performanceType] = helper.StringIntToStringFloat(rangeHits[0][0])
 
 						} else if len(rangeHits) == 2 {
 							//If there is a range with no infinity as border, create two points
 							if strings.Contains(data, "@") {
-								perf.tags[fillLabel] = "inner"
+								perf.Tags[fillLabel] = "inner"
 							} else {
-								perf.tags[fillLabel] = "outer"
+								perf.Tags[fillLabel] = "outer"
 							}
 
 							for i, tag := range []string{"min", "max"} {
 								tagKey := fmt.Sprintf("%s-%s", performanceType, tag)
-								perf.fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
+								perf.Fields[tagKey] = helper.StringIntToStringFloat(rangeHits[i][0])
 							}
 						} else {
-							logging.GetLogger().Warnf("Could not parse warn/crit value. Host: %v, Service: %v, Element: %v, Wholedata: %v", perf.hostname, perf.service, data, value)
+							logging.GetLogger().Warnf("Could not parse warn/crit value. Host: %v, Service: %v, Element: %v, Wholedata: %v", perf.Hostname, perf.Service, data, value)
 						}
 
 					} else {
 						if !helper.IsStringANumber(data) {
 							continue item
 						}
-						perf.fields[performanceType] = helper.StringIntToStringFloat(data)
+						perf.Fields[performanceType] = helper.StringIntToStringFloat(data)
 
 					}
 				}

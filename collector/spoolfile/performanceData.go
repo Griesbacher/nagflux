@@ -10,38 +10,38 @@ import (
 //PerformanceData represents the nagios perfdata
 type PerformanceData struct {
 	collector.Filterable
-	hostname         string
-	service          string
-	command          string
-	performanceLabel string
-	unit             string
-	time             string
-	tags             map[string]string
-	fields           map[string]string
+	Hostname         string
+	Service          string
+	Command          string
+	PerformanceLabel string
+	Unit             string
+	Time             string
+	Tags             map[string]string
+	Fields           map[string]string
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
 func (p PerformanceData) PrintForInfluxDB(version string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
-		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.hostname))
-		if p.service == "" {
+		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.Hostname))
+		if p.Service == "" {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(config.GetConfig().InfluxDBGlobal.HostcheckAlias))
 		} else {
-			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.service))
+			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.Service))
 		}
 		tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s`,
-			helper.SanitizeInfluxInput(p.command),
-			helper.SanitizeInfluxInput(p.performanceLabel),
+			helper.SanitizeInfluxInput(p.Command),
+			helper.SanitizeInfluxInput(p.PerformanceLabel),
 		)
-		if len(p.tags) > 0 {
-			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.tags), ",", "="))
+		if len(p.Tags) > 0 {
+			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.Tags), ",", "="))
 		}
-		if p.unit != "" {
-			tableName += fmt.Sprintf(`,unit=%s`, p.unit)
+		if p.Unit != "" {
+			tableName += fmt.Sprintf(`,unit=%s`, p.Unit)
 		}
 
-		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.fields), ",", "="))
-		tableName += fmt.Sprintf(" %s\n", p.time)
+		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.Fields), ",", "="))
+		tableName += fmt.Sprintf(" %s\n", p.Time)
 		return tableName
 	}
 	return ""
@@ -50,23 +50,23 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 //PrintForElasticsearch prints in the elasticsearch json format
 func (p PerformanceData) PrintForElasticsearch(version, index string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
-		if p.service == "" {
-			p.service = config.GetConfig().InfluxDBGlobal.HostcheckAlias
+		if p.Service == "" {
+			p.Service = config.GetConfig().InfluxDBGlobal.HostcheckAlias
 		}
-		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, helper.GenIndex(index, p.time)) + "\n"
+		head := fmt.Sprintf(`{"index":{"_index":"%s","_type":"metrics"}}`, helper.GenIndex(index, p.Time)) + "\n"
 		data := fmt.Sprintf(
 			`{"timestamp":%s,"host":"%s","service":"%s","command":"%s","performanceLabel":"%s"`,
-			p.time,
-			helper.SanitizeElasicInput(p.hostname),
-			helper.SanitizeElasicInput(p.service),
-			helper.SanitizeElasicInput(p.command),
-			helper.SanitizeElasicInput(p.performanceLabel),
+			p.Time,
+			helper.SanitizeElasicInput(p.Hostname),
+			helper.SanitizeElasicInput(p.Service),
+			helper.SanitizeElasicInput(p.Command),
+			helper.SanitizeElasicInput(p.PerformanceLabel),
 		)
-		if p.unit != "" {
-			data += fmt.Sprintf(`,"unit":"%s"`, helper.SanitizeElasicInput(p.unit))
+		if p.Unit != "" {
+			data += fmt.Sprintf(`,"unit":"%s"`, helper.SanitizeElasicInput(p.Unit))
 		}
-		data += helper.CreateJSONFromStringMap(p.tags)
-		data += helper.CreateJSONFromStringMap(p.fields)
+		data += helper.CreateJSONFromStringMap(p.Tags)
+		data += helper.CreateJSONFromStringMap(p.Fields)
 		data += "}\n"
 		return head + data
 	}
