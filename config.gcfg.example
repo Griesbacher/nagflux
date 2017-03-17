@@ -82,7 +82,7 @@
     Version = 2.1
 
 [JSONFileExport "one"]
-    Enabled = true
+    Enabled = false
     Path = "export/json"
     # Timeinterval  in Seconds till a new file will be used. 0 for no rotation.
     # If no rotation is selected, the JSON Objects are appended line by line so,
