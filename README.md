@@ -57,6 +57,12 @@ There are basically two ways for Nagflux to receive data:
 - Gearman: If you have a distributed setup, that's the way to go
 <p>With both ways you could enrich your performance data with additional informations from livestatus. Like downtimes, notifications and so.<p>
 
+Targets can be:
+
+- **InfluxDB**, that's the main target and the reason for this project.
+- Elasticsearch, more a prove of concept but it worked some time ago ;)
+- JSON, to parse the data by an third tool. 
+
 ![Dataflow Image](https://raw.githubusercontent.com/Griesbacher/nagflux/master/doc/NagfluxDataflow.png "Nagflux Dataflow")
 
 ## OMD
