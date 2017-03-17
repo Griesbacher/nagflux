@@ -13,6 +13,7 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/griesbacher/nagflux/statistics"
 	"github.com/griesbacher/nagflux/target/elasticsearch"
+	"github.com/griesbacher/nagflux/target/file/json"
 	"github.com/griesbacher/nagflux/target/influx"
 	"github.com/kdar/factorlog"
 	"os"
@@ -110,6 +111,20 @@ Commandline Parameter:
 		elasticDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)
 		waitForDumpfileCollector(elasticDumpFileCollector)
 		stoppables = append(stoppables, elasticDumpFileCollector)
+	}
+
+	for name, value := range cfg.JSONFileExport {
+		if value == nil || !(*value).Enabled {
+			continue
+		}
+		jsonFileConfig := (*value)
+		target := data.Target{Name: name, Datatype: data.JSONFile}
+		resultQueues[target] = make(chan collector.Printable, cfg.Main.BufferSize)
+		templateFile := json.NewJSONFileWorker(
+			log, jsonFileConfig.AutomaticFileRotation,
+			resultQueues[target], target, jsonFileConfig.Path,
+		)
+		stoppables = append(stoppables, templateFile)
 	}
 
 	//Some time for the dumpfile to fill the queue

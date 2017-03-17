@@ -60,4 +60,9 @@ type Config struct {
 		Index   string
 		Version string
 	}
+	JSONFileExport map[string]*struct {
+		Enabled               bool
+		Path                  string
+		AutomaticFileRotation int
+	}
 }

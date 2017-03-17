@@ -1,3 +1,8 @@
+## v0.4.0 - 17.03.2017
+### Feature
+- Livestatusversion can be set in the config.
+- JSONFileExport, to write collected data to an JSON File.
+
 ## v0.4.0-b1 - 16.03.2017
 ### Feature
 - It is possible to define multiple Influxdbs, each addressed by an name, as well es Elasticsearchs, they are all called "targets". 
@@ -5,6 +10,7 @@ If the data contains an NAGFLUX:TARGET field, this one is used to direct this ce
 If this tag is not added to the data, the config defines the default tag, by default "all" which means that the data is 
 will be send to all targets. So "all" is a magic word and should not be uses as target name. See issue [#25](https://github.com/Griesbacher/nagflux/issues/25).
 - If an Influxdb is not reachable the option "StopPullingDataIfDown" decides if reading new data into Nagflux should go on or not.
+
 ### Fix
 - Some minor bugs should be fixed.
 

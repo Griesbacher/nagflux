@@ -80,3 +80,12 @@
     Address = "http://localhost:9200"
     Index = "nagflux"
     Version = 2.1
+
+[JSONFileExport "one"]
+    Enabled = true
+    Path = "export/json"
+    # Timeinterval  in Seconds till a new file will be used. 0 for no rotation.
+    # If no rotation is selected, the JSON Objects are appended line by line so,
+    #   every single line is valid JSON but the whole file not.
+    # If rotation is selected every file as whole is valid JSON.
+    AutomaticFileRotation = "10"
