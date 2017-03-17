@@ -45,24 +45,24 @@
     Worker = 1
 
 [InfluxDBGlobal]
-	CreateDatabaseIfNotExists = true
-	NastyString = ""
-	NastyStringToReplace = ""
-	HostcheckAlias = "hostcheck"
+    CreateDatabaseIfNotExists = true
+    NastyString = ""
+    NastyStringToReplace = ""
+    HostcheckAlias = "hostcheck"
 
 [InfluxDB "nagflux"]
     Enabled = true
-	Version = 1.0
-	Address = "http://127.0.0.1:8086"
-	Arguments = "precision=ms&u=root&p=root&db=nagflux"
-	StopPullingDataIfDown = true
+    Version = 1.0
+    Address = "http://127.0.0.1:8086"
+    Arguments = "precision=ms&u=root&p=root&db=nagflux"
+    StopPullingDataIfDown = true
 
 [InfluxDB "fast"]
     Enabled = false
-	Version = 1.0
-	Address = "http://127.0.0.1:8086"
-	Arguments = "precision=ms&u=root&p=root&db=fast"
-	StopPullingDataIfDown = false
+    Version = 1.0
+    Address = "http://127.0.0.1:8086"
+    Arguments = "precision=ms&u=root&p=root&db=fast"
+    StopPullingDataIfDown = false
 
 [ElasticsearchGlobal]
     HostcheckAlias = "hostcheck"
