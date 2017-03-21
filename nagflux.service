@@ -1,0 +1,14 @@
+[Unit]
+Description=A connector which transforms performancedata from Nagios/Icinga(2)/Naemon to InfluxDB/Elasticsearch
+Documentation=https://github.com/Griesbacher/nagflux
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+ExecStart=/opt/nagflux/nagflux -configPath /opt/nagflux/config.gcfg
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=nagflux.service
