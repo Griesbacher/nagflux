@@ -50,6 +50,7 @@ else:
 - If the Livestatus is not available Nagflux will just write an log entry, but additional informations can't be gathered.
 - If any part of the Tablename is not valid for the InfluxDB an log entry will written and the data is writen to a file which has the same name as the logfile just with the ending '.dump-errors'. You could fix the errors by hand and copy the lines in the NagfluxSpoolfileFolder
 - If the Data can't be send to the InfluxDB, Nagflux will also write them in the '.dump-errors' file, you can handle them the same way.
+- If the logs are showing files are being read (in DEBUG mode) but nothing is going into InfluxDB, check the perfdata template to ensure it matches OMD format. See [Perfdata Template](https://github.com/Griesbacher/nagflux#perfdata-template) for more details.
 
 ## Dataflow
 There are basically two ways for Nagflux to receive data:
@@ -67,6 +68,21 @@ Targets can be:
 
 ## OMD
 Nagflux is fully integrated in [OMD-Labs](https://github.com/ConSol/omd), as well as Histou is. Therefor if you wanna try it out, it's maybe easier to install OMD-Labs.
+
+## Perfdata Template
+Nagflux supports a couple of Perfdata templates (see `main_test.go` for all supported formats). By default it assumes you have the OMD format. If you are setting this up manually (not using OMD) please ensure your perfdata template is as follows:
+
+**Host**
+```
+DATATYPE::HOSTPERFDATA\tTIMET::$TIMET$\tHOSTNAME::$HOSTNAME$\tHOSTPERFDATA::$HOSTPERFDATA$\tHOSTCHECKCOMMAND::$HOSTCHECKCOMMAND$
+```
+
+**Service**
+```
+DATATYPE::SERVICEPERFDATA\tTIMET::$TIMET$\tHOSTNAME::$HOSTNAME$\tSERVICEDESC::$SERVICEDESC$\tSERVICEPERFDATA::$SERVICEPERFDATA$\tSERVICECHECKCOMMAND::$SERVICECHECKCOMMAND$
+```
+
+If you are using Nagios the default templates will not work. Use the above templates with config `host_perfdata_file_template` and `service_perfdata_file_template`, respectively.
 
 ## DEMO
 This Dockercontainer contains OMD and everything is preconfigured to use Nagflux/Histou/Grafana/InfluxDB: https://github.com/Griesbacher/docker-omd-grafana
