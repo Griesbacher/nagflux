@@ -70,7 +70,7 @@ Targets can be:
 Nagflux is fully integrated in [OMD-Labs](https://github.com/ConSol/omd), as well as Histou is. Therefor if you wanna try it out, it's maybe easier to install OMD-Labs.
 
 ## Perfdata Template
-Nagflux supports a couple of Perfdata templates (see `main_test.go` for all supported formats). By default it assumes you have the OMD format. If you are setting this up manually (not using OMD) please ensure your perfdata template is as follows:
+Nagflux supports a couple of Perfdata templates (see `main_test.go` for some supported formats). By default it assumes you have the [OMD formattemplate](https://github.com/ConSol/omd/blob/labs/packages/nagflux/skel/etc/nagflux/nagios_nagflux.cfg). If you are setting this up manually (not using OMD) please ensure your perfdata template is as follows:
 
 **Host**
 ```
