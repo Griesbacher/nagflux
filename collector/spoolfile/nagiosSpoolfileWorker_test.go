@@ -279,6 +279,41 @@ var TestPerformanceData = []struct {
 			Filterable:       collector.AllFilterable,
 		}},
 	},
+	{
+		//github https://github.com/Griesbacher/nagflux/issues/32
+		"DATATYPE::SERVICEPERFDATA	TIMET::1490957788	HOSTNAME::müü	SERVICEDESC::möö	SERVICEPERFDATA::getItinerary_min=34385µs getItinerary_avg=130925µs getItinerary_max=267719µs	SERVICECHECKCOMMAND::check_perfs	SERVICESTATE::0	SERVICESTATETYPE::1",
+		[]PerformanceData{{
+			Hostname:         "müü",
+			Service:          "möö",
+			Command:          "check_perfs",
+			Time:             "1490957788000",
+			PerformanceLabel: "getItinerary_min",
+			Unit:             "µs",
+			Tags:             map[string]string{},
+			Fields:           map[string]string{"value": "34385.0"},
+			Filterable:       collector.AllFilterable,
+		}, {
+			Hostname:         "müü",
+			Service:          "möö",
+			Command:          "check_perfs",
+			Time:             "1490957788000",
+			PerformanceLabel: "getItinerary_avg",
+			Unit:             "µs",
+			Tags:             map[string]string{},
+			Fields:           map[string]string{"value": "130925.0"},
+			Filterable:       collector.AllFilterable,
+		}, {
+			Hostname:         "müü",
+			Service:          "möö",
+			Command:          "check_perfs",
+			Time:             "1490957788000",
+			PerformanceLabel: "getItinerary_max",
+			Unit:             "µs",
+			Tags:             map[string]string{},
+			Fields:           map[string]string{"value": "267719.0"},
+			Filterable:       collector.AllFilterable,
+		}},
+	},
 }
 
 func compareStringMap(m1, m2 map[string]string) bool {
@@ -324,6 +359,8 @@ func comparePerformanceData(p1, p2 PerformanceData) (bool, string) {
 	return true, "equal"
 }
 
+var debug = true
+
 func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
 	w := NewNagiosSpoolfileWorker(0, nil, nil, nil, 4096, collector.AllFilterable)
 	for _, data := range TestPerformanceData {
@@ -335,6 +372,17 @@ func TestNagiosSpoolfileWorker_PerformanceDataIterator(t *testing.T) {
 				if equal {
 					found = true
 					break
+				}
+			}
+			if !found && debug {
+				for _, expectedPerfdata := range data.expected {
+					equal, err := comparePerformanceData(singlePerfdata, expectedPerfdata)
+					if equal {
+						break
+					} else {
+						fmt.Println(err)
+					}
+
 				}
 			}
 			if !found {

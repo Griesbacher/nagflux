@@ -38,7 +38,7 @@ const (
 var (
 	checkMulitRegex       = regexp.MustCompile(`^(.*::)(.*)`)
 	rangeRegex            = regexp.MustCompile(`[\d\.\-]+`)
-	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.,\-]+)([\w\/%]*);?([\d\.,\-:~@]+)?;?([\d\.,\-:~@]+)?;?([\d\.,\-]+)?;?([\d\.,\-]+)?;?\s*`)
+	regexPerformancelable = regexp.MustCompile(`([^=]+)=(U|[\d\.,\-]+)([\pL\/%]*);?([\d\.,\-:~@]+)?;?([\d\.,\-:~@]+)?;?([\d\.,\-]+)?;?([\d\.,\-]+)?;?\s*`)
 	regexAltCommand       = regexp.MustCompile(`.*\[(.*)\]\s?$`)
 )
 
@@ -155,7 +155,7 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 	typ := findType(input)
 	if typ == "" {
 		if len(input) > 1 {
-			logging.GetLogger().Info("Line does not match the scheme", input)
+			logging.GetLogger().Info("Line does not match the scheme: ", input)
 		}
 		close(ch)
 		return ch

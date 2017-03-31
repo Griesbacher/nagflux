@@ -1,3 +1,7 @@
+## v0.4.1 - 
+### Feature
+- Unicode support in Units like µs
+
 ## v0.4.0 - 17.03.2017
 ### Feature
 - Livestatusversion can be set in the config.
