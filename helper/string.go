@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/griesbacher/nagflux/logging"
 	"strconv"
 	"strings"
@@ -90,4 +92,17 @@ func VersionOrdinal(version string) string {
 		vo[j]++
 	}
 	return string(vo)
+}
+
+func SPrintStringSlice(slice []string) string {
+	var buffer bytes.Buffer
+	for index, value := range slice {
+		buffer.WriteString("`")
+		buffer.WriteString(fmt.Sprint(value))
+		buffer.WriteString("`")
+		if index < (len(slice) - 1) {
+			buffer.WriteString(",")
+		}
+	}
+	return buffer.String()
 }

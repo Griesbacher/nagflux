@@ -5,9 +5,11 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/config"
 	"github.com/griesbacher/nagflux/data"
+	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -163,14 +165,10 @@ func (live Collector) requestPrintablesFromLivestatus(query string, addTimestamp
 			case QueryNagiosForNotifications:
 				if printable := live.handleQueryForNotifications(line); printable != nil {
 					printables <- printable
-				} else {
-					live.log.Warn("The notification type is unknown:" + line[0])
 				}
 			case QueryIcinga2ForNotifications:
 				if printable := live.handleQueryForNotifications(line); printable != nil {
 					printables <- printable
-				} else {
-					live.log.Warn("The notification type is unknown:" + line[0])
 				}
 			case QueryForComments:
 				if len(line) == 6 {
@@ -217,7 +215,7 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 		} else if len(line) == 8 {
 			return &NotificationData{collector.AllFilterable, Data{line[4], "", line[7], line[1], line[2]}, line[0], line[5]}
 		} else {
-			live.log.Warn("HOST NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
+			live.log.Warn("HOST NOTIFICATION, undefinded linelenght: ", len(line), " Line:", helper.SPrintStringSlice(line))
 		}
 	case "SERVICE NOTIFICATION":
 		if len(line) == 11 {
@@ -226,9 +224,14 @@ func (live Collector) handleQueryForNotifications(line []string) *NotificationDa
 		} else if len(line) == 10 || len(line) == 9 {
 			return &NotificationData{collector.AllFilterable, Data{line[4], line[5], line[8], line[1], line[2]}, line[0], line[6]}
 		} else {
-			live.log.Warn("SERVICE NOTIFICATION, undefinded linelenght: ", len(line), " Line:", line)
+			live.log.Warn("SERVICE NOTIFICATION, undefinded linelenght: ", len(line), " Line:", helper.SPrintStringSlice(line))
 		}
-
+	default:
+		if strings.Contains(line[0], "NOTIFICATION SUPPRESSED") {
+			live.log.Debugf("Ignoring suppressed Notification: '%s', Line: %s", line[0], helper.SPrintStringSlice(line))
+		} else {
+			live.log.Warnf("The notification type is unknown: '%s', whole line: '%s'", line[0], helper.SPrintStringSlice(line))
+		}
 	}
 	return nil
 }
