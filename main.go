@@ -31,7 +31,7 @@ type Stoppable interface {
 const updateRate = 1
 
 //nagfluxVersion contains the current Github-Release
-const nagfluxVersion string = "v0.4.0"
+const nagfluxVersion string = "v0.4.1"
 
 var log *factorlog.FactorLog
 var quit = make(chan bool)
@@ -44,7 +44,10 @@ func main() {
 		fmt.Println(`Nagflux by Philip Griesbacher`, nagfluxVersion, `
 Commandline Parameter:
 -configPath Path to the config file. If no file path is given the default is ./config.gcfg.
--V Print version and exit`)
+-V Print version and exit
+
+For further informations / bugs reportes: https://github.com/Griesbacher/nagflux
+`)
 	}
 	flag.StringVar(&configPath, "configPath", "config.gcfg", "path to the config file")
 	flag.BoolVar(&printver, "V", false, "print version and exit")

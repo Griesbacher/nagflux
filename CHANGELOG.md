@@ -1,6 +1,7 @@
-## v0.4.1 - 
+## v0.4.1 - 07.06.2017
 ### Feature
 - Unicode support in Units like µs
+- If performancedata contains only an U the value field will be missing, but a field unknown with the value true will be added
 
 ## v0.4.0 - 17.03.2017
 ### Feature
