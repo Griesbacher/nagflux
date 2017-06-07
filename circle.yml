@@ -14,6 +14,7 @@ dependencies:
         - rm -rf /home/ubuntu/.go_project/src/github.com/griesbacher/nagflux
         - go get -u -t github.com/griesbacher/nagflux; echo 1
         - go build -v github.com/griesbacher/nagflux
+        - cp nagflux $CIRCLE_ARTIFACTS
 
 database:
     override:
