@@ -60,6 +60,11 @@ For further informations / bugs reportes: https://github.com/Griesbacher/nagflux
 	}
 
 	//Load config
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		fmt.Printf("Can not find config file: '%s'.\n\nHelp:\n", configPath)
+		flag.Usage()
+		os.Exit(1)
+	}
 	config.InitConfig(configPath)
 	cfg := config.GetConfig()
 
@@ -178,7 +183,7 @@ For further informations / bugs reportes: https://github.com/Griesbacher/nagflux
 		cleanUp(stoppables, resultQueues)
 		quit <- true
 	}()
-loop:
+	loop:
 	//Main loop
 	for {
 		select {
