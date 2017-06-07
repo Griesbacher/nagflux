@@ -257,6 +257,10 @@ func (w *NagiosSpoolfileWorker) PerformanceDataIterator(input map[string]string)
 						}
 
 					} else {
+						if data == "U" {
+							perf.Fields["unknown"] = "true"
+							continue
+						}
 						if !helper.IsStringANumber(data) {
 							continue item
 						}
