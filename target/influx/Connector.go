@@ -36,13 +36,13 @@ type Connector struct {
 
 //ConnectorFactory Constructor which will create some workers if the connection is established.
 func ConnectorFactory(jobs chan collector.Printable, connectionHost, connectionArgs, dumpFile, version string,
-	workerAmount, maxWorkers int, createDatabaseIfNotExists, stopReadingDataIfDown bool, target data.Target) *Connector {
+	workerAmount, maxWorkers int, createDatabaseIfNotExists, stopReadingDataIfDown bool, target data.Target, clientTimeout int) *Connector {
 	parsedArgs := helper.StringToMap(connectionArgs, "&", "=")
 	var databaseName string
 	if db, found_db := parsedArgs["db"]; found_db {
 		databaseName = db
 	}
-	timeout := time.Duration(5 * time.Second)
+	timeout := time.Duration(time.Duration(clientTimeout) * time.Second)
 	transport := &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 	client := http.Client{Timeout: timeout, Transport: transport}
 	s := &Connector{

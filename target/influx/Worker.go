@@ -50,7 +50,8 @@ var mutex = &sync.Mutex{}
 func WorkerGenerator(jobs chan collector.Printable, connection, dumpFile, version string,
 	connector *Connector, target data.Target, stopReadingDataIfDown bool) func(workerId int) *Worker {
 	return func(workerId int) *Worker {
-		timeout := time.Duration(5 * time.Second)
+		//timeout := time.Duration(5 * time.Second)
+		timeout := connector.httpClient.Timeout
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
