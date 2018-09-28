@@ -53,6 +53,7 @@
     NastyString = ""
     NastyStringToReplace = ""
     HostcheckAlias = "hostcheck"
+    ClientTimeout  = 5
 
 [InfluxDB "nagflux"]
     Enabled = true

@@ -94,7 +94,7 @@ For further informations / bugs reportes: https://github.com/Griesbacher/nagflux
 			resultQueues[target],
 			influxConfig.Address, influxConfig.Arguments, cfg.Main.DumpFile, influxConfig.Version,
 			cfg.Main.InfluxWorker, cfg.Main.MaxInfluxWorker, cfg.InfluxDBGlobal.CreateDatabaseIfNotExists,
-			influxConfig.StopPullingDataIfDown, target,
+			influxConfig.StopPullingDataIfDown, target, cfg.InfluxDBGlobal.ClientTimeout,
 		)
 		stoppables = append(stoppables, influx)
 		influxDumpFileCollector := nagflux.NewDumpfileCollector(resultQueues[target], cfg.Main.DumpFile, target, cfg.Main.FileBufferSize)

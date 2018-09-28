@@ -34,6 +34,7 @@ type Config struct {
 		NastyString               string
 		NastyStringToReplace      string
 		HostcheckAlias            string
+		ClientTimeout		      int
 	}
 	InfluxDB map[string]*struct {
 		Enabled               bool
