@@ -29,10 +29,25 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 		} else {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.Service))
 		}
-		tableName += fmt.Sprintf(`,command=%s,performanceLabel=%s`,
-			helper.SanitizeInfluxInput(p.Command),
-			helper.SanitizeInfluxInput(p.PerformanceLabel),
-		)
+		var fieldsString = ""
+		if config.GetConfig().InfluxDBGlobal.StoreCommandAsField {
+			fieldsString += fmt.Sprintf(`,command="%s"`,
+				helper.SanitizeInfluxField(p.Command),
+			)
+		} else {
+			tableName += fmt.Sprintf(`,command=%s`,
+				helper.SanitizeInfluxInput(p.Command),
+			)
+		}
+		if config.GetConfig().InfluxDBGlobal.StorePerformanceLabelAsField {
+			fieldsString += fmt.Sprintf(`,performanceLabel="%s"`,
+				helper.SanitizeInfluxField(p.PerformanceLabel),
+			)
+		} else {
+			tableName += fmt.Sprintf(`,performanceLabel=%s`,
+				helper.SanitizeInfluxInput(p.PerformanceLabel),
+			)
+		}
 		if len(p.Tags) > 0 {
 			tableName += fmt.Sprintf(`,%s`, helper.PrintMapAsString(helper.SanitizeMap(p.Tags), ",", "="))
 		}
@@ -41,6 +56,7 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 		}
 
 		tableName += fmt.Sprintf(` %s`, helper.PrintMapAsString(helper.SanitizeMap(p.Fields), ",", "="))
+		tableName += fieldsString
 		tableName += fmt.Sprintf(" %s\n", p.Time)
 		return tableName
 	}

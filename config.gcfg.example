@@ -54,6 +54,13 @@
     NastyStringToReplace = ""
     HostcheckAlias = "hostcheck"
     ClientTimeout  = 5
+    # on big installations with lot of checks that have device dependend performance labels
+    # e.g. check_interface_table, the series cardinality in influxdb can explode and therefore
+    # cause write timeouts.
+    # In such cases, setting PerformanceLabel as Field value will significantly reduce the series
+    # cardinality.
+    StoreCommandAsField = false
+    StorePerformanceLabelAsField = false
 
 [InfluxDB "nagflux"]
     Enabled = true
