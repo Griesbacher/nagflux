@@ -59,7 +59,6 @@
     # cause write timeouts.
     # In such cases, setting PerformanceLabel as Field value will significantly reduce the series
     # cardinality.
-    StoreCommandAsField = false
     StorePerformanceLabelAsField = false
 
 [InfluxDB "nagflux"]

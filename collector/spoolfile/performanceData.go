@@ -30,20 +30,15 @@ func (p PerformanceData) PrintForInfluxDB(version string, i int) string {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.Service))
 		}
 		var fieldsString = ""
-		if config.GetConfig().InfluxDBGlobal.StorePerformanceLabelAsField || config.GetConfig().InfluxDBGlobal.StoreCommandAsField {
+		if config.GetConfig().InfluxDBGlobal.StorePerformanceLabelAsField {
 			tableName += fmt.Sprintf(`,performanceLabelIndex=%d`,
 				i,
 			)
 		}
-		if config.GetConfig().InfluxDBGlobal.StoreCommandAsField {
-			fieldsString += fmt.Sprintf(`,command="%s"`,
-				helper.SanitizeInfluxField(p.Command),
-			)
-		} else {
-			tableName += fmt.Sprintf(`,command=%s`,
-				helper.SanitizeInfluxInput(p.Command),
-			)
-		}
+
+		tableName += fmt.Sprintf(`,command=%s`,
+			helper.SanitizeInfluxInput(p.Command),
+		)
 		if config.GetConfig().InfluxDBGlobal.StorePerformanceLabelAsField {
 			fieldsString += fmt.Sprintf(`,performanceLabel="%s"`,
 				helper.SanitizeInfluxField(p.PerformanceLabel),

@@ -30,12 +30,11 @@ type Config struct {
 		PrometheusAddress string
 	}
 	InfluxDBGlobal struct {
-		CreateDatabaseIfNotExists bool
-		NastyString               string
-		NastyStringToReplace      string
-		HostcheckAlias            string
-		ClientTimeout		      int
-		StoreCommandAsField	      bool
+		CreateDatabaseIfNotExists    bool
+		NastyString                  string
+		NastyStringToReplace         string
+		HostcheckAlias               string
+		ClientTimeout                int
 		StorePerformanceLabelAsField bool
 	}
 	InfluxDB map[string]*struct {
