@@ -21,7 +21,7 @@ type PerformanceData struct {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (p PerformanceData) PrintForInfluxDB(version string) string {
+func (p PerformanceData) PrintForInfluxDB(version string, i int) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		tableName := fmt.Sprintf(`metrics,host=%s`, helper.SanitizeInfluxInput(p.Hostname))
 		if p.Service == "" {
@@ -30,6 +30,11 @@ func (p PerformanceData) PrintForInfluxDB(version string) string {
 			tableName += fmt.Sprintf(`,service=%s`, helper.SanitizeInfluxInput(p.Service))
 		}
 		var fieldsString = ""
+		if config.GetConfig().InfluxDBGlobal.StorePerformanceLabelAsField || config.GetConfig().InfluxDBGlobal.StoreCommandAsField {
+			tableName += fmt.Sprintf(`,performanceLabelIndex=%d`,
+				i,
+			)
+		}
 		if config.GetConfig().InfluxDBGlobal.StoreCommandAsField {
 			fieldsString += fmt.Sprintf(`,command="%s"`,
 				helper.SanitizeInfluxField(p.Command),

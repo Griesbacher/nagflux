@@ -10,7 +10,7 @@ type SimplePrintable struct {
 }
 
 //PrintForInfluxDB generates an String for InfluxDB
-func (p SimplePrintable) PrintForInfluxDB(version string) string {
+func (p SimplePrintable) PrintForInfluxDB(version string, i int) string {
 	if p.Datatype == data.InfluxDB {
 		return p.Text
 	}

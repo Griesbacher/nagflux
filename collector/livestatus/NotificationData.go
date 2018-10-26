@@ -23,7 +23,7 @@ func (notification *NotificationData) sanitizeValues() {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (notification NotificationData) PrintForInfluxDB(version string) string {
+func (notification NotificationData) PrintForInfluxDB(version string, i int) string {
 	notification.sanitizeValues()
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		var tags string
