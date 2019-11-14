@@ -1,6 +1,8 @@
 package modGearman
 
 import (
+	"time"
+
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/collector/livestatus"
 	"github.com/griesbacher/nagflux/collector/spoolfile"
@@ -10,7 +12,6 @@ import (
 	"github.com/griesbacher/nagflux/logging"
 	"github.com/kdar/factorlog"
 	"github.com/mikespook/gearman-go/worker"
-	"time"
 )
 
 //GearmanWorker queries the gearmanserver and adds the extraced perfdata to the queue.
@@ -127,7 +128,7 @@ func (g GearmanWorker) handlePause() {
 		case <-time.After(time.Duration(1) * time.Second):
 			globalPause := config.IsAnyTargetOnPause()
 			if pause != globalPause {
-				if pause {
+				if globalPause {
 					g.worker.Lock()
 				} else {
 					g.worker.Unlock()
