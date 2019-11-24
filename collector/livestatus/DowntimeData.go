@@ -21,7 +21,7 @@ func (downtime *DowntimeData) sanitizeValues() {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (downtime DowntimeData) PrintForInfluxDB(version string) string {
+func (downtime DowntimeData) PrintForInfluxDB(version string, i int) string {
 	downtime.sanitizeValues()
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		tags := ",type=downtime,author=" + downtime.author

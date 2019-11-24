@@ -19,7 +19,7 @@ func (comment *CommentData) sanitizeValues() {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (comment CommentData) PrintForInfluxDB(version string) string {
+func (comment CommentData) PrintForInfluxDB(version string, i int) string {
 	comment.sanitizeValues()
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		var tags string

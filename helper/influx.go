@@ -28,6 +28,23 @@ func SanitizeInfluxInput(input string) string {
 	return input
 }
 
+//SanitizeInfluxField escapes '"' chars only
+func SanitizeInfluxField(input string) string {
+
+	if config.GetConfig().InfluxDBGlobal.NastyString != "" {
+		input = strings.Replace(
+			input,
+			config.GetConfig().InfluxDBGlobal.NastyString,
+			config.GetConfig().InfluxDBGlobal.NastyStringToReplace,
+			-1,
+		)
+	}
+
+	input = strings.Replace(input, "\"", `\"`, -1)
+
+	return input
+}
+
 //SanitizeMap calls SanitizeInfluxInput in key and value
 func SanitizeMap(input map[string]string) map[string]string {
 	result := map[string]string{}

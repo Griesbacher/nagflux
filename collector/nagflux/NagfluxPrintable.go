@@ -16,7 +16,7 @@ type Printable struct {
 }
 
 //PrintForInfluxDB prints the data in influxdb lineformat
-func (p Printable) PrintForInfluxDB(version string) string {
+func (p Printable) PrintForInfluxDB(version string, i int) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("0.9") {
 		line := p.Table
 		if len(p.tags) > 0 {

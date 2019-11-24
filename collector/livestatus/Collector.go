@@ -248,7 +248,7 @@ Loop:
 	for roundsToWait != 0 {
 		select {
 		case versionPrintable := <-printables:
-			version = versionPrintable.PrintForInfluxDB("0")
+			version = versionPrintable.PrintForInfluxDB("0", 0)
 			break Loop
 		case <-time.After(oneMinute):
 			if i < roundsToWait {
