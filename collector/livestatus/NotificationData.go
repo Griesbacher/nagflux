@@ -5,8 +5,8 @@ import (
 	"github.com/griesbacher/nagflux/collector"
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
-	"strings"
 	"html"
+	"strings"
 )
 
 //NotificationData adds notification types to the livestatus data
