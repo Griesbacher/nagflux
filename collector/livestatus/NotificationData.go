@@ -6,6 +6,7 @@ import (
 	"github.com/griesbacher/nagflux/helper"
 	"github.com/griesbacher/nagflux/logging"
 	"strings"
+	"html"
 )
 
 //NotificationData adds notification types to the livestatus data
@@ -30,7 +31,7 @@ func (notification NotificationData) PrintForInfluxDB(version string) string {
 		if text := notificationToText(notification.notificationType); text != "" {
 			tags = ",type=" + text
 		}
-		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), notification.comment)
+		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), html.EscapeString(notification.comment))
 		return notification.genInfluxLineWithValue(tags, value)
 	}
 	logging.GetLogger().Criticalf("This influxversion [%f] given in the config is not supported", version)
@@ -41,7 +42,7 @@ func (notification NotificationData) PrintForInfluxDB(version string) string {
 func (notification NotificationData) PrintForElasticsearch(version, index string) string {
 	if helper.VersionOrdinal(version) >= helper.VersionOrdinal("2.0") {
 		text := notificationToText(notification.notificationType)
-		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), notification.comment)
+		value := fmt.Sprintf("%s:<br> %s", strings.TrimSpace(notification.notificationLevel), html.EscapeString(notification.comment))
 		return notification.genElasticLineWithValue(index, text, value, notification.entryTime)
 	}
 	logging.GetLogger().Criticalf("This elasticsearchversion [%f] given in the config is not supported", version)
