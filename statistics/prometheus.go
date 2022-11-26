@@ -2,13 +2,15 @@ package statistics
 
 import (
 	"fmt"
-	"github.com/griesbacher/nagflux/collector"
-	"github.com/griesbacher/nagflux/logging"
-	"github.com/prometheus/client_golang/prometheus"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/griesbacher/nagflux/collector"
+	"github.com/griesbacher/nagflux/logging"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 //PrometheusServer stores all prometheus metrics
@@ -106,7 +108,7 @@ func NewPrometheusServer(address string) PrometheusServer {
 	pMutex.Unlock()
 	if address != "" {
 		go func() {
-			http.Handle("/metrics", prometheus.Handler())
+			http.Handle("/metrics", promhttp.Handler())
 			if err := http.ListenAndServe(address, nil); err != nil {
 				logging.GetLogger().Warn(err.Error())
 			}
